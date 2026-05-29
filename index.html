@@ -1,0 +1,5891 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+   <meta charset="UTF-8">
+
+   <meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+   <title>KOSEN NOW</title>
+
+   <style>
+      * {
+         margin: 0;
+         padding: 0;
+         box-sizing: border-box;
+         font-family: Arial, sans-serif;
+      }
+
+      html {
+         width: 100%;
+         max-width: 100%;
+         min-height: 100%;
+         overflow-x: hidden;
+      }
+
+      body {
+         background: #ececec;
+         overflow-x: hidden;
+         width: 100%;
+         max-width: 100%;
+         min-height: 100%;
+         position: relative;
+         touch-action: pan-y;
+         overscroll-behavior-x: none;
+      }
+
+      .page {
+         display: none;
+         min-height: 100vh;
+         padding: 20px 20px 120px;
+         text-align: center;
+         position: relative;
+         width: 100%;
+         max-width: 100%;
+         overflow-x: hidden;
+         will-change: transform, opacity;
+      }
+
+      .active {
+         display: block;
+      }
+
+      /* ========================
+   PAGE TRANSITION ANIMATION
+======================== */
+
+      .pageTransitioning {
+         display: block !important;
+         position: fixed !important;
+         top: 0;
+         left: 0;
+         right: 0;
+         bottom: 0;
+         width: 100%;
+         min-height: 100vh;
+         overflow-y: auto;
+         overflow-x: hidden;
+         background: inherit;
+         z-index: 10;
+         backface-visibility: hidden;
+         -webkit-backface-visibility: hidden;
+         transform: none !important;
+      }
+
+      .pageTransitioning .homeHeader {
+         display: flex !important;
+         position: fixed !important;
+         top: 0 !important;
+         left: 0 !important;
+         right: 0 !important;
+         z-index: 1000 !important;
+         transform: none !important;
+         animation: none !important;
+      }
+
+      .pageTransitioning .bottomNav {
+         display: flex !important;
+         position: fixed !important;
+         bottom: 0 !important;
+         left: 0 !important;
+         right: 0 !important;
+         z-index: 1010 !important;
+         transform: none !important;
+         animation: none !important;
+      }
+
+      .fixedAppHeader {
+         display: none;
+         height: 110px;
+         background: white;
+         align-items: center;
+         justify-content: space-between;
+         padding: 0 55px;
+         box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+         position: fixed;
+         top: 0;
+         left: 0;
+         right: 0;
+         z-index: 500;
+         width: 100%;
+         max-width: 100%;
+         overflow: hidden;
+      }
+
+      .fixedAppHeader.showFixedBars {
+         display: flex;
+      }
+
+      .fixedAppBottomNav {
+         display: none;
+         position: fixed;
+         bottom: 0;
+         left: 0;
+         right: 0;
+         width: 100%;
+         height: 115px;
+         background: white;
+         justify-content: space-around;
+         align-items: flex-end;
+         box-shadow: 0 -5px 20px rgba(0, 0, 0, .08);
+         z-index: 510;
+         overflow: hidden;
+      }
+
+      .fixedAppBottomNav.showFixedBars {
+         display: flex;
+      }
+
+      .slideInFromRight {
+         animation: slideInFromRight 0.32s ease forwards;
+      }
+
+      .slideInFromLeft {
+         animation: slideInFromLeft 0.28s ease forwards;
+      }
+
+      .slideOutToLeft {
+         animation: slideOutToLeft 0.32s ease forwards;
+      }
+
+      .slideOutToRight {
+         animation: slideOutToRight 0.28s ease forwards;
+      }
+
+      .fadeInPage {
+         animation: fadeInPage 0.22s ease forwards;
+      }
+
+      .pageTransitioning.slideInFromRight,
+      .pageTransitioning.slideInFromLeft,
+      .pageTransitioning.slideOutToLeft,
+      .pageTransitioning.slideOutToRight {
+         animation: none !important;
+         transform: none !important;
+      }
+
+      /* ล็อคแถบบนและแถบล่าง ไม่ให้ขยับตาม animation */
+      .pageTransitioning .homeHeader,
+      .pageTransitioning .bottomNav {
+         transform: none !important;
+         animation: none !important;
+      }
+
+      .pageTransitioning .homeHeader {
+         display: flex !important;
+         position: fixed !important;
+         top: 0 !important;
+         left: 0 !important;
+         right: 0 !important;
+         z-index: 1000 !important;
+      }
+
+      .pageTransitioning .bottomNav {
+         display: flex !important;
+         position: fixed !important;
+         bottom: 0 !important;
+         left: 0 !important;
+         right: 0 !important;
+         z-index: 1010 !important;
+      }
+
+      /* ให้เฉพาะเนื้อหาเลื่อน */
+      .pageTransitioning.slideInFromRight>.homeContent,
+      .pageTransitioning.slideInFromRight>.eventContent,
+      .pageTransitioning.slideInFromRight>.pointContent,
+      .pageTransitioning.slideInFromRight>.rewardContent,
+      .pageTransitioning.slideInFromRight>.scanContent {
+         animation: slideInFromRight 0.32s ease forwards;
+      }
+
+      .pageTransitioning.slideInFromLeft>.homeContent,
+      .pageTransitioning.slideInFromLeft>.eventContent,
+      .pageTransitioning.slideInFromLeft>.pointContent,
+      .pageTransitioning.slideInFromLeft>.rewardContent,
+      .pageTransitioning.slideInFromLeft>.scanContent {
+         animation: slideInFromLeft 0.32s ease forwards;
+      }
+
+      .pageTransitioning.slideOutToLeft>.homeContent,
+      .pageTransitioning.slideOutToLeft>.eventContent,
+      .pageTransitioning.slideOutToLeft>.pointContent,
+      .pageTransitioning.slideOutToLeft>.rewardContent,
+      .pageTransitioning.slideOutToLeft>.scanContent {
+         animation: slideOutToLeft 0.32s ease forwards;
+      }
+
+      .pageTransitioning.slideOutToRight>.homeContent,
+      .pageTransitioning.slideOutToRight>.eventContent,
+      .pageTransitioning.slideOutToRight>.pointContent,
+      .pageTransitioning.slideOutToRight>.rewardContent,
+      .pageTransitioning.slideOutToRight>.scanContent {
+         animation: slideOutToRight 0.32s ease forwards;
+      }
+
+      /* Profile content animation */
+
+      .pageTransitioning.slideInFromRight>.profileContent {
+         animation: slideInFromRight 0.32s ease forwards;
+      }
+
+      .pageTransitioning.slideInFromLeft>.profileContent {
+         animation: slideInFromLeft 0.32s ease forwards;
+      }
+
+      .pageTransitioning.slideOutToLeft>.profileContent {
+         animation: slideOutToLeft 0.32s ease forwards;
+      }
+
+      .pageTransitioning.slideOutToRight>.profileContent {
+         animation: slideOutToRight 0.32s ease forwards;
+      }
+
+      @keyframes slideInFromRight {
+         from {
+            transform: translateX(100%);
+            opacity: 0.95;
+         }
+
+         to {
+            transform: translateX(0);
+            opacity: 1;
+         }
+      }
+
+      @keyframes slideInFromLeft {
+         from {
+            transform: translateX(-100%);
+            opacity: 0.95;
+         }
+
+         to {
+            transform: translateX(0);
+            opacity: 1;
+         }
+      }
+
+      @keyframes slideOutToLeft {
+         from {
+            transform: translateX(0);
+            opacity: 1;
+         }
+
+         to {
+            transform: translateX(-10%);
+            opacity: 0.96;
+         }
+      }
+
+      @keyframes slideOutToRight {
+         from {
+            transform: translateX(0);
+            opacity: 1;
+         }
+
+         to {
+            transform: translateX(10%);
+            opacity: 0.96;
+         }
+      }
+
+      @keyframes fadeInPage {
+         from {
+            opacity: 0;
+         }
+
+         to {
+            opacity: 1;
+         }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+
+         .slideInFromRight,
+         .slideInFromLeft,
+         .slideOutToLeft,
+         .slideOutToRight,
+         .fadeInPage {
+            animation: none !important;
+         }
+
+      }
+
+      .topLogos {
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         gap: 10px;
+         margin-top: 5px;
+         margin-bottom: 5px;
+      }
+
+      .logo66 {
+         width: 120px;
+      }
+
+      .logoKosen {
+         width: 220px;
+      }
+
+      .mainLogo {
+         width: 80%;
+         max-width: 540px;
+         margin: 5px auto 15px auto;
+         display: block;
+      }
+
+      .mascot {
+         width: 180px;
+         margin-top: 20px;
+         margin-bottom: 10px;
+      }
+
+      .title {
+         font-size: 72px;
+         font-weight: 900;
+         color: #000;
+         line-height: 1;
+         margin-top: 10px;
+      }
+
+      .subtitle {
+         font-size: 22px;
+         margin-top: 10px;
+         margin-bottom: 30px;
+      }
+
+      .input {
+         width: 85%;
+         max-width: 500px;
+         height: 70px;
+         border-radius: 40px;
+         border: 3px solid #d0d0d0;
+         background: white;
+         font-size: 24px;
+         text-align: center;
+         margin: 15px auto;
+         display: block;
+         outline: none;
+      }
+
+      select.input {
+         text-align: center;
+         text-align-last: center;
+         appearance: none;
+         -webkit-appearance: none;
+         background: white;
+         cursor: pointer;
+         color: #555;
+      }
+
+      .btnBlue,
+      .btnOrange,
+      .btnGray {
+         width: 85%;
+         max-width: 500px;
+         height: 75px;
+         border: none;
+         border-radius: 40px;
+         color: white;
+         font-size: 28px;
+         font-weight: bold;
+         margin-top: 20px;
+         cursor: pointer;
+      }
+
+      .btnBlue {
+         background: #0b7dff;
+      }
+
+      .btnOrange {
+         background: #ff5c1a;
+      }
+
+      .btnGray {
+         background: #d9d9d9;
+         color: #666;
+      }
+
+      .link {
+         margin-top: 20px;
+         font-size: 24px;
+         text-decoration: underline;
+         cursor: pointer;
+         color: #666;
+      }
+
+      .smallText {
+         margin-top: 20px;
+         font-size: 18px;
+         color: #777;
+         padding: 0 20px;
+         line-height: 1.5;
+      }
+
+      .codeBox {
+         width: 85%;
+         max-width: 500px;
+         min-height: 90px;
+         background: white;
+         border: 3px solid #d0d0d0;
+         border-radius: 40px;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         font-size: 54px;
+         font-weight: bold;
+         margin: 25px auto;
+         padding: 10px;
+         word-break: break-word;
+      }
+
+      .memberCard {
+         width: 90%;
+         max-width: 560px;
+         background: white;
+         border-radius: 36px;
+         padding: 24px;
+         margin: 20px auto;
+         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      }
+
+      .memberRow {
+         font-size: 22px;
+         margin: 10px 0;
+         color: #333;
+      }
+
+      .memberLabel {
+         font-weight: bold;
+         color: #000;
+      }
+
+      .statusBox {
+         width: 85%;
+         max-width: 500px;
+         border-radius: 30px;
+         padding: 18px;
+         margin: 20px auto;
+         font-size: 24px;
+         font-weight: bold;
+      }
+
+      .statusSuccess {
+         background: #dff7e8;
+         color: #107b3d;
+         border: 2px solid #18a957;
+      }
+
+      .qrBox {
+         width: 260px;
+         height: 260px;
+         background: white;
+         border-radius: 24px;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         margin: 20px auto;
+         padding: 15px;
+      }
+
+      .qrBox img {
+         width: 230px;
+         height: 230px;
+      }
+
+      .loading {
+         font-size: 24px;
+         font-weight: bold;
+         color: #555;
+         margin-top: 30px;
+      }
+
+      /* ========================
+   COMMON APP PAGE
+======================== */
+
+      .homePage,
+      .eventPage,
+      .pointPage,
+      .rewardPage,
+      .scanPage {
+         background: #ffffff;
+         padding: 0 0 120px;
+         text-align: left;
+         width: 100%;
+         max-width: 100%;
+         overflow-x: hidden;
+      }
+
+      .homeHeader {
+         height: 110px;
+         background: white;
+         display: flex;
+         align-items: center;
+         justify-content: space-between;
+         padding: 0 55px;
+         box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+         position: fixed;
+         top: 0;
+         left: 0;
+         right: 0;
+         z-index: 1000;
+         width: 100%;
+         max-width: 100%;
+         overflow: hidden;
+      }
+
+      .homeLogo {
+         width: 150px;
+      }
+
+      .menuIcon {
+         width: 70px;
+         height: 50px;
+         display: flex;
+         flex-direction: column;
+         justify-content: space-between;
+         margin-left: auto;
+         cursor: pointer;
+      }
+
+      .menuIcon span {
+         height: 6px;
+         background: #999;
+         border-radius: 10px;
+         display: block;
+      }
+
+      .homeContent,
+      .eventContent {
+         padding-top: 110px;
+         padding-bottom: 110px;
+         width: 100%;
+         max-width: 100%;
+         overflow-x: hidden;
+      }
+
+      /* ========================
+   HOME
+======================== */
+
+      .heroSection {
+         position: relative;
+         width: 100%;
+         max-width: 100%;
+         height: 820px;
+         overflow: hidden;
+         background: #f5f5f5;
+      }
+
+      .heroSlide {
+         position: absolute;
+         top: 0;
+         left: 0;
+         width: 100%;
+         max-width: 100%;
+         height: 100%;
+         opacity: 0;
+         transition: opacity 0.7s ease;
+         overflow: hidden;
+      }
+
+      .heroSlide.activeSlide {
+         opacity: 1;
+      }
+
+      .heroSlide img {
+         width: 100%;
+         max-width: 100%;
+         height: 100%;
+         object-fit: cover;
+         display: block;
+      }
+
+      .heroOverlay {
+         position: absolute;
+         top: 90px;
+         left: 55px;
+         right: 40px;
+         z-index: 2;
+         max-width: calc(100% - 95px);
+      }
+
+      .heroTitle {
+         font-size: 64px;
+         font-weight: 900;
+         line-height: 1.05;
+         color: #000;
+         text-align: left;
+      }
+
+      .heroTitle .blue {
+         color: #238bff;
+      }
+
+      .heroTitle .orange {
+         color: #ff6a00;
+      }
+
+      .slideDots {
+         position: absolute;
+         bottom: 30px;
+         left: 0;
+         right: 0;
+         display: flex;
+         justify-content: center;
+         gap: 12px;
+         z-index: 3;
+      }
+
+      .slideDot {
+         width: 18px;
+         height: 18px;
+         border-radius: 50%;
+         background: #d6d6d6;
+      }
+
+      .slideDot.activeDot {
+         background: #777;
+      }
+
+      .interestSection {
+         padding: 55px 40px 40px;
+         background: white;
+         text-align: center;
+         width: 100%;
+         overflow-x: hidden;
+      }
+
+      .interestImage {
+         width: 100%;
+         max-height: 430px;
+         object-fit: cover;
+         margin-bottom: 20px;
+         display: block;
+      }
+
+      .interestTitle {
+         font-size: 58px;
+         font-weight: 900;
+         line-height: 1.1;
+         margin-top: 10px;
+      }
+
+      .themeMecha {
+         color: #8a45ff;
+      }
+
+      .themeCom {
+         color: #ff3b30;
+      }
+
+      .themeElec {
+         color: #18a957;
+      }
+
+      .themeAdvanced {
+         color: #238bff;
+      }
+
+      .interestSubtitle {
+         font-size: 44px;
+         font-weight: 900;
+         color: #000;
+         margin-bottom: 20px;
+      }
+
+      .interestText {
+         width: 85%;
+         margin: 0 auto 35px;
+         font-size: 22px;
+         line-height: 1.55;
+         color: #666;
+         font-weight: bold;
+         text-align: center;
+      }
+
+      .interestButtons {
+         display: flex;
+         justify-content: center;
+         gap: 30px;
+         margin: 25px 0;
+         flex-wrap: wrap;
+      }
+
+      .interestBtn {
+         width: 110px;
+         height: 110px;
+         border-radius: 50%;
+         border: none;
+         background: #bfbfbf;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         font-size: 46px;
+         cursor: pointer;
+      }
+
+      .mechaColor {
+         background: #8a45ff !important;
+      }
+
+      .comColor {
+         background: #ff3b30 !important;
+      }
+
+      .elecColor {
+         background: #18a957 !important;
+      }
+
+      .advancedColor {
+         background: #238bff !important;
+      }
+
+      .activeInterest.mechaColor {
+         box-shadow: 0 0 0 9px white, 0 0 0 16px #8a45ff;
+      }
+
+      .activeInterest.comColor {
+         box-shadow: 0 0 0 9px white, 0 0 0 16px #ff3b30;
+      }
+
+      .activeInterest.elecColor {
+         box-shadow: 0 0 0 9px white, 0 0 0 16px #18a957;
+      }
+
+      .activeInterest.advancedColor {
+         box-shadow: 0 0 0 9px white, 0 0 0 16px #238bff;
+      }
+
+      .chooseText {
+         font-size: 26px;
+         font-weight: 900;
+         color: #aaa;
+         margin-top: 20px;
+      }
+
+      .noticeSection {
+         padding: 60px 55px 40px;
+         background: white;
+         overflow-x: hidden;
+      }
+
+      .noticeTitle {
+         font-size: 54px;
+         font-weight: 900;
+         color: #666;
+         margin-bottom: 35px;
+      }
+
+      .noticeItem {
+         margin-bottom: 35px;
+      }
+
+      .noticeMeta {
+         display: flex;
+         align-items: center;
+         gap: 30px;
+         margin-bottom: 15px;
+         flex-wrap: wrap;
+      }
+
+      .noticeTag {
+         background: #b9d9ff;
+         color: #666;
+         font-size: 22px;
+         padding: 12px 60px;
+         border-radius: 30px;
+      }
+
+      .noticeDate {
+         font-size: 28px;
+         color: #777;
+      }
+
+      .noticeLink {
+         font-size: 27px;
+         line-height: 1.45;
+         color: #666;
+         text-decoration: underline;
+         font-weight: bold;
+         cursor: pointer;
+         word-break: break-word;
+      }
+
+      .followSection {
+         padding: 20px 55px 60px;
+         text-align: center;
+         background: white;
+      }
+
+      .followTitle {
+         font-size: 46px;
+         font-weight: 900;
+         color: #666;
+         margin-bottom: 35px;
+      }
+
+      .socialIcons {
+         display: flex;
+         justify-content: center;
+         gap: 40px;
+         align-items: center;
+         flex-wrap: wrap;
+      }
+
+      .socialIcon {
+         width: 105px;
+         height: 105px;
+         border-radius: 24px;
+         object-fit: contain;
+         cursor: pointer;
+      }
+
+      .contactFooter {
+         background: #000;
+         color: white;
+         padding: 55px 55px 140px;
+         text-align: left;
+         overflow-x: hidden;
+      }
+
+      .footerLogo {
+         width: 260px;
+         display: block;
+         margin: 0 auto 35px;
+      }
+
+      .contactTitle {
+         font-size: 26px;
+         font-weight: 900;
+         margin-bottom: 25px;
+      }
+
+      .contactText {
+         font-size: 22px;
+         line-height: 1.45;
+         margin-bottom: 20px;
+         word-break: break-word;
+      }
+
+      /* ========================
+   EVENT
+======================== */
+
+      .eventPosterBox {
+         background: white;
+         padding: 20px 18px 10px;
+         text-align: center;
+         overflow: hidden;
+      }
+
+      .eventPosterImage {
+         width: 100%;
+         max-width: 760px;
+         height: auto;
+         display: block;
+         margin: 0 auto;
+      }
+
+      .eventSection {
+         padding: 28px 0 32px;
+         background: white;
+         text-align: center;
+         overflow: hidden;
+      }
+
+      .floorSliderWrap {
+         overflow: hidden;
+         position: relative;
+         background: white;
+      }
+
+      .floorMapScroller {
+         width: 100%;
+         overflow-x: auto;
+         overflow-y: hidden;
+         display: flex;
+         scroll-snap-type: x mandatory;
+         -webkit-overflow-scrolling: touch;
+         scrollbar-width: none;
+         touch-action: auto;
+         overscroll-behavior-x: contain;
+         overscroll-behavior-y: auto;
+      }
+
+      .floorMapScroller::-webkit-scrollbar {
+         display: none;
+      }
+
+      .floorSlide {
+         min-width: 100%;
+         width: 100%;
+         scroll-snap-align: center;
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         padding: 0 0 10px;
+         overflow: hidden;
+         touch-action: auto;
+      }
+
+      .floorSlide img {
+         width: 100%;
+         max-width: 900px;
+         height: auto;
+         display: block;
+         object-fit: contain;
+         touch-action: auto;
+      }
+
+      .floorArrowRow {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         padding: 0 35px;
+         margin: 10px 0 5px;
+      }
+
+      .floorArrow {
+         border: none;
+         background: transparent;
+         font-size: 64px;
+         font-weight: 900;
+         color: #777;
+         cursor: pointer;
+         line-height: 1;
+      }
+
+      .floorDots {
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         gap: 10px;
+      }
+
+      .floorDot {
+         width: 18px;
+         height: 18px;
+         background: #d0d0d0;
+         border-radius: 50%;
+      }
+
+      .floorDot.activeFloorDot {
+         background: #777;
+      }
+
+      .floorInfoBox {
+         width: 90%;
+         max-width: 760px;
+         border: 4px solid #c7c7c7;
+         border-radius: 34px;
+         margin: 25px auto 30px;
+         padding: 22px 28px;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         gap: 25px;
+         background: white;
+      }
+
+      .floorNumber {
+         font-size: 34px;
+         font-weight: 500;
+         line-height: 1.05;
+         text-align: center;
+         min-width: 110px;
+      }
+
+      .floorNumber small {
+         font-size: 18px;
+         vertical-align: super;
+      }
+
+      .floorInfoList {
+         font-size: 22px;
+         line-height: 1.45;
+         text-align: left;
+      }
+
+      .scrollHint {
+         text-align: center;
+         color: #d0d0d0;
+         font-size: 22px;
+         font-weight: 900;
+         margin: 20px 0 10px;
+      }
+
+      .scrollHintIcon {
+         font-size: 46px;
+         line-height: .8;
+         color: #d0d0d0;
+      }
+
+      .scheduleSection {
+         background: white;
+         padding: 35px 22px 90px;
+         text-align: center;
+         overflow: hidden;
+      }
+
+      .scheduleImage {
+         width: 100%;
+         max-width: 820px;
+         height: auto;
+         display: block;
+         margin: 0 auto;
+      }
+
+      /* ========================
+   POINT
+======================== */
+
+      .pointContent {
+         padding: 180px 24px 120px;
+         text-align: center;
+      }
+
+      .pointTitle {
+         font-size: 72px;
+         font-weight: 900;
+         color: #000;
+         margin-bottom: 45px;
+      }
+
+      .coinImage {
+         width: 55%;
+         max-width: 430px;
+         display: block;
+         margin: 0 auto 40px;
+      }
+
+      .pointAmount {
+         font-size: 72px;
+         font-weight: 900;
+         color: #000;
+         margin-bottom: 10px;
+      }
+
+      .pointLabel {
+         font-size: 30px;
+         font-weight: 900;
+         color: #bbb;
+         margin-bottom: 28px;
+      }
+
+      .pointBarOuter {
+         width: 85%;
+         max-width: 560px;
+         height: 72px;
+         border: 5px solid #ff5c1a;
+         border-radius: 50px;
+         margin: 0 auto 35px;
+         overflow: hidden;
+         background: white;
+         position: relative;
+      }
+
+      .pointBarInner {
+         height: 100%;
+         width: 0%;
+         background: #ff5c1a;
+         border-radius: 50px;
+         transition: width .4s ease;
+      }
+
+      .pointBarText {
+         position: absolute;
+         left: 0;
+         right: 0;
+         top: 50%;
+         transform: translateY(-50%);
+         font-size: 34px;
+         font-weight: 900;
+         color: white;
+         text-align: center;
+      }
+
+      .pointNote {
+         width: 85%;
+         max-width: 600px;
+         font-size: 24px;
+         line-height: 1.45;
+         color: #777;
+         font-weight: bold;
+         margin: 0 auto 30px;
+      }
+
+      /* ========================
+   REWARD
+======================== */
+
+      .rewardContent {
+         padding: 180px 24px 120px;
+         text-align: center;
+      }
+
+      .rewardTopRow {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         width: 90%;
+         max-width: 760px;
+         margin: 0 auto 35px;
+      }
+
+      .rewardTitle {
+         font-size: 72px;
+         font-weight: 900;
+         color: #000;
+         line-height: 1;
+      }
+
+      .rewardPointBadge {
+         display: flex;
+         align-items: center;
+         gap: 12px;
+         font-size: 42px;
+         font-weight: 900;
+         color: #000;
+      }
+
+      .rewardPointBadge img {
+         width: 72px;
+         height: 72px;
+         object-fit: contain;
+      }
+
+      .rewardSubtitle {
+         width: 90%;
+         max-width: 760px;
+         margin: 0 auto 30px;
+         font-size: 38px;
+         font-weight: 900;
+         color: #777;
+         text-align: left;
+      }
+
+      .rewardList {
+         width: 92%;
+         max-width: 780px;
+         margin: 0 auto;
+         display: flex;
+         flex-direction: column;
+         gap: 18px;
+      }
+
+      .rewardItem {
+         width: 100%;
+         min-height: 150px;
+         border: 5px solid #ff5c1a;
+         background: #ffd0bf;
+         border-radius: 55px;
+         display: grid;
+         grid-template-columns: 28% 32% 40%;
+         align-items: center;
+         padding: 16px 18px;
+         gap: 10px;
+      }
+
+      .rewardItem.disabledReward {
+         background: #ddd;
+         border-color: #aaa;
+         opacity: .65;
+      }
+
+      .rewardItem.cerReward {
+         background: #b9dcff;
+         border-color: #238bff;
+      }
+
+      .rewardImage {
+         width: 100%;
+         max-width: 125px;
+         max-height: 100px;
+         object-fit: contain;
+         margin: 0 auto;
+      }
+
+      .rewardName {
+         font-size: 32px;
+         font-weight: 900;
+         line-height: 1.25;
+         color: #000;
+         text-align: center;
+      }
+
+      .rewardCostBox {
+         background: white;
+         border-radius: 48px;
+         min-height: 110px;
+         display: flex;
+         flex-direction: column;
+         justify-content: center;
+         align-items: center;
+         font-size: 28px;
+         font-weight: 900;
+         color: #000;
+         cursor: pointer;
+      }
+
+      .rewardCostRow {
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         gap: 10px;
+         font-size: 42px;
+         font-weight: 900;
+      }
+
+      .rewardCostRow img {
+         width: 48px;
+         height: 48px;
+         object-fit: contain;
+      }
+
+      .rewardRedeemText {
+         font-size: 26px;
+         font-weight: 900;
+         margin-top: 2px;
+      }
+
+      .rewardNoteStrong {
+         width: 90%;
+         max-width: 760px;
+         margin: 28px auto 8px;
+         font-size: 28px;
+         font-weight: 900;
+         color: #000;
+         line-height: 1.35;
+      }
+
+      .rewardNote {
+         width: 90%;
+         max-width: 760px;
+         margin: 0 auto;
+         font-size: 24px;
+         font-weight: bold;
+         color: #777;
+         line-height: 1.45;
+      }
+
+      .rewardModalOverlay {
+         display: none;
+         position: fixed;
+         inset: 0;
+         z-index: 200;
+         background: rgba(0, 0, 0, .35);
+         justify-content: center;
+         align-items: center;
+         padding: 24px;
+      }
+
+      .rewardModalOverlay.activeModal {
+         display: flex;
+      }
+
+      .rewardModal {
+         width: 92%;
+         max-width: 680px;
+         background: white;
+         border-radius: 40px;
+         padding: 45px 28px;
+         text-align: center;
+         box-shadow: 0 12px 35px rgba(0, 0, 0, .18);
+      }
+
+      .rewardModalTitle {
+         font-size: 56px;
+         font-weight: 900;
+         line-height: 1.1;
+         margin-bottom: 22px;
+      }
+
+      .rewardModalImage {
+         width: 190px;
+         height: 150px;
+         object-fit: contain;
+         margin: 0 auto 20px;
+         display: block;
+      }
+
+      .rewardModalName {
+         font-size: 44px;
+         font-weight: 900;
+         line-height: 1.2;
+         margin-bottom: 18px;
+      }
+
+      .rewardModalCost {
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         gap: 18px;
+         font-size: 48px;
+         font-weight: 900;
+         margin-bottom: 28px;
+      }
+
+      .rewardModalCost img {
+         width: 62px;
+         height: 62px;
+         object-fit: contain;
+      }
+
+      .rewardQrBox {
+         width: 78%;
+         max-width: 420px;
+         margin: 20px auto 22px;
+         text-align: center;
+      }
+
+      .rewardQrBox img {
+         width: 100%;
+         height: auto;
+         display: block;
+      }
+
+      .rewardQrHint {
+         font-size: 28px;
+         line-height: 1.35;
+         font-weight: 900;
+         color: #ff5c1a;
+         margin: 18px auto 0;
+      }
+
+      .rewardSuccessMascot {
+         width: 240px;
+         max-width: 70%;
+         display: block;
+         margin: 40px auto 25px;
+      }
+
+      .rewardSuccessTitle {
+         font-size: 58px;
+         font-weight: 900;
+         line-height: 1.25;
+         color: #000;
+         margin-bottom: 24px;
+      }
+
+      .rewardSuccessText {
+         width: 86%;
+         max-width: 600px;
+         font-size: 26px;
+         font-weight: bold;
+         line-height: 1.45;
+         color: #777;
+         margin: 0 auto 35px;
+      }
+
+      .certificatePreview {
+         width: 92%;
+         max-width: 780px;
+         margin: 25px auto 15px;
+         display: block;
+      }
+
+      .previewText {
+         font-size: 30px;
+         font-weight: 900;
+         color: #777;
+         margin: 10px auto 25px;
+      }
+
+      .certificateEditorBox {
+         width: 92%;
+         max-width: 700px;
+         margin: 80px auto 0;
+         text-align: center;
+      }
+
+      .certificateEditorTitle {
+         font-size: 58px;
+         font-weight: 900;
+         color: #000;
+         margin-bottom: 35px;
+      }
+
+      .cerInput {
+         width: 100%;
+         height: 78px;
+         border-radius: 42px;
+         border: 4px solid #d6d6d6;
+         font-size: 28px;
+         text-align: center;
+         margin: 18px auto;
+         outline: none;
+      }
+
+      .cerWarning {
+         font-size: 26px;
+         font-weight: 900;
+         line-height: 1.35;
+         color: #777;
+         margin: 28px auto;
+      }
+
+      /* ========================
+   CERTIFICATE PREVIEW FIX
+======================== */
+
+      .certificatePreviewWrap {
+         width: 100%;
+         max-width: 100%;
+         padding: 0 12px;
+         margin: 12px auto 16px;
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         overflow: hidden;
+      }
+
+      .certificateCanvas {
+         width: 72%;
+         max-width: 546px;
+         height: auto;
+         display: block;
+         margin: 0 auto;
+         border-radius: 8px;
+         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.10);
+         background: white;
+         object-fit: contain;
+      }
+
+      .cerPreviewLoading {
+         font-size: 18px;
+         font-weight: 900;
+         color: #777;
+         margin: 14px auto;
+         text-align: center;
+      }
+
+      .previewText {
+         font-size: 26px;
+         font-weight: 900;
+         color: #777;
+         text-align: center;
+         margin: 10px auto 20px;
+      }
+
+      /* ========================
+   SCAN
+======================== */
+
+      .scanContent {
+         padding: 150px 20px 120px;
+         text-align: center;
+      }
+
+      .scanTitle {
+         font-size: 46px;
+         font-weight: 900;
+         margin-bottom: 24px;
+      }
+
+      #qrReader {
+         width: 100%;
+         max-width: 420px;
+         margin: 0 auto 20px;
+         border-radius: 24px;
+         overflow: hidden;
+         background: #f4f4f4;
+      }
+
+      .scanHint {
+         width: 85%;
+         max-width: 500px;
+         margin: 10px auto 20px;
+         font-size: 18px;
+         line-height: 1.5;
+         color: #777;
+         font-weight: bold;
+      }
+
+      /* ========================
+   BOTTOM NAV
+======================== */
+
+      .bottomNav {
+         position: fixed;
+         bottom: 0;
+         left: 0;
+         right: 0;
+         width: 100%;
+         height: 115px;
+         background: white;
+         display: flex;
+         justify-content: space-around;
+         align-items: flex-end;
+         box-shadow: 0 -5px 20px rgba(0, 0, 0, .08);
+         z-index: 1010;
+         overflow: hidden;
+      }
+
+      .navItem {
+         width: 20%;
+         min-width: 0;
+         height: 100%;
+         display: flex;
+         flex-direction: column;
+         align-items: center;
+         justify-content: center;
+         font-size: 22px;
+         font-weight: 900;
+         color: #aaa;
+         cursor: pointer;
+         overflow: hidden;
+      }
+
+      .navIcon {
+         font-size: 42px;
+         margin-bottom: 5px;
+      }
+
+      .navItem.activeNav {
+         background: #ff5c1a;
+         color: white;
+         border-radius: 35px 35px 0 0;
+         height: 135px;
+         margin-top: -20px;
+      }
+
+      .navItem.scanNav {
+         background: #238bff;
+         color: white;
+         border-radius: 35px 35px 0 0;
+         height: 135px;
+         margin-top: -20px;
+      }
+
+      .navItem.disabledNav {
+         opacity: .55;
+      }
+
+      /* ========================
+   MOBILE
+======================== */
+
+      @media screen and (max-width:480px) {
+
+         .page {
+            min-height: 100vh;
+            padding: 14px 12px 95px;
+         }
+
+         .topLogos {
+            gap: 6px;
+            margin: 4px 0;
+         }
+
+         .logo66 {
+            width: 72px;
+         }
+
+         .logoKosen {
+            width: 145px;
+         }
+
+         .mainLogo {
+            width: 92%;
+            max-width: 330px;
+            margin: 6px auto 14px;
+         }
+
+         .mascot {
+            width: 120px;
+            margin: 12px 0 8px;
+         }
+
+         .title {
+            font-size: 42px;
+            line-height: 1.05;
+            margin-top: 8px;
+         }
+
+         .subtitle {
+            font-size: 16px;
+            margin: 8px 0 18px;
+         }
+
+         .input {
+            width: 92%;
+            max-width: 360px;
+            height: 54px;
+            border-radius: 28px;
+            border: 2px solid #d0d0d0;
+            font-size: 18px;
+            margin: 10px auto;
+         }
+
+         .btnBlue,
+         .btnOrange,
+         .btnGray {
+            width: 92%;
+            max-width: 360px;
+            height: 56px;
+            border-radius: 30px;
+            font-size: 20px;
+            margin-top: 14px;
+         }
+
+         .link {
+            font-size: 18px;
+            margin-top: 14px;
+         }
+
+         .smallText {
+            font-size: 14px;
+            line-height: 1.45;
+            margin-top: 14px;
+            padding: 0 12px;
+         }
+
+         .codeBox {
+            width: 92%;
+            max-width: 360px;
+            min-height: 70px;
+            font-size: 34px;
+            border-radius: 30px;
+            margin: 18px auto;
+         }
+
+         .qrBox {
+            width: 210px;
+            height: 210px;
+            border-radius: 20px;
+            padding: 12px;
+            margin: 16px auto;
+         }
+
+         .qrBox img {
+            width: 185px;
+            height: 185px;
+         }
+
+         .homePage,
+         .eventPage,
+         .pointPage,
+         .rewardPage,
+         .scanPage {
+            padding: 0 0 95px;
+         }
+
+         .homeHeader {
+            height: 72px;
+            padding: 0 18px;
+         }
+
+         .fixedAppHeader {
+            height: 72px;
+            padding: 0 18px;
+         }
+
+         .fixedAppBottomNav {
+            height: 82px;
+         }
+
+         .homeLogo {
+            width: 105px;
+         }
+
+         .menuIcon {
+            width: 42px;
+            height: 30px;
+            margin-left: auto;
+         }
+
+         .menuIcon span {
+            height: 4px;
+         }
+
+         .homeContent,
+         .eventContent {
+            padding-top: 72px;
+            padding-bottom: 80px;
+         }
+
+         .heroSection {
+            height: 430px;
+         }
+
+         .heroOverlay {
+            top: 42px;
+            left: 18px;
+            right: 18px;
+            max-width: calc(100% - 36px);
+         }
+
+         .heroTitle {
+            font-size: 36px;
+            line-height: 1.08;
+         }
+
+         .slideDots {
+            bottom: 18px;
+            gap: 8px;
+         }
+
+         .slideDot {
+            width: 11px;
+            height: 11px;
+         }
+
+         .interestSection {
+            padding: 32px 18px 28px;
+         }
+
+         .interestImage {
+            max-height: 240px;
+            margin-bottom: 16px;
+         }
+
+         .interestTitle {
+            font-size: 34px;
+            line-height: 1.1;
+            margin-top: 8px;
+         }
+
+         .interestSubtitle {
+            font-size: 26px;
+            margin-bottom: 14px;
+         }
+
+         .interestText {
+            width: 94%;
+            font-size: 15px;
+            line-height: 1.55;
+            margin: 0 auto 24px;
+         }
+
+         .interestButtons {
+            gap: 12px;
+            margin: 18px 0;
+         }
+
+         .interestBtn {
+            width: 68px;
+            height: 68px;
+            font-size: 30px;
+         }
+
+         .chooseText {
+            font-size: 18px;
+            margin-top: 14px;
+         }
+
+         .noticeSection {
+            padding: 38px 22px 25px;
+         }
+
+         .noticeTitle {
+            font-size: 34px;
+            margin-bottom: 24px;
+         }
+
+         .noticeItem {
+            margin-bottom: 26px;
+         }
+
+         .noticeMeta {
+            gap: 12px;
+            margin-bottom: 10px;
+         }
+
+         .noticeTag {
+            font-size: 15px;
+            padding: 8px 24px;
+         }
+
+         .noticeDate {
+            font-size: 18px;
+         }
+
+         .noticeLink {
+            font-size: 17px;
+            line-height: 1.45;
+         }
+
+         .followSection {
+            padding: 18px 22px 38px;
+         }
+
+         .followTitle {
+            font-size: 30px;
+            margin-bottom: 24px;
+         }
+
+         .socialIcons {
+            gap: 14px;
+         }
+
+         .socialIcon {
+            width: 62px;
+            height: 62px;
+            border-radius: 16px;
+         }
+
+         .contactFooter {
+            padding: 36px 24px 120px;
+         }
+
+         .footerLogo {
+            width: 180px;
+            margin: 0 auto 25px;
+         }
+
+         .contactTitle {
+            font-size: 20px;
+            margin-bottom: 18px;
+         }
+
+         .contactText {
+            font-size: 15px;
+            line-height: 1.45;
+            margin-bottom: 14px;
+         }
+
+         .memberCard {
+            width: 94%;
+            border-radius: 26px;
+            padding: 18px;
+            margin: 16px auto;
+         }
+
+         .memberRow {
+            font-size: 16px;
+            margin: 8px 0;
+         }
+
+         .statusBox {
+            width: 92%;
+            max-width: 360px;
+            border-radius: 24px;
+            padding: 14px;
+            font-size: 18px;
+            margin: 16px auto;
+         }
+
+         .bottomNav {
+            height: 82px;
+         }
+
+         .navItem {
+            font-size: 12px;
+            height: 82px;
+         }
+
+         .navIcon {
+            font-size: 25px;
+            margin-bottom: 3px;
+         }
+
+         .navItem.activeNav,
+         .navItem.scanNav {
+            height: 96px;
+            margin-top: -14px;
+            border-radius: 24px 24px 0 0;
+         }
+
+         .eventPosterBox {
+            padding: 16px 10px 8px;
+         }
+
+         .eventPosterImage {
+            width: 100%;
+            max-width: 100%;
+         }
+
+         .eventSection {
+            padding: 18px 0 25px;
+         }
+
+         .floorSlide {
+            padding: 0 0 5px;
+         }
+
+         .floorSlide img {
+            width: 100%;
+            max-width: none;
+         }
+
+         .floorArrowRow {
+            padding: 0 26px;
+            margin: 8px 0 4px;
+         }
+
+         .floorArrow {
+            font-size: 48px;
+         }
+
+         .floorDot {
+            width: 12px;
+            height: 12px;
+         }
+
+         .floorInfoBox {
+            width: 90%;
+            border: 3px solid #c7c7c7;
+            border-radius: 24px;
+            padding: 15px 18px;
+            gap: 12px;
+            margin: 18px auto 24px;
+         }
+
+         .floorNumber {
+            font-size: 24px;
+            min-width: 70px;
+         }
+
+         .floorNumber small {
+            font-size: 13px;
+         }
+
+         .floorInfoList {
+            font-size: 15px;
+            line-height: 1.4;
+         }
+
+         .scrollHint {
+            font-size: 17px;
+            margin: 14px 0 8px;
+         }
+
+         .scrollHintIcon {
+            font-size: 34px;
+         }
+
+         .scheduleSection {
+            padding: 25px 12px 90px;
+         }
+
+         .scheduleImage {
+            width: 100%;
+            max-width: 100%;
+         }
+
+         .pointContent {
+            padding: 125px 18px 100px;
+         }
+
+         .pointTitle {
+            font-size: 48px;
+            margin-bottom: 32px;
+         }
+
+         .coinImage {
+            width: 72%;
+            max-width: 300px;
+            margin-bottom: 30px;
+         }
+
+         .pointAmount {
+            font-size: 52px;
+         }
+
+         .pointLabel {
+            font-size: 22px;
+            margin-bottom: 22px;
+         }
+
+         .pointBarOuter {
+            width: 88%;
+            height: 58px;
+            border: 4px solid #ff5c1a;
+         }
+
+         .pointBarText {
+            font-size: 26px;
+         }
+
+         .pointNote {
+            width: 88%;
+            font-size: 18px;
+         }
+
+         .rewardContent {
+            padding: 125px 16px 100px;
+         }
+
+         .rewardTopRow {
+            width: 90%;
+            margin: 0 auto 28px;
+         }
+
+         .rewardTitle {
+            font-size: 48px;
+         }
+
+         .rewardPointBadge {
+            font-size: 30px;
+            gap: 8px;
+         }
+
+         .rewardPointBadge img {
+            width: 48px;
+            height: 48px;
+         }
+
+         .rewardSubtitle {
+            width: 88%;
+            font-size: 28px;
+            margin-bottom: 22px;
+         }
+
+         .rewardList {
+            width: 92%;
+            gap: 12px;
+         }
+
+         .rewardItem {
+            min-height: 110px;
+            border-width: 3px;
+            border-radius: 36px;
+            grid-template-columns: 28% 32% 40%;
+            padding: 12px 10px;
+            gap: 6px;
+         }
+
+         .rewardImage {
+            max-width: 90px;
+            max-height: 72px;
+         }
+
+         .rewardName {
+            font-size: 23px;
+         }
+
+         .rewardCostBox {
+            min-height: 78px;
+            border-radius: 32px;
+         }
+
+         .rewardCostRow {
+            font-size: 30px;
+            gap: 7px;
+         }
+
+         .rewardCostRow img {
+            width: 36px;
+            height: 36px;
+         }
+
+         .rewardRedeemText {
+            font-size: 18px;
+         }
+
+         .rewardNoteStrong {
+            font-size: 22px;
+            width: 90%;
+         }
+
+         .rewardNote {
+            font-size: 18px;
+            width: 90%;
+         }
+
+         .rewardModal {
+            border-radius: 34px;
+            padding: 35px 22px;
+         }
+
+         .rewardModalTitle {
+            font-size: 44px;
+         }
+
+         .rewardModalImage {
+            width: 150px;
+            height: 115px;
+         }
+
+         .rewardModalName {
+            font-size: 34px;
+         }
+
+         .rewardModalCost {
+            font-size: 38px;
+         }
+
+         .rewardModalCost img {
+            width: 50px;
+            height: 50px;
+         }
+
+         .rewardQrBox {
+            width: 88%;
+         }
+
+         .rewardQrHint {
+            font-size: 22px;
+         }
+
+         .rewardSuccessMascot {
+            width: 210px;
+         }
+
+         .rewardSuccessTitle {
+            font-size: 42px;
+         }
+
+         .rewardSuccessText {
+            font-size: 20px;
+         }
+
+         .certificatePreview {
+            width: 94%;
+         }
+
+         .certificatePreviewWrap {
+            width: 100%;
+            padding: 0 6px;
+            margin: 8px auto 10px;
+         }
+
+         .certificateCanvas {
+            width: 62%;
+            max-width: 273px;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 5px 16px rgba(0, 0, 0, 0.08);
+         }
+
+         .cerPreviewLoading {
+            font-size: 14px;
+            margin: 8px auto;
+         }
+
+         .previewText {
+            font-size: 18px;
+            margin: 8px auto 16px;
+         }
+
+         .certificateEditorBox {
+            width: 90%;
+            margin-top: 60px;
+         }
+
+         .certificateEditorTitle {
+            font-size: 38px;
+         }
+
+         .cerInput {
+            height: 62px;
+            font-size: 22px;
+            border-width: 3px;
+         }
+
+         .cerWarning {
+            font-size: 20px;
+         }
+
+         .scanTitle {
+            font-size: 34px;
+         }
+
+         .scanHint {
+            font-size: 15px;
+            width: 88%;
+         }
+
+         @media screen and (max-width:390px) {
+
+            .title {
+               font-size: 38px;
+            }
+
+            .heroSection {
+               height: 390px;
+            }
+
+            .heroTitle {
+               font-size: 32px;
+            }
+
+            .interestTitle {
+               font-size: 30px;
+            }
+
+            .interestSubtitle {
+               font-size: 23px;
+            }
+
+            .interestBtn {
+               width: 62px;
+               height: 62px;
+               font-size: 27px;
+            }
+
+            .noticeTitle {
+               font-size: 31px;
+            }
+
+            .bottomNav {
+               height: 78px;
+            }
+
+            .navItem {
+               font-size: 11px;
+            }
+
+            .navIcon {
+               font-size: 23px;
+            }
+
+            .certificateCanvas {
+               width: 57%;
+               max-width: 234px;
+            }
+
+            .floorInfoList {
+               font-size: 14px;
+            }
+
+         }
+
+      }
+
+      /* ========================
+   FINAL APP LAYOUT FIX
+   Header / BottomNav fixed
+   Only content scrolls
+======================== */
+
+      .homePage.active,
+      .eventPage.active,
+      .pointPage.active,
+      .rewardPage.active,
+      .scanPage.active,
+      #profilePage.active,
+      #profileEditorPage.active {
+         position: fixed !important;
+         inset: 0 !important;
+         width: 100% !important;
+         height: 100dvh !important;
+         min-height: 100dvh !important;
+         padding: 0 !important;
+         margin: 0 !important;
+         overflow: hidden !important;
+         background: white !important;
+      }
+
+      .homePage.active .homeHeader,
+      .eventPage.active .homeHeader,
+      .pointPage.active .homeHeader,
+      .rewardPage.active .homeHeader,
+      .scanPage.active .homeHeader,
+      #profilePage.active .homeHeader,
+      #profileEditorPage.active .homeHeader {
+         position: fixed !important;
+         top: 0 !important;
+         left: 0 !important;
+         right: 0 !important;
+         width: 100% !important;
+         height: 110px !important;
+         z-index: 9000 !important;
+         transform: none !important;
+         -webkit-transform: none !important;
+         animation: none !important;
+      }
+
+      .homePage.active .bottomNav,
+      .eventPage.active .bottomNav,
+      .pointPage.active .bottomNav,
+      .rewardPage.active .bottomNav,
+      .scanPage.active .bottomNav,
+      #profilePage.active .bottomNav,
+      #profileEditorPage.active .bottomNav {
+         position: fixed !important;
+         left: 0 !important;
+         right: 0 !important;
+         bottom: 0 !important;
+         width: 100% !important;
+         height: 115px !important;
+         z-index: 9010 !important;
+         transform: none !important;
+         -webkit-transform: none !important;
+         animation: none !important;
+      }
+
+      .homePage.active .homeContent,
+      .eventPage.active .eventContent,
+      .pointPage.active .pointContent,
+      .rewardPage.active .rewardContent,
+      .scanPage.active .scanContent,
+      #profilePage.active .profileContent,
+      #profileEditorPage.active .profileContent {
+         position: absolute !important;
+         top: 110px !important;
+         left: 0 !important;
+         right: 0 !important;
+         bottom: 115px !important;
+         width: 100% !important;
+         height: auto !important;
+         max-height: none !important;
+         overflow-y: auto !important;
+         overflow-x: hidden !important;
+         -webkit-overflow-scrolling: touch !important;
+         overscroll-behavior-y: contain !important;
+         transform: translateZ(0) !important;
+         -webkit-transform: translateZ(0) !important;
+      }
+
+      .homePage.active .homeContent,
+      .eventPage.active .eventContent {
+         padding-top: 0 !important;
+         padding-bottom: 40px !important;
+      }
+
+      .pointPage.active .pointContent,
+      .rewardPage.active .rewardContent,
+      .scanPage.active .scanContent,
+      #profilePage.active .profileContent,
+      #profileEditorPage.active .profileContent {
+         margin-top: 0 !important;
+         padding-top: 40px !important;
+         padding-bottom: 40px !important;
+      }
+
+      .pageTransitioning {
+         overflow: hidden !important;
+      }
+
+      .pageTransitioning .homeHeader,
+      .pageTransitioning .bottomNav {
+         transform: none !important;
+         -webkit-transform: none !important;
+         animation: none !important;
+      }
+
+      .pageTransitioning.slideInFromRight,
+      .pageTransitioning.slideInFromLeft,
+      .pageTransitioning.slideOutToLeft,
+      .pageTransitioning.slideOutToRight {
+         animation: none !important;
+         transform: none !important;
+         -webkit-transform: none !important;
+      }
+
+      .rewardModalOverlay {
+         z-index: 10000 !important;
+      }
+
+      @media screen and (max-width: 480px) {
+
+         .homePage.active .homeHeader,
+         .eventPage.active .homeHeader,
+         .pointPage.active .homeHeader,
+         .rewardPage.active .homeHeader,
+         .scanPage.active .homeHeader,
+         #profilePage.active .homeHeader,
+         #profileEditorPage.active .homeHeader {
+            height: 72px !important;
+         }
+
+         .homePage.active .bottomNav,
+         .eventPage.active .bottomNav,
+         .pointPage.active .bottomNav,
+         .rewardPage.active .bottomNav,
+         .scanPage.active .bottomNav,
+         #profilePage.active .bottomNav,
+         #profileEditorPage.active .bottomNav {
+            height: 82px !important;
+         }
+
+         .homePage.active .homeContent,
+         .eventPage.active .eventContent,
+         .pointPage.active .pointContent,
+         .rewardPage.active .rewardContent,
+         .scanPage.active .scanContent,
+         #profilePage.active .profileContent,
+         #profileEditorPage.active .profileContent {
+            top: 72px !important;
+            bottom: 82px !important;
+         }
+
+         .pointPage.active .pointContent,
+         .rewardPage.active .rewardContent,
+         .scanPage.active .scanContent,
+         #profilePage.active .profileContent,
+         #profileEditorPage.active .profileContent {
+            padding-top: 28px !important;
+            padding-bottom: 28px !important;
+         }
+
+      }
+
+      /* ========================
+   SMOOTH PAGE TRANSITION OVERRIDE
+   Make forward/back feel equally smooth
+======================== */
+
+      .slideInFromRight,
+      .slideInFromLeft,
+      .slideOutToLeft,
+      .slideOutToRight {
+         animation-duration: 0.26s !important;
+         animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1) !important;
+      }
+
+      .pageTransitioning.slideInFromRight>.homeContent,
+      .pageTransitioning.slideInFromRight>.eventContent,
+      .pageTransitioning.slideInFromRight>.pointContent,
+      .pageTransitioning.slideInFromRight>.rewardContent,
+      .pageTransitioning.slideInFromRight>.scanContent,
+      .pageTransitioning.slideInFromRight>.profileContent {
+         animation: slideInFromRight 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) forwards !important;
+      }
+
+      .pageTransitioning.slideInFromLeft>.homeContent,
+      .pageTransitioning.slideInFromLeft>.eventContent,
+      .pageTransitioning.slideInFromLeft>.pointContent,
+      .pageTransitioning.slideInFromLeft>.rewardContent,
+      .pageTransitioning.slideInFromLeft>.scanContent,
+      .pageTransitioning.slideInFromLeft>.profileContent {
+         animation: slideInFromLeft 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) forwards !important;
+      }
+
+      .pageTransitioning.slideOutToLeft>.homeContent,
+      .pageTransitioning.slideOutToLeft>.eventContent,
+      .pageTransitioning.slideOutToLeft>.pointContent,
+      .pageTransitioning.slideOutToLeft>.rewardContent,
+      .pageTransitioning.slideOutToLeft>.scanContent,
+      .pageTransitioning.slideOutToLeft>.profileContent {
+         animation: slideOutToLeft 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) forwards !important;
+      }
+
+      .pageTransitioning.slideOutToRight>.homeContent,
+      .pageTransitioning.slideOutToRight>.eventContent,
+      .pageTransitioning.slideOutToRight>.pointContent,
+      .pageTransitioning.slideOutToRight>.rewardContent,
+      .pageTransitioning.slideOutToRight>.scanContent,
+      .pageTransitioning.slideOutToRight>.profileContent {
+         animation: slideOutToRight 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) forwards !important;
+      }
+   </style>
+
+</head>
+
+<body>
+   <!-- FIXED APP BARS FOR PAGE TRANSITION -->
+
+   <div id="fixedAppHeader" class="fixedAppHeader">
+      <img class="homeLogo" src="https://mocsipa.github.io/kosen-now-images/Kosenlogo.png">
+
+      <div class="menuIcon" onclick="openMenuOverlay()">
+         <span></span>
+         <span></span>
+         <span></span>
+      </div>
+   </div>
+
+   <div id="fixedAppBottomNav" class="fixedAppBottomNav">
+
+      <div id="fixedNavHome" class="navItem" onclick="showHome()">
+         <div class="navIcon">⌂</div>
+         <div>HOME</div>
+      </div>
+
+      <div id="fixedNavEvent" class="navItem" onclick="showEvent()">
+         <div class="navIcon">▣</div>
+         <div>EVENT</div>
+      </div>
+
+      <div id="fixedNavScan" class="navItem scanNav" onclick="showScanPage()">
+         <div class="navIcon">▢</div>
+         <div>SCAN</div>
+      </div>
+
+      <div id="fixedNavPoint" class="navItem" onclick="showPoint()">
+         <div class="navIcon">★</div>
+         <div>POINT</div>
+      </div>
+
+      <div id="fixedNavReward" class="navItem" onclick="showReward()">
+         <div class="navIcon">🎁</div>
+         <div>REWARD</div>
+      </div>
+
+   </div>
+   <!-- LOGIN -->
+
+   <div id="loginPage" class="page active">
+
+      <div class="topLogos">
+         <img class="logo66" src="https://mocsipa.github.io/kosen-now-images/Logo66.png">
+         <img class="logoKosen" src="https://mocsipa.github.io/kosen-now-images/Kosenlogo.png">
+      </div>
+
+      <img class="mainLogo" src="https://mocsipa.github.io/kosen-now-images/Kosen now logo.png">
+
+      <button class="btnGray" onclick="showRegister()">REGISTER</button>
+
+      <input id="loginCode" class="input" placeholder="Enter code to Login">
+
+      <div class="link" onclick="showForgot()">Forgot Codes?</div>
+
+      <button class="btnBlue" onclick="login()">LOGIN</button>
+
+   </div>
+
+   <!-- MENU OVERLAY -->
+   <div id="menuOverlay"
+      style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;background:rgba(0,0,0,0.32);">
+      <div
+         style="background:white;position:fixed;top:0;right:0;width:320px;max-width:88vw;height:100vh;box-shadow:-6px 0 32px rgba(0,0,0,0.13);padding:0;">
+         <div
+            style="display:flex;align-items:center;justify-content:space-between;padding:24px 22px 18px 22px;border-bottom:1px solid #ececec;">
+            <img src="https://mocsipa.github.io/kosen-now-images/Kosenlogo.png" style="width:100px;">
+            <button onclick="closeMenuOverlay()"
+               style="background:none;border:none;font-size:34px;cursor:pointer;">×</button>
+         </div>
+         <div style="padding:18px 22px;">
+            <div style="font-size:28px;font-weight:900;margin-bottom:30px;color:#222;">Menu</div>
+            <div style="display:flex;flex-direction:column;gap:18px;">
+               <button onclick="showHome();closeMenuOverlay();"
+                  style="background:none;border:none;font-size:22px;font-weight:900;text-align:left;padding:0;color:#0b7dff;cursor:pointer;">⌂
+                  Home</button>
+               <button onclick="showEvent();closeMenuOverlay();"
+                  style="background:none;border:none;font-size:22px;font-weight:900;text-align:left;padding:0;color:#ff5c1a;cursor:pointer;">▣
+                  Event</button>
+               <button onclick="showPoint();closeMenuOverlay();"
+                  style="background:none;border:none;font-size:22px;font-weight:900;text-align:left;padding:0;color:#18a957;cursor:pointer;">★
+                  Point</button>
+               <button onclick="showReward();closeMenuOverlay();"
+                  style="background:none;border:none;font-size:22px;font-weight:900;text-align:left;padding:0;color:#238bff;cursor:pointer;">🎁
+                  Reward</button>
+               <button onclick="showScanPage();closeMenuOverlay();"
+                  style="background:none;border:none;font-size:22px;font-weight:900;text-align:left;padding:0;color:#8a45ff;cursor:pointer;">▢
+                  Scan</button>
+               <button onclick="showProfilePage();closeMenuOverlay();"
+                  style="background:none;border:none;font-size:22px;font-weight:900;text-align:left;padding:0;color:#333;cursor:pointer;">👤
+                  Profile</button>
+               <button onclick="logoutUser();closeMenuOverlay();"
+                  style="background:none;border:none;font-size:22px;font-weight:900;text-align:left;padding:0;color:#777;cursor:pointer;">⎋
+                  Logout</button>
+            </div>
+         </div>
+      </div>
+   </div>
+
+   <!-- HOME -->
+
+   <div id="homePage" class="page homePage">
+
+      <div class="homeHeader">
+         <img class="homeLogo" src="https://mocsipa.github.io/kosen-now-images/Kosenlogo.png">
+         <div class="menuIcon" onclick="openMenuOverlay()"><span></span><span></span><span></span></div>
+      </div>
+
+      <div class="homeContent">
+
+         <section class="heroSection">
+
+            <div class="heroOverlay">
+               <div class="heroTitle">
+                  Welcome to<br>
+                  <span class="blue">KOSEN</span>-<span class="orange">KMITL</span>
+               </div>
+            </div>
+
+            <div class="heroSlide activeSlide">
+               <img src="https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 13.05.39.png">
+            </div>
+
+            <div class="heroSlide">
+               <img src="https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 13.05.51.png">
+            </div>
+
+            <div class="heroSlide">
+               <img src="https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 13.06.04.png">
+            </div>
+
+            <div class="heroSlide">
+               <img src="https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 13.06.21.png">
+            </div>
+
+            <div class="heroSlide">
+               <img src="https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 13.06.38.png">
+            </div>
+
+            <div class="heroSlide">
+               <img src="https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 13.07.01.png">
+            </div>
+
+            <div class="heroSlide">
+               <img src="https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 13.07.03.png">
+            </div>
+
+            <div class="slideDots">
+               <div class="slideDot activeDot"></div>
+               <div class="slideDot"></div>
+               <div class="slideDot"></div>
+               <div class="slideDot"></div>
+               <div class="slideDot"></div>
+               <div class="slideDot"></div>
+               <div class="slideDot"></div>
+            </div>
+
+         </section>
+
+         <section class="interestSection">
+
+            <img id="interestImage" class="interestImage"
+               src="https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 13.21.35.png">
+
+            <div id="interestTitle" class="interestTitle themeMecha">Mechatronics</div>
+
+            <div id="interestSubtitle" class="interestSubtitle">Engineering</div>
+
+            <div id="interestText" class="interestText">
+               The Mechatronics Engineering program integrates knowledge from mechanics, electronics, and computer
+               science, with a focus on robotics. It aims to produce and develop smart technologies for industrial
+               applications.
+            </div>
+
+            <div class="interestButtons">
+               <button id="interestBtn0" class="interestBtn activeInterest mechaColor"
+                  onclick="changeInterest(0)">🤖</button>
+               <button id="interestBtn1" class="interestBtn comColor" onclick="changeInterest(1)">💻</button>
+               <button id="interestBtn2" class="interestBtn elecColor" onclick="changeInterest(2)">⚡</button>
+               <button id="interestBtn3" class="interestBtn advancedColor" onclick="changeInterest(3)">✈️</button>
+            </div>
+
+            <div class="chooseText">Choose your interests.</div>
+
+         </section>
+
+         <section class="noticeSection">
+
+            <div class="noticeTitle">NOTICE</div>
+
+            <div class="noticeItem">
+               <div class="noticeMeta">
+                  <div class="noticeTag">ประกาศ</div>
+                  <div class="noticeDate">01/08/2026</div>
+               </div>
+               <div class="noticeLink" onclick="openLink('https://www.kosen.kmitl.ac.th')">
+                  ประกาศรับสมัครเข้าศึกษา สถาบันโคเซ็นแห่ง สจล. ปีการศึกษา 2070 [แผนทุนการศึกษา]
+               </div>
+            </div>
+
+            <div class="noticeItem">
+               <div class="noticeMeta">
+                  <div class="noticeTag">ประกาศ</div>
+                  <div class="noticeDate">01/08/2026</div>
+               </div>
+               <div class="noticeLink" onclick="openLink('https://www.kosen.kmitl.ac.th')">
+                  ประกาศรับสมัครเข้าศึกษา สถาบันโคเซ็นแห่ง สจล. ปีการศึกษา 2070 [แผนปกติ]
+               </div>
+            </div>
+
+         </section>
+
+         <section class="followSection">
+
+            <div class="followTitle">FOLLOW US</div>
+
+            <div class="socialIcons">
+               <img class="socialIcon" onclick="openLink('https://www.facebook.com')"
+                  src="https://upload.wikimedia.org/wikipedia/commons/6/6c/Facebook_Logo_2023.png">
+               <img class="socialIcon" onclick="openLink('https://www.instagram.com')"
+                  src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png">
+               <img class="socialIcon" onclick="openLink('https://www.tiktok.com')"
+                  src="https://mocsipa.github.io/kosen-now-images/14.png">
+               <img class="socialIcon" onclick="openLink('https://www.youtube.com')"
+                  src="https://upload.wikimedia.org/wikipedia/commons/e/ef/Youtube_logo.png">
+            </div>
+
+         </section>
+
+         <section class="contactFooter">
+
+            <img class="footerLogo" src="https://mocsipa.github.io/kosen-now-images/Kosenlogo.png">
+
+            <div class="contactTitle">Contact Us</div>
+
+            <div class="contactText">
+               สถาบันโคเซ็นแห่ง สจล. ซอยฉลองกรุง 1 แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ 10520
+            </div>
+
+            <div class="contactText">
+               kosen@kmitl.ac.th
+            </div>
+
+         </section>
+
+      </div>
+
+      <div class="bottomNav">
+         <div class="navItem activeNav" onclick="showHome()">
+            <div class="navIcon">⌂</div>
+            <div>HOME</div>
+         </div>
+         <div class="navItem disabledNav" onclick="showEvent()">
+            <div class="navIcon">▣</div>
+            <div>EVENT</div>
+         </div>
+         <div class="navItem scanNav" onclick="showScanPage()">
+            <div class="navIcon">▢</div>
+            <div>SCAN</div>
+         </div>
+         <div class="navItem disabledNav" onclick="showPoint()">
+            <div class="navIcon">★</div>
+            <div>POINT</div>
+         </div>
+         <div class="navItem disabledNav" onclick="showReward()">
+            <div class="navIcon">🎁</div>
+            <div>REWARD</div>
+         </div>
+      </div>
+
+   </div>
+
+   <!-- EVENT -->
+
+   <div id="eventPage" class="page eventPage">
+
+      <div class="homeHeader">
+         <img class="homeLogo" src="https://mocsipa.github.io/kosen-now-images/Kosenlogo.png">
+         <div class="menuIcon" onclick="openMenuOverlay()"><span></span><span></span><span></span></div>
+      </div>
+
+      <div class="eventContent">
+
+         <section class="eventPosterBox">
+            <img class="eventPosterImage" src="https://mocsipa.github.io/kosen-now-images/E1.png">
+         </section>
+
+         <section class="eventSection">
+
+            <div class="floorSliderWrap">
+
+               <div id="floorMapScroller" class="floorMapScroller" onscroll="handleFloorScroll()">
+
+                  <div class="floorSlide"><img src="https://mocsipa.github.io/kosen-now-images/E3.png"></div>
+                  <div class="floorSlide"><img src="https://mocsipa.github.io/kosen-now-images/E4.png"></div>
+                  <div class="floorSlide"><img src="https://mocsipa.github.io/kosen-now-images/E5.png"></div>
+                  <div class="floorSlide"><img src="https://mocsipa.github.io/kosen-now-images/E6.png"></div>
+
+               </div>
+
+               <div class="floorArrowRow">
+                  <button class="floorArrow" onclick="changeFloorSlide(-1)">‹</button>
+                  <div class="floorDots">
+                     <div id="floorDot0" class="floorDot activeFloorDot"></div>
+                     <div id="floorDot1" class="floorDot"></div>
+                     <div id="floorDot2" class="floorDot"></div>
+                     <div id="floorDot3" class="floorDot"></div>
+                  </div>
+                  <button class="floorArrow" onclick="changeFloorSlide(1)">›</button>
+               </div>
+
+               <div id="floorInfoBox" class="floorInfoBox">
+                  <div id="floorNumber" class="floorNumber">1<small>st</small><br>floor</div>
+                  <div id="floorInfoList" class="floorInfoList">
+                     • Registration Area<br>
+                     • Exhibition Zone<br>
+                     • Information Desk
+                  </div>
+               </div>
+
+               <div class="scrollHint">
+                  <div class="scrollHintIcon">⌄</div>
+                  SCROLL
+               </div>
+
+            </div>
+
+         </section>
+
+         <section class="scheduleSection">
+            <img class="scheduleImage" src="https://mocsipa.github.io/kosen-now-images/E7.png">
+         </section>
+
+      </div>
+
+      <div class="bottomNav">
+         <div class="navItem disabledNav" onclick="showHome()">
+            <div class="navIcon">⌂</div>
+            <div>HOME</div>
+         </div>
+         <div class="navItem activeNav" onclick="showEvent()">
+            <div class="navIcon">▣</div>
+            <div>EVENT</div>
+         </div>
+         <div class="navItem scanNav" onclick="showScanPage()">
+            <div class="navIcon">▢</div>
+            <div>SCAN</div>
+         </div>
+         <div class="navItem disabledNav" onclick="showPoint()">
+            <div class="navIcon">★</div>
+            <div>POINT</div>
+         </div>
+         <div class="navItem disabledNav" onclick="showReward()">
+            <div class="navIcon">🎁</div>
+            <div>REWARD</div>
+         </div>
+      </div>
+
+   </div>
+
+   <!-- POINT -->
+
+   <div id="pointPage" class="page pointPage">
+
+      <div class="homeHeader">
+         <img class="homeLogo" src="https://mocsipa.github.io/kosen-now-images/Kosenlogo.png">
+         <div class="menuIcon" onclick="openMenuOverlay()"><span></span><span></span><span></span></div>
+      </div>
+
+      <div class="pointContent">
+
+         <div class="pointTitle">POINT</div>
+
+         <img class="coinImage" src="https://mocsipa.github.io/kosen-now-images/16.png">
+
+         <div id="pointAmount" class="pointAmount">x 0</div>
+
+         <div class="pointLabel">คะแนนที่ได้รับ</div>
+
+         <div class="pointBarOuter">
+            <div id="pointBarInner" class="pointBarInner"></div>
+            <div id="pointBarText" class="pointBarText">0 / 12</div>
+         </div>
+
+         <div class="pointNote">
+            *คะแนนทั้งหมดจะสามารถใช้ได้ภายในวันงาน KOSEN-KMITL FAIR เท่านั้น ซึ่งจะไม่สามารถแลกรางวัลย้อนหลังได้
+         </div>
+
+      </div>
+
+      <div class="bottomNav">
+         <div class="navItem disabledNav" onclick="showHome()">
+            <div class="navIcon">⌂</div>
+            <div>HOME</div>
+         </div>
+         <div class="navItem disabledNav" onclick="showEvent()">
+            <div class="navIcon">▣</div>
+            <div>EVENT</div>
+         </div>
+         <div class="navItem scanNav" onclick="showScanPage()">
+            <div class="navIcon">▢</div>
+            <div>SCAN</div>
+         </div>
+         <div class="navItem activeNav" onclick="showPoint()">
+            <div class="navIcon">★</div>
+            <div>POINT</div>
+         </div>
+         <div class="navItem disabledNav" onclick="showReward()">
+            <div class="navIcon">🎁</div>
+            <div>REWARD</div>
+         </div>
+      </div>
+
+   </div>
+
+   <!-- REWARD -->
+
+   <div id="rewardPage" class="page rewardPage">
+
+      <div class="homeHeader">
+         <img class="homeLogo" src="https://mocsipa.github.io/kosen-now-images/Kosenlogo.png">
+         <div class="menuIcon" onclick="openMenuOverlay()"><span></span><span></span><span></span></div>
+      </div>
+
+      <div id="rewardListView" class="rewardContent">
+
+         <div class="rewardTopRow">
+            <div class="rewardTitle">REWARD</div>
+            <div class="rewardPointBadge">
+               <img src="https://mocsipa.github.io/kosen-now-images/16.png">
+               <span id="rewardPointTop">x 0</span>
+            </div>
+         </div>
+
+         <div class="rewardSubtitle">ของรางวัลที่แลกได้</div>
+
+         <div id="rewardList" class="rewardList"></div>
+
+         <div class="rewardNoteStrong">
+            คะแนนจะถูกหักเมื่อเจ้าหน้าที่สแกน QR เพื่อยืนยันรับรางวัล
+         </div>
+
+         <div class="rewardNote">
+            *คะแนนทั้งหมดจะสามารถใช้ได้ภายในวันงาน KOSEN-KMITL FAIR เท่านั้น ซึ่งจะไม่สามารถแลกรางวัลย้อนหลังได้
+         </div>
+
+      </div>
+
+      <div id="rewardClaimQrView" class="rewardContent" style="display:none">
+
+         <div class="rewardTopRow">
+            <div class="rewardTitle">REWARD</div>
+            <div class="rewardPointBadge">
+               <img src="https://mocsipa.github.io/kosen-now-images/16.png">
+               <span id="rewardPointClaimTop">x 0</span>
+            </div>
+         </div>
+
+         <img id="claimRewardImage" class="rewardImage"
+            style="max-width:170px;max-height:130px;display:block;margin:20px auto">
+
+         <div id="claimRewardName" class="rewardName" style="font-size:34px;margin-bottom:20px"></div>
+
+         <div id="claimQrBox" class="rewardQrBox"></div>
+
+         <div class="rewardQrHint">
+            โปรดนำ QR CODE ไปที่จุดแลกรับรางวัล เพื่อให้เจ้าหน้าที่สแกน
+         </div>
+
+         <div class="rewardNote">
+            หลังเจ้าหน้าที่สแกนสำเร็จ ระบบจะตัดคะแนนและแสดงผลสำเร็จให้โดยอัตโนมัติ
+         </div>
+
+         <button class="btnGray" onclick="showReward()">Back</button>
+
+      </div>
+
+      <div id="rewardSuccessView" class="rewardContent" style="display:none">
+
+         <div class="rewardTopRow">
+            <div class="rewardTitle">REWARD</div>
+            <div class="rewardPointBadge">
+               <img src="https://mocsipa.github.io/kosen-now-images/16.png">
+               <span id="rewardPointSuccessTop">x 0</span>
+            </div>
+         </div>
+
+         <img class="rewardSuccessMascot" src="https://mocsipa.github.io/kosen-now-images/11.png">
+
+         <div class="rewardSuccessTitle">Redeemed<br>successfully</div>
+
+         <div class="rewardSuccessText">
+            *คะแนนที่ได้รับจะสามารถใช้ได้เฉพาะในวันงานเท่านั้น<br><br>[ 01/08/2026 ]
+         </div>
+
+         <button class="btnGray" onclick="showReward()">Back</button>
+
+      </div>
+
+      <div id="certificatePreviewView" class="rewardContent" style="display:none">
+
+         <div class="rewardTopRow">
+            <div class="rewardTitle">REWARD</div>
+            <div class="rewardPointBadge">
+               <img src="https://mocsipa.github.io/kosen-now-images/16.png">
+               <span id="rewardPointCerTop">x 0</span>
+            </div>
+         </div>
+
+         <div class="rewardTitle" style="font-size:46px;text-align:center;margin-bottom:20px">
+            Certificate
+         </div>
+
+         <div id="cerPreviewLoading" class="cerPreviewLoading">
+            Generating Certificate Preview...
+         </div>
+
+         <div class="certificatePreviewWrap">
+            <canvas id="certificateCanvas" class="certificateCanvas">
+            </canvas>
+         </div>
+
+         <div class="previewText">
+            Certificate Preview
+         </div>
+
+         <button class="btnOrange" onclick="showCertificateEditor()">Edit</button>
+
+         <button class="btnBlue" onclick="sendCertificateEmail()">Send to e-mail</button>
+
+      </div>
+
+      <div id="certificateEditorView" class="rewardContent" style="display:none">
+
+         <div class="rewardTopRow">
+            <div class="rewardTitle">REWARD</div>
+            <div class="rewardPointBadge">
+               <img src="https://mocsipa.github.io/kosen-now-images/16.png">
+               <span id="rewardPointEditorTop">x 0</span>
+            </div>
+         </div>
+
+         <div class="certificateEditorBox">
+
+            <div class="certificateEditorTitle">Certificate Editor</div>
+
+            <input id="cerName" class="cerInput" placeholder="Name">
+
+            <input id="cerEmail" class="cerInput" placeholder="Email">
+
+            <div class="cerWarning">
+               *ผู้ใช้สามารถแก้ไขได้ภายในวันงาน<br>
+               KOSEN-KMITL FAIR เท่านั้น<br><br>
+               [ 01/08/2026 ]
+            </div>
+
+            <button class="btnBlue" onclick="saveCertificateEditor()">Confirm</button>
+
+            <button class="btnGray" onclick="showCertificatePreview()">Back</button>
+
+         </div>
+
+      </div>
+
+      <div id="certificateSuccessView" class="rewardContent" style="display:none">
+
+         <div class="rewardTopRow">
+            <div class="rewardTitle">REWARD</div>
+            <div class="rewardPointBadge">
+               <img src="https://mocsipa.github.io/kosen-now-images/16.png">
+               <span id="rewardPointCerSuccessTop">x 0</span>
+            </div>
+         </div>
+
+         <img class="rewardSuccessMascot" src="https://mocsipa.github.io/kosen-now-images/10.png">
+
+         <div class="rewardSuccessTitle">Certificate send to<br>your email</div>
+
+         <div class="rewardSuccessText">
+            *รบกวนเช็ค e-mail ของท่าน ถ้าไม่ได้รับ Certificate ของท่าน สามารถติดต่อเจ้าหน้าที่ได้ที่ชั้น 1 อาคาร
+            Kosen-Kmitl เฉพาะในวันงานเท่านั้น<br><br>[ 01/08/2026 ]
+         </div>
+
+         <button class="btnGray" onclick="showReward()">Back</button>
+
+      </div>
+
+      <div class="bottomNav">
+         <div class="navItem disabledNav" onclick="showHome()">
+            <div class="navIcon">⌂</div>
+            <div>HOME</div>
+         </div>
+         <div class="navItem disabledNav" onclick="showEvent()">
+            <div class="navIcon">▣</div>
+            <div>EVENT</div>
+         </div>
+         <div class="navItem scanNav" onclick="showScanPage()">
+            <div class="navIcon">▢</div>
+            <div>SCAN</div>
+         </div>
+         <div class="navItem disabledNav" onclick="showPoint()">
+            <div class="navIcon">★</div>
+            <div>POINT</div>
+         </div>
+         <div class="navItem activeNav" onclick="showReward()">
+            <div class="navIcon">🎁</div>
+            <div>REWARD</div>
+         </div>
+      </div>
+
+   </div>
+
+   <!-- REWARD MODAL -->
+
+   <div id="rewardConfirmModal" class="rewardModalOverlay">
+
+      <div class="rewardModal">
+
+         <div class="rewardModalTitle">ยืนยันแลกรับ</div>
+
+         <img id="confirmRewardImage" class="rewardModalImage">
+
+         <div id="confirmRewardName" class="rewardModalName"></div>
+
+         <div class="rewardModalCost">
+            <img src="https://mocsipa.github.io/kosen-now-images/16.png">
+            <span id="confirmRewardCost">x 0</span>
+         </div>
+
+         <button class="btnBlue" onclick="confirmRedeemReward()">Confirm</button>
+
+         <button class="btnGray" onclick="closeRewardModal()">Back</button>
+
+      </div>
+
+   </div>
+
+   <!-- SCAN -->
+
+   <div id="scanPage" class="page scanPage">
+
+      <div class="homeHeader">
+         <img class="homeLogo" src="https://mocsipa.github.io/kosen-now-images/Kosenlogo.png">
+         <div class="menuIcon" onclick="openMenuOverlay()"><span></span><span></span><span></span></div>
+      </div>
+
+      <div class="scanContent">
+
+         <div class="scanTitle">SCAN QR</div>
+
+         <div id="qrReader"></div>
+
+         <div class="scanHint">
+            นำกล้องไปจ่อที่ QR Code ระบบจะสแกนให้อัตโนมัติ<br>
+            กรุณาให้ QR อยู่กลางกรอบและมีแสงเพียงพอ
+         </div>
+
+         <button class="btnOrange" onclick="restartScanner()">Scan Again</button>
+
+         <button class="btnGray" onclick="stopScannerAndBack()">Back</button>
+
+      </div>
+
+   </div>
+
+   <!-- PROFILE PAGE -->
+
+   <div id="profilePage" class="page" style="background:white;">
+
+      <div class="homeHeader">
+         <img class="homeLogo" src="https://mocsipa.github.io/kosen-now-images/Kosenlogo.png">
+         <div class="menuIcon" onclick="openMenuOverlay()"><span></span><span></span><span></span></div>
+      </div>
+
+      <div class="profileContent"
+         style="margin-top:110px;max-width:520px;padding:32px 18px 0 18px;margin-left:auto;margin-right:auto;text-align:center;">
+
+         <img src="https://mocsipa.github.io/kosen-now-images/Mascot happy.png" style="width:110px;margin-bottom:10px;">
+
+         <div class="title" style="font-size:36px;margin-bottom:12px;">Profile</div>
+
+         <div id="profileInfoBox"
+            style="background:#f7f7f7;border-radius:30px;padding:24px 18px;text-align:left;margin-bottom:30px;">
+            <div style="font-size:20px;margin-bottom:10px;"><b>Name:</b> <span id="profileName">-</span></div>
+            <div style="font-size:20px;margin-bottom:10px;"><b>Age:</b> <span id="profileAge">-</span></div>
+            <div style="font-size:20px;margin-bottom:10px;"><b>Email:</b> <span id="profileEmail">-</span></div>
+            <div style="font-size:20px;margin-bottom:10px;"><b>Type:</b> <span id="profileIdentity">-</span></div>
+            <div style="font-size:20px;margin-bottom:10px;"><b>Code:</b> <span id="profileCode">-</span></div>
+            <div style="font-size:20px;"><b>Check-in Time:</b> <span id="profileCheckinTime">-</span></div>
+         </div>
+
+         <button class="btnOrange" onclick="showProfileEditor()">Edit Profile</button>
+
+         <button class="btnGray" style="margin-top:12px;" onclick="showHome()">Back</button>
+
+      </div>
+
+   </div>
+
+   <!-- PROFILE EDITOR PAGE -->
+
+   <div id="profileEditorPage" class="page" style="background:white;">
+
+      <div class="homeHeader">
+         <img class="homeLogo" src="https://mocsipa.github.io/kosen-now-images/Kosenlogo.png">
+         <div class="menuIcon" onclick="openMenuOverlay()"><span></span><span></span><span></span></div>
+      </div>
+
+      <div class="profileContent"
+         style="margin-top:110px;max-width:520px;padding:32px 18px 0 18px;margin-left:auto;margin-right:auto;text-align:center;">
+
+         <img src="https://mocsipa.github.io/kosen-now-images/Mascot happy.png" style="width:110px;margin-bottom:10px;">
+
+         <div class="title" style="font-size:36px;margin-bottom:12px;">Edit Profile</div>
+
+         <div style="background:#f7f7f7;border-radius:30px;padding:24px 18px;text-align:left;margin-bottom:30px;">
+            <div style="margin-bottom:10px;">
+               <b>Name:</b><br>
+               <input id="editProfileName" class="input" style="width:100%;max-width:100%;margin:6px 0;"
+                  placeholder="Name">
+            </div>
+
+            <div style="margin-bottom:10px;">
+               <b>Age:</b><br>
+               <input id="editProfileAge" class="input" style="width:100%;max-width:100%;margin:6px 0;"
+                  placeholder="Age">
+            </div>
+
+            <div style="margin-bottom:10px;">
+               <b>Email:</b><br>
+               <input id="editProfileEmail" class="input" style="width:100%;max-width:100%;margin:6px 0;"
+                  placeholder="Email">
+            </div>
+
+            <div style="margin-bottom:10px;">
+               <b>Type:</b><br>
+               <select id="editProfileIdentity" class="input" style="width:100%;max-width:100%;margin:6px 0;">
+                  <option value="">Student / Parent / Teacher</option>
+                  <option value="Student">Student</option>
+                  <option value="Parent">Parent</option>
+                  <option value="Teacher">Teacher</option>
+               </select>
+            </div>
+         </div>
+
+         <button class="btnBlue" onclick="saveProfileEditor()">Save</button>
+
+         <button class="btnGray" style="margin-top:12px;" onclick="showProfilePage()">Back</button>
+
+      </div>
+
+   </div>
+
+   <!-- REGISTER -->
+
+   <div id="registerPage" class="page">
+
+      <img class="mascot" src="https://mocsipa.github.io/kosen-now-images/Mascot happy.png">
+
+      <div class="title">Register</div>
+
+      <div class="subtitle">Please register to login</div>
+
+      <input id="name" class="input" placeholder="Name">
+
+      <input id="age" class="input" placeholder="Age">
+
+      <input id="email" class="input" placeholder="Email">
+
+      <select id="identity" class="input">
+         <option value="">Student / Parent / Teacher</option>
+         <option value="Student">Student</option>
+         <option value="Parent">Parent</option>
+         <option value="Teacher">Teacher</option>
+      </select>
+
+      <div class="smallText">
+         การสมัครนี้เป็นการเก็บข้อมูล เพื่อการจัดสถิติสำหรับการใช้งาน และปรับปรุงการจัดแสดงงานในอนาคต
+      </div>
+
+      <button class="btnBlue" onclick="registerUserUI()">Confirm</button>
+
+      <button class="btnGray" onclick="showLogin()">Back</button>
+
+   </div>
+
+   <!-- CODE PAGE -->
+
+   <div id="codePage" class="page">
+
+      <img class="mascot" src="https://mocsipa.github.io/kosen-now-images/Mascot excited.png">
+
+      <div class="title">Login Code</div>
+
+      <div class="subtitle">Please remember your code and QR Code.</div>
+
+      <div id="showCode" class="codeBox">KM000AA</div>
+
+      <div id="showQr" class="qrBox"></div>
+
+      <div class="smallText">
+         โปรดบันทึกรหัสและ QR Code นี้ไว้เพื่อเข้าสู่ระบบ<br>
+         หากหลุดออกจากระบบ สามารถใช้รหัส Login หรือให้เจ้าหน้าที่สแกน QR อีกครั้งได้
+      </div>
+
+      <button class="btnBlue" onclick="loginFromCodePage()">Enter System</button>
+
+      <button class="btnGray" onclick="showLogin()">Back</button>
+
+   </div>
+
+   <!-- MEMBER -->
+
+   <div id="memberPage" class="page">
+
+      <img class="mascot" src="https://mocsipa.github.io/kosen-now-images/Mascot happy.png">
+
+      <div class="title">Welcome</div>
+
+      <div id="memberStatus" class="statusBox statusSuccess">Checked In</div>
+
+      <div class="memberCard">
+
+         <div class="memberRow">
+            <span class="memberLabel">Name:</span>
+            <span id="memberName">-</span>
+         </div>
+
+         <div class="memberRow">
+            <span class="memberLabel">Code:</span>
+            <span id="memberCode">-</span>
+         </div>
+
+         <div class="memberRow">
+            <span class="memberLabel">Type:</span>
+            <span id="memberIdentity">-</span>
+         </div>
+
+         <div class="memberRow">
+            <span class="memberLabel">Check-in Time:</span>
+            <span id="memberCheckInTime">-</span>
+         </div>
+
+      </div>
+
+      <div id="memberQr" class="qrBox"></div>
+
+      <div class="smallText">
+         หน้านี้คือหลักฐานการเข้าสู่ระบบและยืนยันการเข้างาน
+      </div>
+
+      <button class="btnBlue" onclick="showHome()">Go Home</button>
+
+      <button class="btnGray" onclick="logoutUser()">Logout</button>
+
+   </div>
+
+   <!-- FORGOT -->
+
+   <div id="forgotPage" class="page">
+
+      <img class="mascot" src="https://mocsipa.github.io/kosen-now-images/Mascot angry.png">
+
+      <div class="title">Forgot Code?</div>
+
+      <div class="subtitle">Enter your e-mail.</div>
+
+      <input id="forgotEmail" class="input" placeholder="Email">
+
+      <div class="smallText">
+         หากเกิดปัญหา กรุณาติดต่อเจ้าหน้าที่ Kosen KMITL
+      </div>
+
+      <button class="btnBlue" onclick="findMyCode()">Confirm</button>
+
+      <button class="btnGray" onclick="showLogin()">Back</button>
+
+   </div>
+
+   <!-- LOADING -->
+
+   <div id="loadingPage" class="page">
+
+      <img class="mascot" src="https://mocsipa.github.io/kosen-now-images/Mascot happy.png">
+
+      <div class="title">Loading</div>
+
+      <div class="loading">Please wait...</div>
+
+   </div>
+
+   <script src="https://unpkg.com/html5-qrcode"></script>
+
+   <script>
+
+      const AUTO_CODE = "";
+
+      const API_URL =
+         "https://script.google.com/macros/s/AKfycbwddQWmML7nliZEzza7mdxl_pvUh80tsjZAL9h61ZUV_ZhZro_NF5uqi5tgh611tvSi6Q/exec";
+
+      const LOGIN_STORAGE_KEY =
+         "KOSEN_NOW_LOGIN_CODE";
+
+      let lastCode = "";
+      let lastQrUrl = "";
+      let currentSlide = 0;
+      let slideTimer = null;
+      let currentFloorSlide = 0;
+      let html5QrCode = null;
+      let scannerRunning = false;
+      let currentPoint = 0;
+      let currentRewardId = "";
+      let currentRewardData = null;
+      let currentRedeemToken = "";
+      let currentRedeemQrText = "";
+      let rewardPollingTimer = null;
+
+      const rewardItems = [
+         {
+            id: "reward1",
+            name: "สมุด + ปากกา",
+            cost: 2,
+            image: "https://mocsipa.github.io/kosen-now-images/26.png",
+            disabled: false,
+            type: "reward"
+         },
+         {
+            id: "reward2",
+            name: "เมาส์ Bluetooth",
+            cost: 4,
+            image: "https://mocsipa.github.io/kosen-now-images/27.png",
+            disabled: false,
+            type: "reward"
+         },
+         {
+            id: "reward3",
+            name: "Ipad Air 7",
+            cost: 12,
+            image: "https://mocsipa.github.io/kosen-now-images/28.png",
+            disabled: false,
+            type: "reward"
+         },
+         {
+            id: "CERTIFICATE",
+            name: "ใบ certificate",
+            cost: 5,
+            image: "https://mocsipa.github.io/kosen-now-images/29.png",
+            disabled: false,
+            type: "certificate"
+         }
+      ];
+
+      const interestData = [
+         {
+            title: "Mechatronics",
+            subtitle: "Engineering",
+            theme: "themeMecha",
+            image: "https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 13.21.35.png",
+            text: "The Mechatronics Engineering program integrates knowledge from mechanics, electronics, and computer science, with a focus on robotics. It aims to produce and develop smart technologies for industrial applications."
+         },
+         {
+            title: "Computer",
+            subtitle: "Engineering",
+            theme: "themeCom",
+            image: "https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 09.59.30.png",
+            text: "The Computer Engineering program focuses on the design, development, application, and problem-solving of computer systems and operations in all aspects. It also aligns with global trends in areas such as AI, IoT, and Network & Cyber Security."
+         },
+         {
+            title: "Electrical and Electronics",
+            subtitle: "Engineering",
+            theme: "themeElec",
+            image: "https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 09.59.47.png",
+            text: "The Electrical and Electronics Engineering program combines electrical and electronic disciplines, applying and developing expertise in these two fundamental areas of engineering. It also includes learning about the use of renewable and clean energy for advancing global technology."
+         },
+         {
+            title: "Advanced Innovation",
+            subtitle: "Engineering",
+            theme: "themeAdvanced",
+            image: "https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 10.00.05.png",
+            text: "The Bachelor of Engineering program at KOSEN - KMITL, offers an advanced innovation engineering track with a duration of 2 years. This program builds upon content from the associate degree level and provides two learning formats: Format 1 includes scholarship opportunities, and Format 2 allows students to study while working"
+         }
+      ];
+
+      const floorData = [
+         {
+            floor: "1<small>st</small><br>floor",
+            info: "• Registration Area<br>• Exhibition Zone<br>• Information Desk"
+         },
+         {
+            floor: "2<small>nd</small><br>floor",
+            info: "• Electrical & Electronics &nbsp;&nbsp;&nbsp; LAB 2<br>• General Department &nbsp;&nbsp;&nbsp; LAB 3<br>• Mechatronics Engineering &nbsp;&nbsp;&nbsp; LAB 4"
+         },
+         {
+            floor: "3<small>rd</small><br>floor",
+            info: "• Computer Engineering<br>• Activity Zone<br>• Workshop Area"
+         },
+         {
+            floor: "4<small>th</small><br>floor",
+            info: "• Advanced Innovation Engineering<br>• Seminar Room<br>• Staff Support Area"
+         }
+      ];
+
+      function apiCall(action, params) {
+
+         return new Promise(function (resolve, reject) {
+
+            const callbackName =
+               "jsonpCallback_" +
+               Date.now() +
+               "_" +
+               Math.floor(Math.random() * 100000);
+
+            params =
+               params || {};
+
+            params.action =
+               action;
+
+            params.callback =
+               callbackName;
+
+            const query =
+               Object.keys(params)
+                  .map(function (key) {
+                     return encodeURIComponent(key) +
+                        "=" +
+                        encodeURIComponent(params[key]);
+                  })
+                  .join("&");
+
+            const script =
+               document.createElement("script");
+
+            const timeout =
+               setTimeout(function () {
+                  cleanup();
+                  reject({
+                     message: "API timeout"
+                  });
+               }, 20000);
+
+            function cleanup() {
+               clearTimeout(timeout);
+
+               if (script && script.parentNode) {
+                  script.parentNode.removeChild(script);
+               }
+
+               try {
+                  delete window[callbackName];
+               } catch (e) {
+                  window[callbackName] = undefined;
+               }
+            }
+
+            window[callbackName] =
+               function (data) {
+                  cleanup();
+                  resolve(data);
+               };
+
+            script.onerror =
+               function () {
+                  cleanup();
+                  reject({
+                     message: "API connection error"
+                  });
+               };
+
+            script.src =
+               API_URL +
+               "?" +
+               query;
+
+            document.body.appendChild(script);
+
+         });
+
+      }
+
+      function hideAll() {
+
+         document
+            .querySelectorAll(".page")
+            .forEach(function (page) {
+               page.classList.remove(
+                  "active",
+                  "pageTransitioning",
+                  "slideInFromRight",
+                  "slideInFromLeft",
+                  "slideOutToLeft",
+                  "slideOutToRight",
+                  "fadeInPage"
+               );
+            });
+
+         hideFixedBars();
+
+      }
+      const appPageIds = [
+         "homePage",
+         "eventPage",
+         "pointPage",
+         "rewardPage",
+         "scanPage",
+         "profilePage",
+         "profileEditorPage"
+      ];
+
+      function isAppPage(id) {
+         return appPageIds.indexOf(id) !== -1;
+      }
+
+      function showFixedBarsForPage(id) {
+
+         const fixedHeader =
+            document.getElementById("fixedAppHeader");
+
+         const fixedNav =
+            document.getElementById("fixedAppBottomNav");
+
+         if (!fixedHeader || !fixedNav) {
+            return;
+         }
+
+         if (!isAppPage(id)) {
+            fixedHeader.classList.remove("showFixedBars");
+            fixedNav.classList.remove("showFixedBars");
+            return;
+         }
+
+         fixedHeader.classList.add("showFixedBars");
+         fixedNav.classList.add("showFixedBars");
+
+         updateFixedNavActive(id);
+
+      }
+
+      function hideFixedBars() {
+
+         const fixedHeader =
+            document.getElementById("fixedAppHeader");
+
+         const fixedNav =
+            document.getElementById("fixedAppBottomNav");
+
+         if (fixedHeader) {
+            fixedHeader.classList.remove("showFixedBars");
+         }
+
+         if (fixedNav) {
+            fixedNav.classList.remove("showFixedBars");
+         }
+
+      }
+
+      function updateFixedNavActive(id) {
+
+         const navMap = {
+            homePage: "fixedNavHome",
+            eventPage: "fixedNavEvent",
+            scanPage: "fixedNavScan",
+            pointPage: "fixedNavPoint",
+            rewardPage: "fixedNavReward",
+            profilePage: "fixedNavHome",
+            profileEditorPage: "fixedNavHome"
+         };
+
+         const allNavs = [
+            "fixedNavHome",
+            "fixedNavEvent",
+            "fixedNavScan",
+            "fixedNavPoint",
+            "fixedNavReward"
+         ];
+
+         allNavs.forEach(function (navId) {
+
+            const nav =
+               document.getElementById(navId);
+
+            if (nav) {
+               nav.classList.remove("activeNav");
+
+               if (navId !== "fixedNavScan") {
+                  nav.classList.add("disabledNav");
+               }
+            }
+
+         });
+
+         const activeId =
+            navMap[id];
+
+         const activeNav =
+            document.getElementById(activeId);
+
+         if (activeNav) {
+            activeNav.classList.add("activeNav");
+            activeNav.classList.remove("disabledNav");
+         }
+
+      }
+
+      function resetActiveContentScroll(pageId) {
+
+         setTimeout(function () {
+
+            const page =
+               document.getElementById(pageId);
+
+            if (!page) {
+               return;
+            }
+
+            const content =
+               page.querySelector(
+                  ".homeContent, .eventContent, .pointContent, .rewardContent, .scanContent, .profileContent"
+               );
+
+            if (content) {
+               content.scrollTop = 0;
+            }
+
+         }, 20);
+
+      }
+      const pageOrder = [
+         "loginPage",
+         "registerPage",
+         "forgotPage",
+         "codePage",
+         "memberPage",
+         "homePage",
+         "eventPage",
+         "pointPage",
+         "rewardPage",
+         "scanPage",
+         "profilePage",
+         "profileEditorPage",
+         "loadingPage"
+      ];
+
+      let isPageAnimating = false;
+
+      function showPage(id) {
+
+         const nextPage =
+            document.getElementById(id);
+
+         if (!nextPage) {
+            return;
+         }
+
+         const currentPage =
+            document.querySelector(".page.active");
+
+         if (!currentPage) {
+            hideAll();
+            nextPage.classList.add("active", "fadeInPage");
+            window.scrollTo(0, 0);
+            resetActiveContentScroll(id);
+            return;
+         }
+
+         if (currentPage.id === id) {
+            window.scrollTo(0, 0);
+            resetActiveContentScroll(id);
+            return;
+         }
+
+         if (isPageAnimating) {
+            hideAll();
+            nextPage.classList.add("active");
+            window.scrollTo(0, 0);
+            resetActiveContentScroll(id);
+            isPageAnimating = false;
+            return;
+         }
+
+         isPageAnimating = true;
+
+         const shouldSlideLeft = false;
+
+         currentPage.classList.add("pageTransitioning");
+         nextPage.classList.add("active", "pageTransitioning");
+
+         if (shouldSlideLeft) {
+            currentPage.classList.add("slideOutToLeft");
+            nextPage.classList.add("slideInFromRight");
+         } else {
+            currentPage.classList.add("slideOutToRight");
+            nextPage.classList.add("slideInFromLeft");
+         }
+
+         window.scrollTo(0, 0);
+         resetActiveContentScroll(id);
+
+         setTimeout(function () {
+
+            currentPage.classList.remove(
+               "active",
+               "pageTransitioning",
+               "slideOutToLeft",
+               "slideOutToRight"
+            );
+
+            nextPage.classList.remove(
+               "pageTransitioning",
+               "slideInFromRight",
+               "slideInFromLeft",
+               "fadeInPage"
+            );
+
+            nextPage.classList.add("active");
+            resetActiveContentScroll(id);
+
+            isPageAnimating = false;
+         }, 270);
+
+      }
+
+      function showLogin() {
+
+         stopRewardPolling();
+         stopScannerSilent();
+         clearAllInputs();
+
+         showPage("loginPage");
+
+      }
+
+      function logoutUser() {
+
+         stopRewardPolling();
+         stopScannerSilent();
+
+         localStorage.removeItem(LOGIN_STORAGE_KEY);
+
+         lastCode = "";
+         lastQrUrl = "";
+         currentPoint = 0;
+
+         clearAllInputs();
+
+         showPage("loginPage");
+
+      }
+
+      function showRegister() {
+
+         stopScannerSilent();
+         clearAllInputs();
+
+         showPage("registerPage");
+
+      }
+
+      function showForgot() {
+
+         stopScannerSilent();
+         clearAllInputs();
+
+         showPage("forgotPage");
+
+      }
+
+      function showLoading() {
+
+         showPage("loadingPage");
+
+      }
+
+      function showHome() {
+
+         stopRewardPolling();
+         stopScannerSilent();
+
+         showPage("homePage");
+
+         startSlideshow();
+
+      }
+
+      function showEvent() {
+
+         stopRewardPolling();
+         stopScannerSilent();
+
+         showPage("eventPage");
+
+         updateFloorInfo(0);
+
+         currentFloorSlide = 0;
+
+         setTimeout(function () {
+
+            const scroller =
+               document.getElementById("floorMapScroller");
+
+            if (scroller) {
+               scroller.scrollLeft = 0;
+            }
+
+            setupFloorTouchDirection();
+
+         }, 100);
+
+      }
+
+      function startSlideshow() {
+
+         if (slideTimer) {
+            clearInterval(slideTimer);
+         }
+
+         slideTimer =
+            setInterval(nextSlide, 3500);
+
+      }
+
+      function nextSlide() {
+
+         const slides =
+            document.querySelectorAll(".heroSlide");
+
+         const dots =
+            document.querySelectorAll(".slideDot");
+
+         if (!slides.length || !dots.length) {
+            return;
+         }
+
+         if (slides[currentSlide]) {
+            slides[currentSlide].classList.remove("activeSlide");
+         }
+
+         if (dots[currentSlide]) {
+            dots[currentSlide].classList.remove("activeDot");
+         }
+
+         currentSlide =
+            (currentSlide + 1) % slides.length;
+
+         if (slides[currentSlide]) {
+            slides[currentSlide].classList.add("activeSlide");
+         }
+
+         if (dots[currentSlide]) {
+            dots[currentSlide].classList.add("activeDot");
+         }
+
+      }
+
+      function changeInterest(index) {
+
+         const data =
+            interestData[index];
+
+         if (!data) {
+            return;
+         }
+
+         const image =
+            document.getElementById("interestImage");
+
+         const title =
+            document.getElementById("interestTitle");
+
+         const subtitle =
+            document.getElementById("interestSubtitle");
+
+         const text =
+            document.getElementById("interestText");
+
+         if (image) {
+            image.src = data.image;
+         }
+
+         if (title) {
+            title.innerHTML = data.title;
+            title.className = "interestTitle " + data.theme;
+         }
+
+         if (subtitle) {
+            subtitle.innerHTML = data.subtitle;
+         }
+
+         if (text) {
+            text.innerHTML = data.text;
+         }
+
+         for (let i = 0; i < interestData.length; i++) {
+
+            const btn =
+               document.getElementById("interestBtn" + i);
+
+            if (btn) {
+               btn.classList.remove("activeInterest");
+            }
+
+         }
+
+         const activeBtn =
+            document.getElementById("interestBtn" + index);
+
+         if (activeBtn) {
+            activeBtn.classList.add("activeInterest");
+         }
+
+      }
+
+      function openLink(url) {
+
+         window.open(url, "_blank");
+
+      }
+
+      function changeFloorSlide(direction) {
+
+         const scroller =
+            document.getElementById("floorMapScroller");
+
+         const slides =
+            document.querySelectorAll(".floorSlide");
+
+         if (!scroller || !slides.length) {
+            return;
+         }
+
+         currentFloorSlide += direction;
+
+         if (currentFloorSlide < 0) {
+            currentFloorSlide = 0;
+         }
+
+         if (currentFloorSlide >= slides.length) {
+            currentFloorSlide = slides.length - 1;
+         }
+
+         scroller.scrollTo({
+            left: scroller.clientWidth * currentFloorSlide,
+            behavior: "smooth"
+         });
+
+         updateFloorInfo(currentFloorSlide);
+
+      }
+
+      function handleFloorScroll() {
+
+         const scroller =
+            document.getElementById("floorMapScroller");
+
+         if (!scroller) {
+            return;
+         }
+
+         const index =
+            Math.round(scroller.scrollLeft / scroller.clientWidth);
+
+         if (index !== currentFloorSlide) {
+            currentFloorSlide = index;
+            updateFloorInfo(index);
+         }
+
+      }
+
+      function setupFloorTouchDirection() {
+
+         const scroller =
+            document.getElementById("floorMapScroller");
+
+         if (!scroller || scroller.dataset.touchReady === "true") {
+            return;
+         }
+
+         scroller.dataset.touchReady = "true";
+
+         let startX = 0;
+         let startY = 0;
+
+         scroller.addEventListener("touchstart", function (e) {
+
+            if (!e.touches || !e.touches.length) {
+               return;
+            }
+
+            startX =
+               e.touches[0].clientX;
+
+            startY =
+               e.touches[0].clientY;
+
+         }, { passive: true });
+
+         scroller.addEventListener("touchmove", function (e) {
+
+            if (!e.touches || !e.touches.length) {
+               return;
+            }
+
+            const dx =
+               Math.abs(e.touches[0].clientX - startX);
+
+            const dy =
+               Math.abs(e.touches[0].clientY - startY);
+
+            if (dy > dx + 8) {
+               scroller.style.overflowX = "hidden";
+            } else if (dx > dy + 8) {
+               scroller.style.overflowX = "auto";
+            }
+
+         }, { passive: true });
+
+         scroller.addEventListener("touchend", function () {
+            scroller.style.overflowX = "auto";
+         }, { passive: true });
+
+         scroller.addEventListener("touchcancel", function () {
+            scroller.style.overflowX = "auto";
+         }, { passive: true });
+
+      }
+
+      function updateFloorInfo(index) {
+
+         const data =
+            floorData[index];
+
+         if (!data) {
+            return;
+         }
+
+         const floorNumber =
+            document.getElementById("floorNumber");
+
+         const floorInfoList =
+            document.getElementById("floorInfoList");
+
+         if (floorNumber) {
+            floorNumber.innerHTML = data.floor;
+         }
+
+         if (floorInfoList) {
+            floorInfoList.innerHTML = data.info;
+         }
+
+         for (let i = 0; i < floorData.length; i++) {
+
+            const dot =
+               document.getElementById("floorDot" + i);
+
+            if (dot) {
+               dot.classList.remove("activeFloorDot");
+            }
+
+         }
+
+         const activeDot =
+            document.getElementById("floorDot" + index);
+
+         if (activeDot) {
+            activeDot.classList.add("activeFloorDot");
+         }
+
+      }
+
+      function makeQrImage(targetId, qrText) {
+
+         const target =
+            document.getElementById(targetId);
+
+         if (!target) {
+            return;
+         }
+
+         target.innerHTML = "";
+
+         if (!qrText) {
+            target.innerHTML = "-";
+            return;
+         }
+
+         const img =
+            document.createElement("img");
+
+         img.src =
+            "https://api.qrserver.com/v1/create-qr-code/?size=230x230&data=" +
+            encodeURIComponent(qrText);
+
+         img.alt =
+            "QR Code";
+
+         target.appendChild(img);
+
+      }
+
+      function showCodeAndQr(code, qrUrl) {
+
+         lastCode =
+            code || "";
+
+         lastQrUrl =
+            qrUrl || "";
+
+         if (lastCode) {
+            localStorage.setItem(LOGIN_STORAGE_KEY, lastCode);
+         }
+
+         const showCode =
+            document.getElementById("showCode");
+
+         if (showCode) {
+            showCode.innerHTML = lastCode || "-";
+         }
+
+         makeQrImage("showQr", lastQrUrl);
+
+         showPage("codePage");
+
+      }
+
+      function showMember(result) {
+
+         if (!result || !result.success) {
+            alert("ไม่สามารถเข้าสู่ระบบได้");
+            showLogin();
+            return;
+         }
+
+         lastCode =
+            result.code || "";
+
+         lastQrUrl =
+            result.qrUrl || "";
+
+         if (lastCode) {
+            localStorage.setItem(LOGIN_STORAGE_KEY, lastCode);
+         }
+
+         const memberName =
+            document.getElementById("memberName");
+
+         const memberCode =
+            document.getElementById("memberCode");
+
+         const memberIdentity =
+            document.getElementById("memberIdentity");
+
+         const memberCheckInTime =
+            document.getElementById("memberCheckInTime");
+
+         if (memberName) {
+            memberName.innerHTML = result.name || "-";
+         }
+
+         if (memberCode) {
+            memberCode.innerHTML = result.code || "-";
+         }
+
+         if (memberIdentity) {
+            memberIdentity.innerHTML = result.identity || "-";
+         }
+
+         if (memberCheckInTime) {
+            memberCheckInTime.innerHTML =
+               result.checkInTime
+                  ? formatDate(result.checkInTime)
+                  : "-";
+         }
+
+         const status =
+            document.getElementById("memberStatus");
+
+         if (status) {
+            status.className = "statusBox statusSuccess";
+            status.innerHTML = "Checked In";
+         }
+
+         if (result.qrUrl) {
+            makeQrImage("memberQr", result.qrUrl);
+         }
+
+         clearAllInputs();
+
+         showHome();
+
+      }
+
+      function showMemberFromNav() {
+
+         if (lastCode) {
+            loginFromCodePage();
+         } else {
+            alert("Please login first.");
+            showLogin();
+         }
+
+      }
+
+      function formatDate(value) {
+
+         if (!value) {
+            return "-";
+         }
+
+         try {
+
+            const date =
+               new Date(value);
+
+            if (isNaN(date.getTime())) {
+               return value;
+            }
+
+            return date.toLocaleString();
+
+         } catch (e) {
+            return value;
+         }
+
+      }
+
+      function registerUserUI() {
+
+         const name =
+            document.getElementById("name").value.trim();
+
+         const age =
+            document.getElementById("age").value.trim();
+
+         const email =
+            document.getElementById("email").value.trim();
+
+         const identity =
+            document.getElementById("identity").value;
+
+         if (!name || !age || !email || !identity) {
+            alert("กรุณากรอกข้อมูลให้ครบ");
+            return;
+         }
+
+         showLoading();
+
+         apiCall("registerUser", {
+            name: name,
+            age: age,
+            email: email,
+            identity: identity
+         })
+            .then(function (result) {
+
+               if (result && result.success) {
+                  showCodeAndQr(result.code, result.qrUrl);
+               } else {
+                  alert(result && result.message ? result.message : "สมัครสมาชิกไม่สำเร็จ");
+                  showRegister();
+               }
+
+            })
+            .catch(function (error) {
+               alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+               showRegister();
+            });
+
+      }
+
+      function login() {
+
+         const code =
+            document.getElementById("loginCode").value.trim().toUpperCase();
+
+         if (!code) {
+            alert("กรุณากรอกรหัส");
+            return;
+         }
+
+         showLoading();
+
+         apiCall("loginUser", {
+            code: code
+         })
+            .then(function (result) {
+
+               if (result && result.success) {
+                  showMember(result);
+               } else {
+                  alert(result && result.message ? result.message : "Code ไม่ถูกต้อง");
+                  showLogin();
+               }
+
+            })
+            .catch(function (error) {
+               alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+               showLogin();
+            });
+
+      }
+
+      function loginFromCodePage() {
+
+         if (!lastCode) {
+            alert("ไม่พบรหัส Login");
+            showLogin();
+            return;
+         }
+
+         showLoading();
+
+         apiCall("loginUser", {
+            code: lastCode
+         })
+            .then(function (result) {
+
+               if (result && result.success) {
+                  showMember(result);
+               } else {
+                  alert(result && result.message ? result.message : "Code ไม่ถูกต้อง");
+                  showLogin();
+               }
+
+            })
+            .catch(function (error) {
+               alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+               showLogin();
+            });
+
+      }
+
+      function findMyCode() {
+
+         const email =
+            document.getElementById("forgotEmail").value.trim();
+
+         if (!email) {
+            alert("กรุณากรอก Email");
+            return;
+         }
+
+         showLoading();
+
+         apiCall("findCode", {
+            email: email
+         })
+            .then(function (result) {
+
+               if (result && result.success) {
+                  showCodeAndQr(result.code, result.qrUrl);
+               } else {
+                  alert(result && result.message ? result.message : "ไม่พบ Email นี้");
+                  showForgot();
+               }
+
+            })
+            .catch(function (error) {
+               alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+               showForgot();
+            });
+
+      }
+
+      function autoLoginFromQr() {
+
+         if (!AUTO_CODE) {
+            return;
+         }
+
+         showLoading();
+
+         apiCall("autoLoginByCode", {
+            code: AUTO_CODE
+         })
+            .then(function (result) {
+
+               if (result && result.success) {
+                  showMember(result);
+               } else {
+                  alert(result && result.message ? result.message : "QR Code ไม่ถูกต้อง หรือไม่พบรหัสนี้");
+                  showLogin();
+               }
+
+            })
+            .catch(function (error) {
+               alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+               showLogin();
+            });
+
+      }
+
+      function clearAllInputs() {
+
+         [
+            "loginCode",
+            "name",
+            "age",
+            "email",
+            "identity",
+            "forgotEmail"
+         ].forEach(function (id) {
+
+            const el =
+               document.getElementById(id);
+
+            if (el) {
+               el.value = "";
+            }
+
+         });
+
+      }
+
+      function showPoint() {
+
+         stopRewardPolling();
+         stopScannerSilent();
+
+         if (!lastCode) {
+            alert("Please login first.");
+            showLogin();
+            return;
+         }
+
+         showPage("pointPage");
+
+         loadPoint();
+
+      }
+
+      function loadPoint() {
+
+         if (!lastCode) {
+            return;
+         }
+
+         apiCall("getUserPoint", {
+            code: lastCode
+         })
+            .then(function (result) {
+
+               if (result && result.success) {
+                  currentPoint = Number(result.point) || 0;
+                  updatePointUI(result.point, result.limit);
+               } else {
+                  alert(result && result.message ? result.message : "ไม่สามารถโหลดคะแนนได้");
+               }
+
+            })
+            .catch(function (error) {
+               alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+            });
+
+      }
+
+      function updatePointUI(point, limit) {
+
+         const safePoint =
+            Number(point) || 0;
+
+         const safeLimit =
+            Number(limit) || 12;
+
+         let percent =
+            (safePoint / safeLimit) * 100;
+
+         if (percent > 100) {
+            percent = 100;
+         }
+
+         const pointAmount =
+            document.getElementById("pointAmount");
+
+         const pointBarInner =
+            document.getElementById("pointBarInner");
+
+         const pointBarText =
+            document.getElementById("pointBarText");
+
+         if (pointAmount) {
+            pointAmount.innerHTML = "x " + safePoint;
+         }
+
+         if (pointBarInner) {
+            pointBarInner.style.width = percent + "%";
+         }
+
+         if (pointBarText) {
+            pointBarText.innerHTML = safePoint + " / " + safeLimit;
+         }
+
+      }
+
+      function showReward() {
+
+         stopScannerSilent();
+         stopRewardPolling();
+
+         if (!lastCode) {
+            alert("Please login first.");
+            showLogin();
+            return;
+         }
+
+         showPage("rewardPage");
+
+         showRewardView("rewardListView");
+
+         loadRewardPoint();
+
+      }
+
+      function showRewardView(id) {
+
+         [
+            "rewardListView",
+            "rewardClaimQrView",
+            "rewardSuccessView",
+            "certificatePreviewView",
+            "certificateEditorView",
+            "certificateSuccessView"
+         ].forEach(function (viewId) {
+
+            const view =
+               document.getElementById(viewId);
+
+            if (view) {
+               view.style.display = "none";
+            }
+
+         });
+
+         const activeView =
+            document.getElementById(id);
+
+         if (activeView) {
+            activeView.style.display = "block";
+         }
+
+      }
+
+      function loadRewardPoint() {
+
+         apiCall("getUserPoint", {
+            code: lastCode
+         })
+            .then(function (result) {
+
+               if (result && result.success) {
+                  currentPoint = Number(result.point) || 0;
+                  updateRewardPointLabels(currentPoint);
+                  renderRewardList();
+               } else {
+                  alert(result && result.message ? result.message : "ไม่สามารถโหลดคะแนนได้");
+               }
+
+            })
+            .catch(function (error) {
+               alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+            });
+
+      }
+
+      function updateRewardPointLabels(point) {
+
+         [
+            "rewardPointTop",
+            "rewardPointClaimTop",
+            "rewardPointSuccessTop",
+            "rewardPointCerTop",
+            "rewardPointEditorTop",
+            "rewardPointCerSuccessTop"
+         ].forEach(function (id) {
+
+            const el =
+               document.getElementById(id);
+
+            if (el) {
+               el.innerHTML = "x " + point;
+            }
+
+         });
+
+      }
+
+      function renderRewardList() {
+
+         const list =
+            document.getElementById("rewardList");
+
+         if (!list) {
+            return;
+         }
+
+         list.innerHTML = "";
+
+         rewardItems.forEach(function (item) {
+
+            const row =
+               document.createElement("div");
+
+            let className =
+               "rewardItem";
+
+            if (item.disabled || (item.type !== "certificate" && currentPoint < item.cost)) {
+               className += " disabledReward";
+            }
+
+            if (item.type === "certificate") {
+               className += " cerReward";
+            }
+
+            row.className =
+               className;
+
+            const img =
+               document.createElement("img");
+
+            img.className =
+               "rewardImage";
+
+            img.src =
+               item.image;
+
+            img.onerror =
+               function () {
+                  this.src = "https://mocsipa.github.io/kosen-now-images/16.png";
+               };
+
+            const name =
+               document.createElement("div");
+
+            name.className =
+               "rewardName";
+
+            name.innerHTML =
+               item.name;
+
+            const box =
+               document.createElement("div");
+
+            box.className =
+               "rewardCostBox";
+
+            box.onclick =
+               function () {
+                  selectReward(item.id);
+               };
+
+            box.innerHTML =
+               '<div class="rewardCostRow">' +
+               '<img src="https://mocsipa.github.io/kosen-now-images/16.png">' +
+               '<span>' +
+               (item.type === "certificate" ? "= " : "x ") +
+               item.cost +
+               '</span>' +
+               '</div>' +
+               '<div class="rewardRedeemText">Redeem</div>';
+
+            row.appendChild(img);
+            row.appendChild(name);
+            row.appendChild(box);
+
+            list.appendChild(row);
+
+         });
+
+      }
+
+      function findRewardById(id) {
+
+         for (let i = 0; i < rewardItems.length; i++) {
+
+            if (rewardItems[i].id === id) {
+               return rewardItems[i];
+            }
+
+         }
+
+         return null;
+
+      }
+
+      function selectReward(id) {
+
+         const item =
+            findRewardById(id);
+
+         if (!item) {
+            return;
+         }
+
+         if (item.disabled) {
+            alert("รางวัลนี้ยังไม่เปิดให้แลก");
+            return;
+         }
+
+         if (item.type === "certificate") {
+
+            if (currentPoint < item.cost) {
+               alert("ต้องมีคะแนนครบ " + item.cost + " คะแนน จึงจะรับ Certificate ได้");
+               return;
+            }
+
+            showCertificatePreview();
+            return;
+
+         }
+
+         if (currentPoint < item.cost) {
+            alert("คะแนนไม่พอสำหรับแลกรางวัลนี้");
+            return;
+         }
+
+         currentRewardId =
+            item.id;
+
+         currentRewardData =
+            item;
+
+         const modal =
+            document.getElementById("rewardConfirmModal");
+
+         const confirmImage =
+            document.getElementById("confirmRewardImage");
+
+         const confirmName =
+            document.getElementById("confirmRewardName");
+
+         const confirmCost =
+            document.getElementById("confirmRewardCost");
+
+         if (confirmImage) {
+            confirmImage.src = item.image;
+         }
+
+         if (confirmName) {
+            confirmName.innerHTML = item.name;
+         }
+
+         if (confirmCost) {
+            confirmCost.innerHTML = "x " + item.cost;
+         }
+
+         if (modal) {
+            modal.classList.add("activeModal");
+         }
+
+      }
+
+      function closeRewardModal() {
+
+         const modal =
+            document.getElementById("rewardConfirmModal");
+
+         if (modal) {
+            modal.classList.remove("activeModal");
+         }
+
+      }
+
+      function confirmRedeemReward() {
+
+         if (!currentRewardData) {
+            alert("ไม่พบข้อมูลรางวัล");
+            closeRewardModal();
+            return;
+         }
+
+         if (!lastCode) {
+            alert("Please login first.");
+            closeRewardModal();
+            showLogin();
+            return;
+         }
+
+         const pointNow =
+            Number(currentPoint) || 0;
+
+         const cost =
+            Number(currentRewardData.cost) || 0;
+
+         if (pointNow < cost) {
+
+            alert(
+               "คะแนนไม่เพียงพอ\n\n" +
+               "คะแนนที่มี: " + pointNow + "\n" +
+               "ต้องใช้: " + cost
+            );
+
+            closeRewardModal();
+            showReward();
+            return;
+
+         }
+
+         closeRewardModal();
+
+         showLoading();
+
+         apiCall("redeemReward", {
+            code: lastCode,
+            rewardName: currentRewardData.id,
+            costPoint: cost
+         })
+            .then(function (result) {
+
+               if (result && result.success) {
+
+                  currentRedeemToken =
+                     result.redeemId || "";
+
+                  currentRedeemQrText =
+                     result.redeemQrText || "";
+
+                  showRewardClaimQr(result);
+
+               } else {
+
+                  alert(result && result.message ? result.message : "แลกรางวัลไม่สำเร็จ");
+
+                  showReward();
+
+               }
+
+            })
+            .catch(function (error) {
+
+               alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+
+               showReward();
+
+            });
+
+      }
+
+      function showRewardClaimQr(result) {
+
+         if (!currentRewardData) {
+            alert("ไม่พบข้อมูลรางวัล");
+            showReward();
+            return;
+         }
+
+         if (!result || !result.redeemQrText) {
+            alert("ไม่พบ QR สำหรับแลกรางวัล");
+            showReward();
+            return;
+         }
+
+         showPage("rewardPage");
+
+         showRewardView("rewardClaimQrView");
+
+         const image =
+            document.getElementById("claimRewardImage");
+
+         const name =
+            document.getElementById("claimRewardName");
+
+         const pointTop =
+            document.getElementById("rewardPointClaimTop");
+
+         if (image) {
+            image.src = currentRewardData.image;
+         }
+
+         if (name) {
+            name.innerHTML = currentRewardData.name;
+         }
+
+         if (pointTop) {
+            pointTop.innerHTML = "x " + (Number(result.point) || currentPoint || 0);
+         }
+
+         makeQrImage("claimQrBox", result.redeemQrText);
+
+         currentRedeemToken =
+            result.redeemId || currentRedeemToken;
+
+         currentRedeemQrText =
+            result.redeemQrText || currentRedeemQrText;
+
+         startRewardPolling();
+
+      }
+
+      function startRewardPolling() {
+
+         stopRewardPolling();
+
+         if (!currentRedeemToken || !lastCode) {
+            return;
+         }
+
+         rewardPollingTimer =
+            setInterval(function () {
+
+               apiCall("checkRedeemStatus", {
+                  redeemId: currentRedeemToken,
+                  code: lastCode
+               })
+                  .then(function (result) {
+
+                     if (result && result.success && result.status === "USED") {
+
+                        stopRewardPolling();
+
+                        currentPoint =
+                           Number(result.point) || 0;
+
+                        showRewardSuccess(result.point);
+
+                     }
+
+                  })
+                  .catch(function () {
+                  });
+
+            }, 3000);
+
+      }
+
+      function stopRewardPolling() {
+
+         if (rewardPollingTimer) {
+            clearInterval(rewardPollingTimer);
+            rewardPollingTimer = null;
+         }
+
+      }
+
+      function showRewardSuccess(point) {
+
+         showPage("rewardPage");
+
+         showRewardView("rewardSuccessView");
+
+         const pointTop =
+            document.getElementById("rewardPointSuccessTop");
+
+         if (pointTop) {
+            pointTop.innerHTML = "x " + (Number(point) || 0);
+         }
+
+      }
+
+      let certificateName =
+         "";
+
+      let certificateEmail =
+         "";
+
+      let certificateImageBase64 =
+         "";
+
+      const CERTIFICATE_TEMPLATE_URL =
+         "https://mocsipa.github.io/kosen-now-images/CER002.png";
+
+      function showCertificatePreview() {
+
+         showPage("rewardPage");
+
+         showRewardView("certificatePreviewView");
+
+         updateRewardPointLabels(currentPoint);
+
+         prepareCertificateDefaultData();
+
+         drawCertificatePreview();
+
+      }
+
+      function prepareCertificateDefaultData() {
+
+         if (!certificateName) {
+
+            if (profileDataCache && profileDataCache.name) {
+               certificateName = profileDataCache.name;
+            } else {
+               certificateName = "";
+            }
+
+         }
+
+         if (!certificateEmail) {
+
+            if (profileDataCache && profileDataCache.email) {
+               certificateEmail = profileDataCache.email;
+            } else {
+               certificateEmail = "";
+            }
+
+         }
+
+      }
+
+      function showCertificateEditor() {
+
+         showPage("rewardPage");
+
+         showRewardView("certificateEditorView");
+
+         updateRewardPointLabels(currentPoint);
+
+         prepareCertificateDefaultData();
+
+         const nameInput =
+            document.getElementById("cerName");
+
+         const emailInput =
+            document.getElementById("cerEmail");
+
+         if (nameInput) {
+            nameInput.value = certificateName || "";
+         }
+
+         if (emailInput) {
+            emailInput.value = certificateEmail || "";
+         }
+
+      }
+
+      function saveCertificateEditor() {
+
+         const name =
+            document
+               .getElementById("cerName")
+               .value
+               .trim();
+
+         const email =
+            document
+               .getElementById("cerEmail")
+               .value
+               .trim();
+
+         if (!name || !email) {
+            alert("กรุณากรอก Name และ Email");
+            return;
+         }
+
+         certificateName =
+            name;
+
+         certificateEmail =
+            email;
+
+         showCertificatePreview();
+
+      }
+
+      function drawCertificatePreview() {
+
+         const canvas =
+            document.getElementById("certificateCanvas");
+
+         const loading =
+            document.getElementById("cerPreviewLoading");
+
+         if (!canvas) {
+            return;
+         }
+
+         if (loading) {
+            loading.style.display = "block";
+         }
+
+         const ctx =
+            canvas.getContext("2d");
+
+         const img =
+            new Image();
+
+         img.crossOrigin =
+            "anonymous";
+
+         img.onload =
+            function () {
+
+               canvas.width =
+                  img.naturalWidth;
+
+               canvas.height =
+                  img.naturalHeight;
+
+               ctx.clearRect(
+                  0,
+                  0,
+                  canvas.width,
+                  canvas.height
+               );
+
+               ctx.drawImage(
+                  img,
+                  0,
+                  0,
+                  canvas.width,
+                  canvas.height
+               );
+
+               const nameText =
+                  certificateName && certificateName.trim()
+                     ? certificateName.trim()
+                     : "Your Name";
+
+               drawCertificateName(
+                  ctx,
+                  canvas.width,
+                  canvas.height,
+                  nameText
+               );
+
+               try {
+
+                  certificateImageBase64 =
+                     canvas.toDataURL("image/png");
+
+               } catch (e) {
+
+                  certificateImageBase64 =
+                     "";
+
+                  alert(
+                     "ไม่สามารถสร้างภาพ Certificate ได้ กรุณาตรวจสอบว่าไฟล์ CER002.png อยู่บน GitHub Pages และเปิด public แล้ว"
+                  );
+
+               }
+
+               if (loading) {
+                  loading.style.display = "none";
+               }
+
+            };
+
+         img.onerror =
+            function () {
+
+               if (loading) {
+                  loading.style.display = "none";
+               }
+
+               alert(
+                  "โหลดภาพ Certificate ไม่สำเร็จ กรุณาตรวจสอบไฟล์ CER002.png ใน GitHub Pages"
+               );
+
+            };
+
+         img.src =
+            CERTIFICATE_TEMPLATE_URL +
+            "?v=" +
+            new Date().getTime();
+
+      }
+
+      function drawCertificateName(
+         ctx,
+         canvasWidth,
+         canvasHeight,
+         nameText
+      ) {
+
+         const centerX =
+            canvasWidth / 2;
+
+         // ตำแหน่งชื่อ: เหนือเส้นดำยาวเล็กน้อย
+         // ถ้าอยากเลื่อนขึ้น/ลง ให้แก้เลข 0.505 นี้
+         const nameY =
+            canvasHeight * 0.505;
+
+         let fontSize =
+            Math.floor(canvasWidth * 0.055);
+
+         if (fontSize > 72) {
+            fontSize = 72;
+         }
+
+         if (fontSize < 36) {
+            fontSize = 36;
+         }
+
+         ctx.textAlign =
+            "center";
+
+         ctx.textBaseline =
+            "middle";
+
+         ctx.fillStyle =
+            "#111111";
+
+         ctx.font =
+            "bold " +
+            fontSize +
+            "px Arial";
+
+         while (
+            ctx.measureText(nameText).width >
+            canvasWidth * 0.68 &&
+            fontSize > 26
+         ) {
+
+            fontSize -= 2;
+
+            ctx.font =
+               "bold " +
+               fontSize +
+               "px Arial";
+
+         }
+
+         ctx.fillText(
+            nameText,
+            centerX,
+            nameY
+         );
+
+      }
+
+      function sendCertificateEmail() {
+
+         if (!lastCode) {
+            alert("Please login first.");
+            showLogin();
+            return;
+         }
+
+         const nameInput =
+            document.getElementById("cerName");
+
+         const emailInput =
+            document.getElementById("cerEmail");
+
+         const profileName =
+            document.getElementById("profileName");
+
+         const profileEmail =
+            document.getElementById("profileEmail");
+
+         const sendName =
+            nameInput && nameInput.value.trim()
+               ? nameInput.value.trim()
+               : profileName
+                  ? profileName.innerText.trim()
+                  : "";
+
+         const sendEmail =
+            emailInput && emailInput.value.trim()
+               ? emailInput.value.trim()
+               : profileEmail
+                  ? profileEmail.innerText.trim()
+                  : "";
+
+         if (!sendName || !sendEmail) {
+            alert("กรุณากรอกชื่อและอีเมลก่อนส่ง Certificate");
+            showCertificateEditor();
+            return;
+         }
+
+         showLoading();
+
+         apiCall(
+            "sendCertificateEmail",
+            {
+               code: lastCode,
+               name: sendName,
+               email: sendEmail
+            }
+         )
+            .then(function (result) {
+
+               if (result && result.success) {
+                  showCertificateSuccess();
+               } else {
+                  alert(
+                     result && result.message
+                        ? result.message
+                        : "ส่ง Certificate ไม่สำเร็จ"
+                  );
+
+                  showCertificatePreview();
+               }
+
+            })
+            .catch(function (error) {
+
+               alert(
+                  "เกิดข้อผิดพลาด: " +
+                  (
+                     error && error.message
+                        ? error.message
+                        : error
+                  )
+               );
+
+               showCertificatePreview();
+
+            });
+
+      }
+
+      function showScanPage() {
+
+         stopRewardPolling();
+
+         if (!lastCode) {
+            alert("Please login first.");
+            showLogin();
+            return;
+         }
+
+         showPage("scanPage");
+
+         setTimeout(startFastQrScanner, 300);
+
+      }
+
+      function startFastQrScanner() {
+
+         const qrReader =
+            document.getElementById("qrReader");
+
+         if (!qrReader || scannerRunning) {
+            return;
+         }
+
+         if (typeof Html5Qrcode === "undefined") {
+            alert("ระบบสแกน QR ยังโหลดไม่เสร็จ กรุณาลองใหม่อีกครั้ง");
+            return;
+         }
+
+         qrReader.innerHTML = "";
+
+         html5QrCode =
+            new Html5Qrcode("qrReader");
+
+         const config = {
+            fps: 15,
+            qrbox: function (width, height) {
+               const size =
+                  Math.floor(Math.min(width, height) * 0.75);
+               return {
+                  width: size,
+                  height: size
+               };
+            },
+            aspectRatio: 1,
+            disableFlip: false,
+            rememberLastUsedCamera: true
+         };
+
+         html5QrCode
+            .start(
+               {
+                  facingMode: "environment"
+               },
+               config,
+               function (decodedText) {
+
+                  if (!scannerRunning) {
+                     return;
+                  }
+
+                  scannerRunning = false;
+
+                  html5QrCode
+                     .stop()
+                     .then(function () {
+                        sendPointQr(decodedText);
+                     })
+                     .catch(function () {
+                        sendPointQr(decodedText);
+                     });
+
+               },
+               function () {
+               }
+            )
+            .then(function () {
+               scannerRunning = true;
+            })
+            .catch(function () {
+
+               scannerRunning = false;
+
+               alert("ไม่สามารถเปิดกล้องสแกนอัตโนมัติได้ กรุณาเปิดผ่าน Safari/Chrome และอนุญาต Camera");
+
+               showPoint();
+
+            });
+
+      }
+
+      function restartScanner() {
+
+         if (html5QrCode && scannerRunning) {
+
+            html5QrCode
+               .stop()
+               .then(function () {
+
+                  scannerRunning = false;
+
+                  setTimeout(startFastQrScanner, 300);
+
+               })
+               .catch(function () {
+
+                  scannerRunning = false;
+
+                  setTimeout(startFastQrScanner, 300);
+
+               });
+
+         } else {
+
+            startFastQrScanner();
+
+         }
+
+      }
+
+      function sendPointQr(qrText) {
+
+         if (!qrText) {
+            alert("QR ไม่ถูกต้อง");
+            showPoint();
+            return;
+         }
+
+         const text =
+            String(qrText).trim();
+
+         showLoading();
+
+         if (text.indexOf("KOSEN_REDEEM|") === 0) {
+
+            apiCall("confirmReward", {
+               redeemQrText: text
+            })
+               .then(function (result) {
+
+                  if (result && result.success) {
+
+                     alert(result.message || "ยืนยันรับรางวัลสำเร็จ");
+
+                     showScanPage();
+
+                  } else {
+
+                     alert(result && result.message ? result.message : "QR รางวัลไม่ถูกต้อง");
+
+                     showScanPage();
+
+                  }
+
+               })
+               .catch(function (error) {
+
+                  alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+
+                  showScanPage();
+
+               });
+
+            return;
+
+         }
+
+         apiCall("addPointByQr", {
+            code: lastCode,
+            qrText: text
+         })
+            .then(function (result) {
+
+               if (result && result.success) {
+
+                  alert("ได้รับ +" + result.addedPoint + " คะแนน");
+
+                  currentPoint =
+                     Number(result.point) || 0;
+
+                  showPage("pointPage");
+
+                  updatePointUI(result.point, result.limit);
+
+               } else {
+
+                  alert(result && result.message ? result.message : "QR ไม่ถูกต้อง");
+
+                  showPoint();
+
+               }
+
+            })
+            .catch(function (error) {
+
+               alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+
+               showPoint();
+
+            });
+
+      }
+
+      function stopScannerAndBack() {
+
+         if (html5QrCode && scannerRunning) {
+
+            html5QrCode
+               .stop()
+               .then(function () {
+
+                  scannerRunning = false;
+
+                  const qrReader =
+                     document.getElementById("qrReader");
+
+                  if (qrReader) {
+                     qrReader.innerHTML = "";
+                  }
+
+                  showPoint();
+
+               })
+               .catch(function () {
+
+                  scannerRunning = false;
+
+                  showPoint();
+
+               });
+
+         } else {
+
+            showPoint();
+
+         }
+
+      }
+
+      function stopScannerSilent() {
+
+         if (html5QrCode && scannerRunning) {
+
+            html5QrCode
+               .stop()
+               .then(function () {
+
+                  scannerRunning = false;
+
+                  const qrReader =
+                     document.getElementById("qrReader");
+
+                  if (qrReader) {
+                     qrReader.innerHTML = "";
+                  }
+
+               })
+               .catch(function () {
+
+                  scannerRunning = false;
+
+               });
+
+         }
+
+      }
+
+      window.addEventListener("scroll", function () {
+
+         if (window.scrollX !== 0) {
+            window.scrollTo(0, window.scrollY);
+         }
+
+      });
+
+      document.addEventListener("touchmove", function () {
+
+         if (window.scrollX !== 0) {
+            window.scrollTo(0, window.scrollY);
+         }
+
+      }, { passive: true });
+
+      document.addEventListener("gesturestart", function (e) {
+         e.preventDefault();
+      });
+
+      document.addEventListener("gesturechange", function (e) {
+         e.preventDefault();
+      });
+
+      document.addEventListener("gestureend", function (e) {
+         e.preventDefault();
+      });
+
+      let lastTouchEnd = 0;
+
+      document.addEventListener("touchend", function (e) {
+
+         const now =
+            Date.now();
+
+         if (now - lastTouchEnd <= 300) {
+            e.preventDefault();
+         }
+
+         lastTouchEnd =
+            now;
+
+      }, false);
+
+      document.addEventListener("touchmove", function (e) {
+
+         if (e.touches && e.touches.length > 1) {
+            e.preventDefault();
+         }
+
+      }, { passive: false });
+
+      function showCertificateSuccess() {
+
+         stopRewardPolling();
+
+         const rewardListView =
+            document.getElementById("rewardListView");
+
+         const rewardClaimQrView =
+            document.getElementById("rewardClaimQrView");
+
+         const rewardSuccessView =
+            document.getElementById("rewardSuccessView");
+
+         const certificatePreviewView =
+            document.getElementById("certificatePreviewView");
+
+         const certificateEditorView =
+            document.getElementById("certificateEditorView");
+
+         const certificateSuccessView =
+            document.getElementById("certificateSuccessView");
+
+         if (rewardListView) {
+            rewardListView.style.display = "none";
+         }
+
+         if (rewardClaimQrView) {
+            rewardClaimQrView.style.display = "none";
+         }
+
+         if (rewardSuccessView) {
+            rewardSuccessView.style.display = "none";
+         }
+
+         if (certificatePreviewView) {
+            certificatePreviewView.style.display = "none";
+         }
+
+         if (certificateEditorView) {
+            certificateEditorView.style.display = "none";
+         }
+
+         if (certificateSuccessView) {
+            certificateSuccessView.style.display = "block";
+         }
+
+         showPage("rewardPage");
+
+         const pointText =
+            "x " + currentPoint;
+
+         const rewardPointCerSuccessTop =
+            document.getElementById("rewardPointCerSuccessTop");
+
+         if (rewardPointCerSuccessTop) {
+            rewardPointCerSuccessTop.innerHTML = pointText;
+         }
+
+      }
+
+      window.onload =
+         function () {
+
+            if (AUTO_CODE) {
+               autoLoginFromQr();
+               return;
+            }
+
+            const savedCode =
+               localStorage.getItem(LOGIN_STORAGE_KEY);
+
+            if (savedCode) {
+
+               lastCode =
+                  savedCode;
+
+               showLoading();
+
+               apiCall("loginUser", {
+                  code: savedCode
+               })
+                  .then(function (result) {
+
+                     if (result && result.success) {
+                        showMember(result);
+                     } else {
+                        localStorage.removeItem(LOGIN_STORAGE_KEY);
+                        showLogin();
+                     }
+
+                  })
+                  .catch(function () {
+                     localStorage.removeItem(LOGIN_STORAGE_KEY);
+                     showLogin();
+                  });
+
+            }
+
+         };
+
+   </script>
+
+</body>
+
+</html>
+<script>
+   // MENU OVERLAY FUNCTIONS
+   function openMenuOverlay() {
+      document.getElementById("menuOverlay").style.display = "block";
+   }
+   function closeMenuOverlay() {
+      document.getElementById("menuOverlay").style.display = "none";
+   }
+
+   // PROFILE PAGE FUNCTIONS
+   let profileDataCache = null;
+
+   function showProfilePage() {
+      if (!lastCode) {
+         alert("Please login first.");
+         showLogin();
+         return;
+      }
+
+      stopRewardPolling();
+      stopScannerSilent();
+      closeMenuOverlay();
+
+      showPage("profilePage");
+      loadProfileInfo();
+   }
+
+   function loadProfileInfo() {
+      if (!lastCode) return;
+      apiCall("loginUser", { code: lastCode })
+         .then(function (result) {
+            if (result && result.success) {
+               profileDataCache = result;
+               document.getElementById("profileName").innerText = result.name || "-";
+               document.getElementById("profileAge").innerText = result.age || "-";
+               document.getElementById("profileEmail").innerText = result.email || "-";
+               document.getElementById("profileIdentity").innerText = result.identity || "-";
+               document.getElementById("profileCode").innerText = result.code || "-";
+               document.getElementById("profileCheckinTime").innerText = result.checkInTime ? formatDate(result.checkInTime) : "-";
+            } else {
+               alert("ไม่สามารถโหลดข้อมูลโปรไฟล์ได้");
+            }
+         })
+         .catch(function () {
+            alert("ไม่สามารถโหลดข้อมูลโปรไฟล์ได้");
+         });
+   }
+
+   function showProfileEditor() {
+      if (!profileDataCache) {
+         loadProfileInfo();
+         setTimeout(showProfileEditor, 300);
+         return;
+      }
+      showPage("profileEditorPage");
+      document.getElementById("editProfileName").value = profileDataCache.name || "";
+      document.getElementById("editProfileAge").value = profileDataCache.age || "";
+      document.getElementById("editProfileEmail").value = profileDataCache.email || "";
+      document.getElementById("editProfileIdentity").value = profileDataCache.identity || "";
+   }
+
+   function saveProfileEditor() {
+      const name = document.getElementById("editProfileName").value.trim();
+      const age = document.getElementById("editProfileAge").value.trim();
+      const email = document.getElementById("editProfileEmail").value.trim();
+      const identity = document.getElementById("editProfileIdentity").value;
+      if (!name || !age || !email || !identity) {
+         alert("กรุณากรอกข้อมูลให้ครบ");
+         return;
+      }
+      showLoading();
+      apiCall("updateProfile", {
+         code: lastCode,
+         name: name,
+         age: age,
+         email: email,
+         identity: identity
+      })
+         .then(function (result) {
+            if (result && result.success) {
+               alert("บันทึกโปรไฟล์สำเร็จ");
+               showProfilePage();
+            } else {
+               alert(result && result.message ? result.message : "ไม่สามารถบันทึกข้อมูลได้");
+               showProfilePage();
+            }
+         })
+         .catch(function () {
+            alert("ไม่สามารถบันทึกข้อมูลได้");
+            showProfilePage();
+         });
+   }
+</script>
