@@ -3368,7 +3368,13 @@
 
    <script>
 
-      const AUTO_CODE = "";
+      const urlParams =
+         new URLSearchParams(window.location.search);
+
+      const AUTO_CODE =
+         urlParams.get("code")
+            ? urlParams.get("code").trim().toUpperCase()
+            : "";
 
       const API_URL =
          "https://script.google.com/macros/s/AKfycbwddQWmML7nliZEzza7mdxl_pvUh80tsjZAL9h61ZUV_ZhZro_NF5uqi5tgh611tvSi6Q/exec";
@@ -3389,7 +3395,7 @@
       let currentRedeemToken = "";
       let currentRedeemQrText = "";
       let rewardPollingTimer = null;
-
+      let codePagePollingTimer = null;
       const rewardItems = [
          {
             id: "reward1",
@@ -3798,16 +3804,17 @@
       function showLogin() {
 
          stopRewardPolling();
+         stopCodePagePolling();
          stopScannerSilent();
          clearAllInputs();
 
          showPage("loginPage");
 
       }
-
       function logoutUser() {
 
          stopRewardPolling();
+         stopCodePagePolling();
          stopScannerSilent();
 
          localStorage.removeItem(LOGIN_STORAGE_KEY);
@@ -3849,6 +3856,7 @@
       function showHome() {
 
          stopRewardPolling();
+         stopCodePagePolling();
          stopScannerSilent();
 
          showPage("homePage");
@@ -4203,6 +4211,48 @@
 
          showPage("codePage");
 
+         startCodePagePolling();
+      }
+
+      function stopCodePagePolling() {
+
+         if (codePagePollingTimer) {
+            clearInterval(codePagePollingTimer);
+            codePagePollingTimer = null;
+         }
+
+      }
+
+      function startCodePagePolling() {
+
+         stopCodePagePolling();
+
+         if (!lastCode) {
+            return;
+         }
+
+         codePagePollingTimer =
+            setInterval(function () {
+
+               apiCall("getMemberStatus", {
+                  code: lastCode
+               })
+                  .then(function (result) {
+
+                     if (result && result.success && result.checkedIn) {
+
+                        stopCodePagePolling();
+
+                        showMember(result);
+
+                     }
+
+                  })
+                  .catch(function (error) {
+                  });
+
+            }, 1800);
+
       }
 
       function showMember(result) {
@@ -4452,24 +4502,32 @@
 
          showLoading();
 
-         apiRequest("loginUser", {
+         apiCall("loginUser", {
             code: AUTO_CODE
          })
             .then(function (result) {
 
                if (result && result.success) {
-                  showMember(result);
+
+                  alert("ยืนยันตัวสำเร็จ");
+
+                  showLogin();
+
                } else {
+
                   alert(
                      result && result.message
                         ? result.message
                         : "QR Code ไม่ถูกต้อง หรือไม่พบรหัสนี้"
                   );
+
                   showLogin();
+
                }
 
             })
             .catch(function (error) {
+
                alert(
                   "เกิดข้อผิดพลาด: " +
                   (
@@ -4478,7 +4536,9 @@
                         : error
                   )
                );
+
                showLogin();
+
             });
 
       }
@@ -5811,24 +5871,32 @@
 
          showLoading();
 
-         apiRequest("loginUser", {
+         apiCall("loginUser", {
             code: scannedCode
          })
             .then(function (result) {
 
                if (result && result.success) {
-                  showMember(result);
+
+                  alert("ยืนยันตัวสำเร็จ");
+
+                  showScanPage();
+
                } else {
+
                   alert(
                      result && result.message
                         ? result.message
                         : "QR Login ไม่ถูกต้อง"
                   );
+
                   showScanPage();
+
                }
 
             })
             .catch(function (error) {
+
                alert(
                   "เกิดข้อผิดพลาด: " +
                   (
@@ -5837,7 +5905,9 @@
                         : error
                   )
                );
+
                showScanPage();
+
             });
 
       }
