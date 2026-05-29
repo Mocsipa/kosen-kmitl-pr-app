@@ -4779,6 +4779,42 @@
          forceBackToRewardList();
       }
 
+      function showRewardSuccessView(result) {
+
+         const rewardListView =
+            document.getElementById("rewardListView");
+
+         const rewardClaimQrView =
+            document.getElementById("rewardClaimQrView");
+
+         const rewardSuccessView =
+            document.getElementById("rewardSuccessView");
+
+         if (rewardListView) {
+            rewardListView.style.display = "none";
+         }
+
+         if (rewardClaimQrView) {
+            rewardClaimQrView.style.display = "none";
+         }
+
+         if (rewardSuccessView) {
+            rewardSuccessView.style.display = "block";
+         }
+
+         if (result && typeof result.point !== "undefined") {
+            savePointToCache(
+               result.point,
+               result.limit || 12
+            );
+
+            updateRewardPointFromCache();
+         }
+
+         showPage("rewardPage");
+
+      }
+
       function forceBackToRewardList() {
 
          if (typeof stopRewardPolling === "function") {
@@ -5292,7 +5328,7 @@
 
          stopRewardPolling();
 
-         if (!currentRedeemToken || !lastCode) {
+         if (!currentRedeemId || !lastCode) {
             return;
          }
 
@@ -5300,20 +5336,26 @@
             setInterval(function () {
 
                apiCall("checkRedeemStatus", {
-                  redeemId: currentRedeemToken,
+                  redeemId: currentRedeemId,
                   code: lastCode
                })
                   .then(function (result) {
 
-                     if (result && result.success && result.status === "USED") {
+                     if (
+                        result &&
+                        result.success &&
+                        (
+                           result.confirmed ||
+                           result.redeemed ||
+                           result.used
+                        )
+                     ) {
 
                         stopRewardPolling();
 
-                        currentPoint =
-                           Number(result.point) || 0;
+                        showRewardSuccessView(result);
 
-                        showRewardSuccess(result.point);
-
+                        return;
                      }
 
                   })
@@ -5323,7 +5365,7 @@
             }, 3000);
 
       }
-
+      
       function stopRewardPolling() {
 
          if (rewardPollingTimer) {
@@ -5913,92 +5955,138 @@
       }
 
       function sendPointQr(qrText) {
-         const possibleLoginCode =
-            extractLoginCodeFromQr(qrText);
 
-         if (possibleLoginCode) {
-            loginByScannedMemberCode(possibleLoginCode);
+         const scannedText =
+            String(qrText || "").trim();
+
+         if (!scannedText) {
+            alert("ไม่พบข้อมูล QR Code");
+            showScanPage();
             return;
          }
-         if (!qrText) {
-            alert("QR ไม่ถูกต้อง");
-            showPoint();
-            return;
-         }
-
-         const text =
-            String(qrText).trim();
 
          showLoading();
 
-         if (text.indexOf("KOSEN_REDEEM|") === 0) {
+         // ========================
+         // 1) ตรวจ QR แลกรางวัลก่อน
+         // สำคัญ: ต้องมาก่อน Login QR
+         // เพราะ QR แลกรางวัลอาจมีรหัส KM อยู่ข้างใน
+         // ========================
 
-            apiCall("confirmReward", {
-               redeemQrText: text
-            })
-               .then(function (result) {
+         apiCall("confirmReward", {
+            redeemQrText: scannedText
+         })
+            .then(function (rewardResult) {
 
-                  if (result && result.success) {
+               if (rewardResult && rewardResult.success) {
 
-                     alert(result.message || "ยืนยันรับรางวัลสำเร็จ");
-
-                     showScanPage();
-
-                  } else {
-
-                     alert(result && result.message ? result.message : "QR รางวัลไม่ถูกต้อง");
-
-                     showScanPage();
-
-                  }
-
-               })
-               .catch(function (error) {
-
-                  alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+                  alert("แลกรับสำเร็จ");
 
                   showScanPage();
 
-               });
-
-            return;
-
-         }
-
-         apiCall("addPointByQr", {
-            code: lastCode,
-            qrText: text
-         })
-            .then(function (result) {
-
-               if (result && result.success) {
-
-                  alert("ได้รับ +" + result.addedPoint + " คะแนน");
-
-                  currentPoint =
-                     Number(result.point) || 0;
-
-                  savePointToCache(result.point, result.limit);
-
-                  showPage("pointPage");
-
-                  updatePointUI(result.point, result.limit);
-                  updateRewardPointFromCache();
-
-               } else {
-
-                  alert(result && result.message ? result.message : "QR ไม่ถูกต้อง");
-
-                  showPoint();
-
+                  return;
                }
+
+               const rewardMessage =
+                  rewardResult && rewardResult.message
+                     ? String(rewardResult.message)
+                     : "";
+
+               const looksLikeRewardQr =
+                  scannedText.indexOf("REWARD") !== -1 ||
+                  scannedText.indexOf("REDEEM") !== -1 ||
+                  scannedText.indexOf("redeem") !== -1 ||
+                  scannedText.indexOf("reward") !== -1 ||
+                  scannedText.indexOf("redeemId") !== -1 ||
+                  scannedText.indexOf("redeemQrText") !== -1;
+
+               if (looksLikeRewardQr) {
+
+                  alert(
+                     rewardMessage
+                        ? rewardMessage
+                        : "QR แลกรางวัลไม่ถูกต้อง หรือถูกใช้งานแล้ว"
+                  );
+
+                  showScanPage();
+
+                  return;
+               }
+
+               // ========================
+               // 2) ถ้าไม่ใช่ QR แลกรางวัล ค่อยตรวจว่าเป็น Login QR ไหม
+               // ========================
+
+               const possibleLoginCode =
+                  extractLoginCodeFromQr(scannedText);
+
+               if (possibleLoginCode) {
+                  loginByScannedMemberCode(possibleLoginCode);
+                  return;
+               }
+
+               // ========================
+               // 3) ถ้าไม่ใช่ Reward / Login ค่อยถือว่าเป็น Point QR
+               // ========================
+
+               return apiCall("addPointByQr", {
+                  code: lastCode,
+                  qrText: scannedText
+               })
+                  .then(function (pointResult) {
+
+                     if (pointResult && pointResult.success) {
+
+                        currentPoint =
+                           Number(pointResult.point) || 0;
+
+                        savePointToCache(
+                           pointResult.point,
+                           pointResult.limit
+                        );
+
+                        alert(
+                           "ได้รับ +" +
+                           pointResult.addedPoint +
+                           " คะแนน"
+                        );
+
+                        showPage("pointPage");
+
+                        updatePointUI(
+                           pointResult.point,
+                           pointResult.limit
+                        );
+
+                        updateRewardPointFromCache();
+
+                     } else {
+
+                        alert(
+                           pointResult && pointResult.message
+                              ? pointResult.message
+                              : "QR ไม่ถูกต้อง"
+                        );
+
+                        showScanPage();
+
+                     }
+
+                  });
 
             })
             .catch(function (error) {
 
-               alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+               alert(
+                  "เกิดข้อผิดพลาด: " +
+                  (
+                     error && error.message
+                        ? error.message
+                        : error
+                  )
+               );
 
-               showPoint();
+               showScanPage();
 
             });
 
