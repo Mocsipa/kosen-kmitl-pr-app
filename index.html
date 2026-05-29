@@ -3387,6 +3387,8 @@
       let currentSlide = 0;
       let slideTimer = null;
       let currentFloorSlide = 0;
+      let rewardStatusTimer = null;
+      let rewardStatusChecking = false;
       let html5QrCode = null;
       let scannerRunning = false;
       let currentPoint = 0;
@@ -4782,6 +4784,8 @@
 
       function showRewardSuccessView(result) {
 
+         stopRewardPolling();
+
          const rewardListView =
             document.getElementById("rewardListView");
 
@@ -4804,12 +4808,26 @@
          }
 
          if (result && typeof result.point !== "undefined") {
+
+            currentPoint =
+               Number(result.point) || 0;
+
             savePointToCache(
                result.point,
                result.limit || 12
             );
 
+            updatePointUI(
+               result.point,
+               result.limit || 12
+            );
+
             updateRewardPointFromCache();
+
+         } else {
+
+            loadPoint();
+
          }
 
          showPage("rewardPage");
@@ -5326,6 +5344,12 @@
          currentRedeemQrText =
             result.redeemQrText || currentRedeemQrText;
 
+         currentRedeemId =
+            result.redeemId ||
+            result.redeemQrText ||
+            currentRedeemId ||
+            "";
+
          startRewardPolling();
 
       }
@@ -5336,6 +5360,7 @@
 
          const redeemIdForCheck =
             currentRedeemId ||
+            currentRedeemToken ||
             currentRedeemQrText ||
             "";
 
@@ -5343,46 +5368,54 @@
             return;
          }
 
+         function checkOnce() {
+
+            apiCall("checkRedeemStatus", {
+               redeemId: redeemIdForCheck,
+               redeemQrText: currentRedeemQrText || "",
+               code: lastCode
+            })
+               .then(function (result) {
+
+                  if (!result || !result.success) {
+                     return;
+                  }
+
+                  const status =
+                     String(result.status || "")
+                        .trim()
+                        .toUpperCase();
+
+                  const isRedeemed =
+                     result.confirmed === true ||
+                     result.redeemed === true ||
+                     result.used === true ||
+                     status === "CONFIRMED" ||
+                     status === "REDEEMED" ||
+                     status === "SUCCESS" ||
+                     status === "USED";
+
+                  if (isRedeemed) {
+
+                     stopRewardPolling();
+
+                     showRewardSuccessView(result);
+
+                     return;
+                  }
+
+               })
+               .catch(function () {
+               });
+
+         }
+
+         checkOnce();
+
          rewardPollingTimer =
             setInterval(function () {
-
-               apiCall("checkRedeemStatus", {
-                  redeemId: redeemIdForCheck,
-                  code: lastCode
-               })
-                  .then(function (result) {
-
-                     if (
-                        result &&
-                        result.success &&
-                        (
-                           result.confirmed ||
-                           result.redeemed ||
-                           result.used
-                        )
-                     ) {
-
-                        stopRewardPolling();
-
-                        showRewardSuccessView(result);
-
-                        return;
-                     }
-
-                  })
-                  .catch(function () {
-                  });
-
-            }, 3000);
-
-      }
-
-      function stopRewardPolling() {
-
-         if (rewardPollingTimer) {
-            clearInterval(rewardPollingTimer);
-            rewardPollingTimer = null;
-         }
+               checkOnce();
+            }, 1800);
 
       }
 
