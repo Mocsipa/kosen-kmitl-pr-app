@@ -2970,7 +2970,7 @@
             *คะแนนที่ได้รับจะสามารถใช้ได้เฉพาะในวันงานเท่านั้น<br><br>[ 01/08/2026 ]
          </div>
 
-         <button class="btnGray" onclick="backFromRewardSuccessToList()">Back</button>
+         <button class="btnGray" onclick="forceBackToRewardList()">Back</button>
 
       </div>
 
@@ -4699,14 +4699,37 @@
       }
 
       function backFromRewardSuccessToList() {
+         forceBackToRewardList();
+      }
+      
+      function forceBackToRewardList() {
 
-         stopRewardPolling();
+         if (typeof stopRewardPolling === "function") {
+            stopRewardPolling();
+         }
 
-         pendingRewardId = "";
-         pendingRewardName = "";
-         pendingRewardCost = 0;
-         pendingRewardImage = "";
-         pendingRewardToken = "";
+         if (typeof pendingRewardId !== "undefined") {
+            pendingRewardId = "";
+         }
+
+         if (typeof pendingRewardName !== "undefined") {
+            pendingRewardName = "";
+         }
+
+         if (typeof pendingRewardCost !== "undefined") {
+            pendingRewardCost = 0;
+         }
+
+         if (typeof pendingRewardImage !== "undefined") {
+            pendingRewardImage = "";
+         }
+
+         if (typeof pendingRewardToken !== "undefined") {
+            pendingRewardToken = "";
+         }
+
+         const rewardPage =
+            document.getElementById("rewardPage");
 
          const rewardListView =
             document.getElementById("rewardListView");
@@ -4725,6 +4748,16 @@
 
          const certificateSuccessView =
             document.getElementById("certificateSuccessView");
+
+         hideAll();
+
+         if (rewardPage) {
+            rewardPage.classList.add("active");
+         }
+
+         if (rewardListView) {
+            rewardListView.style.display = "block";
+         }
 
          if (rewardClaimQrView) {
             rewardClaimQrView.style.display = "none";
@@ -4746,13 +4779,20 @@
             certificateSuccessView.style.display = "none";
          }
 
-         if (rewardListView) {
-            rewardListView.style.display = "block";
+         if (typeof updateRewardPointFromCache === "function") {
+            updateRewardPointFromCache();
          }
 
-         showPage("rewardPage");
+         const rewardContent =
+            rewardPage
+               ? rewardPage.querySelector(".rewardContent")
+               : null;
 
-         updateRewardPointFromCache();
+         if (rewardContent) {
+            rewardContent.scrollTop = 0;
+         }
+
+         window.scrollTo(0, 0);
 
          if (typeof loadRewardPoint === "function") {
             setTimeout(function () {
@@ -4787,7 +4827,7 @@
          if (certificatePreviewView) { certificatePreviewView.style.display = "none"; }
          if (certificateEditorView) { certificateEditorView.style.display = "none"; }
          if (certificateSuccessView) { certificateSuccessView.style.display = "none"; }
-         
+
          updateRewardPointFromCache();
 
          setTimeout(function () {
