@@ -3388,6 +3388,7 @@
       let slideTimer = null;
       let currentFloorSlide = 0;
       let rewardStatusTimer = null;
+
       let rewardStatusChecking = false;
       let html5QrCode = null;
       let scannerRunning = false;
@@ -3399,6 +3400,23 @@
       let currentRedeemId = "";
       let rewardPollingTimer = null;
       let codePagePollingTimer = null;
+
+      function stopRewardPolling() {
+
+         if (rewardPollingTimer) {
+            clearInterval(rewardPollingTimer);
+            rewardPollingTimer = null;
+         }
+
+         if (rewardStatusTimer) {
+            clearInterval(rewardStatusTimer);
+            rewardStatusTimer = null;
+         }
+
+         rewardStatusChecking = false;
+
+      }
+
       const rewardItems = [
          {
             id: "reward1",
