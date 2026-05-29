@@ -5253,6 +5253,11 @@
                   currentRedeemQrText =
                      result.redeemQrText || "";
 
+                  currentRedeemId =
+                     result.redeemId ||
+                     result.redeemQrText ||
+                     "";
+
                   showRewardClaimQr(result);
 
                } else {
@@ -5330,9 +5335,9 @@
          stopRewardPolling();
 
          const redeemIdForCheck =
-            typeof currentRedeemId !== "undefined" && currentRedeemId
-               ? currentRedeemId
-               : currentRedeemQrText;
+            currentRedeemId ||
+            currentRedeemQrText ||
+            "";
 
          if (!redeemIdForCheck || !lastCode) {
             return;
