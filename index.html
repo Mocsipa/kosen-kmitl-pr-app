@@ -5365,7 +5365,7 @@
             }, 3000);
 
       }
-      
+
       function stopRewardPolling() {
 
          if (rewardPollingTimer) {
@@ -5902,6 +5902,10 @@
 
       function loginByScannedMemberCode(code) {
 
+         if (!requireStaffForScanAction("ยืนยันตัวตนผู้ใช้")) {
+            return;
+         }
+
          const scannedCode =
             String(code || "").trim().toUpperCase();
 
@@ -5913,8 +5917,9 @@
 
          showLoading();
 
-         apiCall("loginUser", {
-            code: scannedCode
+         apiCall("staffCheckInMember", {
+            staffCode: lastCode,
+            targetCode: scannedCode
          })
             .then(function (result) {
 
@@ -5954,6 +5959,34 @@
 
       }
 
+      function isStaffCode(code) {
+
+         return String(code || "")
+            .trim()
+            .toUpperCase()
+            .startsWith("XX");
+
+      }
+
+      function requireStaffForScanAction(actionName) {
+
+         if (isStaffCode(lastCode)) {
+            return true;
+         }
+
+         alert(
+            "สิทธิ์ไม่เพียงพอ\n\n" +
+            "เฉพาะเจ้าหน้าที่เท่านั้นที่สามารถ " +
+            actionName +
+            " ได้"
+         );
+
+         showScanPage();
+
+         return false;
+
+      }
+
       function sendPointQr(qrText) {
 
          const scannedText =
@@ -5965,114 +5998,137 @@
             return;
          }
 
-         showLoading();
+         const looksLikeRewardQr =
+            scannedText.indexOf("REWARD") !== -1 ||
+            scannedText.indexOf("REDEEM") !== -1 ||
+            scannedText.indexOf("redeem") !== -1 ||
+            scannedText.indexOf("reward") !== -1 ||
+            scannedText.indexOf("redeemId") !== -1 ||
+            scannedText.indexOf("redeemQrText") !== -1;
+
+         const possibleLoginCode =
+            extractLoginCodeFromQr(scannedText);
 
          // ========================
-         // 1) ตรวจ QR แลกรางวัลก่อน
-         // สำคัญ: ต้องมาก่อน Login QR
-         // เพราะ QR แลกรางวัลอาจมีรหัส KM อยู่ข้างใน
+         // 1) QR แลกรางวัล
+         // เจ้าหน้าที่เท่านั้น
          // ========================
 
-         apiCall("confirmReward", {
-            redeemQrText: scannedText
-         })
-            .then(function (rewardResult) {
+         if (looksLikeRewardQr) {
 
-               if (rewardResult && rewardResult.success) {
+            if (!requireStaffForScanAction("ยืนยันแลกรางวัล")) {
+               return;
+            }
 
-                  alert("แลกรับสำเร็จ");
+            showLoading();
 
-                  showScanPage();
+            apiCall("confirmReward", {
+               redeemQrText: scannedText,
+               staffCode: lastCode
+            })
+               .then(function (rewardResult) {
 
-                  return;
-               }
+                  if (rewardResult && rewardResult.success) {
 
-               const rewardMessage =
-                  rewardResult && rewardResult.message
-                     ? String(rewardResult.message)
-                     : "";
+                     alert("แลกรับสำเร็จ");
 
-               const looksLikeRewardQr =
-                  scannedText.indexOf("REWARD") !== -1 ||
-                  scannedText.indexOf("REDEEM") !== -1 ||
-                  scannedText.indexOf("redeem") !== -1 ||
-                  scannedText.indexOf("reward") !== -1 ||
-                  scannedText.indexOf("redeemId") !== -1 ||
-                  scannedText.indexOf("redeemQrText") !== -1;
+                     showScanPage();
 
-               if (looksLikeRewardQr) {
+                     return;
+                  }
 
                   alert(
-                     rewardMessage
-                        ? rewardMessage
+                     rewardResult && rewardResult.message
+                        ? rewardResult.message
                         : "QR แลกรางวัลไม่ถูกต้อง หรือถูกใช้งานแล้ว"
                   );
 
                   showScanPage();
 
-                  return;
-               }
-
-               // ========================
-               // 2) ถ้าไม่ใช่ QR แลกรางวัล ค่อยตรวจว่าเป็น Login QR ไหม
-               // ========================
-
-               const possibleLoginCode =
-                  extractLoginCodeFromQr(scannedText);
-
-               if (possibleLoginCode) {
-                  loginByScannedMemberCode(possibleLoginCode);
-                  return;
-               }
-
-               // ========================
-               // 3) ถ้าไม่ใช่ Reward / Login ค่อยถือว่าเป็น Point QR
-               // ========================
-
-               return apiCall("addPointByQr", {
-                  code: lastCode,
-                  qrText: scannedText
                })
-                  .then(function (pointResult) {
+               .catch(function (error) {
 
-                     if (pointResult && pointResult.success) {
+                  alert(
+                     "เกิดข้อผิดพลาด: " +
+                     (
+                        error && error.message
+                           ? error.message
+                           : error
+                     )
+                  );
 
-                        currentPoint =
-                           Number(pointResult.point) || 0;
+                  showScanPage();
 
-                        savePointToCache(
-                           pointResult.point,
-                           pointResult.limit
-                        );
+               });
 
-                        alert(
-                           "ได้รับ +" +
-                           pointResult.addedPoint +
-                           " คะแนน"
-                        );
+            return;
+         }
 
-                        showPage("pointPage");
+         // ========================
+         // 2) QR Login / ยืนยันตัวตนผู้ใช้
+         // เจ้าหน้าที่เท่านั้น
+         // ========================
 
-                        updatePointUI(
-                           pointResult.point,
-                           pointResult.limit
-                        );
+         if (possibleLoginCode) {
 
-                        updateRewardPointFromCache();
+            if (!requireStaffForScanAction("ยืนยันตัวตนผู้ใช้")) {
+               return;
+            }
 
-                     } else {
+            loginByScannedMemberCode(possibleLoginCode);
 
-                        alert(
-                           pointResult && pointResult.message
-                              ? pointResult.message
-                              : "QR ไม่ถูกต้อง"
-                        );
+            return;
+         }
 
-                        showScanPage();
+         // ========================
+         // 3) QR Point
+         // ผู้ใช้ทั่วไปสแกนได้
+         // ========================
 
-                     }
+         showLoading();
 
-                  });
+         apiCall("addPointByQr", {
+            code: lastCode,
+            qrText: scannedText
+         })
+            .then(function (pointResult) {
+
+               if (pointResult && pointResult.success) {
+
+                  currentPoint =
+                     Number(pointResult.point) || 0;
+
+                  savePointToCache(
+                     pointResult.point,
+                     pointResult.limit
+                  );
+
+                  alert(
+                     "ได้รับ +" +
+                     pointResult.addedPoint +
+                     " คะแนน"
+                  );
+
+                  showPage("pointPage");
+
+                  updatePointUI(
+                     pointResult.point,
+                     pointResult.limit
+                  );
+
+                  updateRewardPointFromCache();
+
+               } else {
+
+                  alert(
+                     pointResult && pointResult.message
+                        ? pointResult.message
+                        : "QR ไม่ถูกต้อง"
+                  );
+
+                  showScanPage();
+
+               }
 
             })
             .catch(function (error) {
