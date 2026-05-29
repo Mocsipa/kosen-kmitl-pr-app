@@ -2970,7 +2970,7 @@
             *คะแนนที่ได้รับจะสามารถใช้ได้เฉพาะในวันงานเท่านั้น<br><br>[ 01/08/2026 ]
          </div>
 
-         <button class="btnGray" onclick="showReward()">Back</button>
+         <button class="btnGray" onclick="backFromRewardSuccessToList()">Back</button>
 
       </div>
 
@@ -4697,6 +4697,71 @@
          }
 
       }
+
+      function backFromRewardSuccessToList() {
+
+         stopRewardPolling();
+
+         pendingRewardId = "";
+         pendingRewardName = "";
+         pendingRewardCost = 0;
+         pendingRewardImage = "";
+         pendingRewardToken = "";
+
+         const rewardListView =
+            document.getElementById("rewardListView");
+
+         const rewardClaimQrView =
+            document.getElementById("rewardClaimQrView");
+
+         const rewardSuccessView =
+            document.getElementById("rewardSuccessView");
+
+         const certificatePreviewView =
+            document.getElementById("certificatePreviewView");
+
+         const certificateEditorView =
+            document.getElementById("certificateEditorView");
+
+         const certificateSuccessView =
+            document.getElementById("certificateSuccessView");
+
+         if (rewardClaimQrView) {
+            rewardClaimQrView.style.display = "none";
+         }
+
+         if (rewardSuccessView) {
+            rewardSuccessView.style.display = "none";
+         }
+
+         if (certificatePreviewView) {
+            certificatePreviewView.style.display = "none";
+         }
+
+         if (certificateEditorView) {
+            certificateEditorView.style.display = "none";
+         }
+
+         if (certificateSuccessView) {
+            certificateSuccessView.style.display = "none";
+         }
+
+         if (rewardListView) {
+            rewardListView.style.display = "block";
+         }
+
+         showPage("rewardPage");
+
+         updateRewardPointFromCache();
+
+         if (typeof loadRewardPoint === "function") {
+            setTimeout(function () {
+               loadRewardPoint();
+            }, 80);
+         }
+
+      }
+
       function showReward() {
 
          stopRewardPolling();
@@ -4709,6 +4774,20 @@
 
          showPage("rewardPage");
 
+         const rewardListView = document.getElementById("rewardListView");
+         const rewardClaimQrView = document.getElementById("rewardClaimQrView");
+         const rewardSuccessView = document.getElementById("rewardSuccessView");
+         const certificatePreviewView = document.getElementById("certificatePreviewView");
+         const certificateEditorView = document.getElementById("certificateEditorView");
+         const certificateSuccessView = document.getElementById("certificateSuccessView");
+
+         if (rewardListView) { rewardListView.style.display = "block"; }
+         if (rewardClaimQrView) { rewardClaimQrView.style.display = "none"; }
+         if (rewardSuccessView) { rewardSuccessView.style.display = "none"; }
+         if (certificatePreviewView) { certificatePreviewView.style.display = "none"; }
+         if (certificateEditorView) { certificateEditorView.style.display = "none"; }
+         if (certificateSuccessView) { certificateSuccessView.style.display = "none"; }
+         
          updateRewardPointFromCache();
 
          setTimeout(function () {
