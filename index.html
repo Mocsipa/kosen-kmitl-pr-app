@@ -2948,7 +2948,7 @@
             หลังเจ้าหน้าที่สแกนสำเร็จ ระบบจะตัดคะแนนและแสดงผลสำเร็จให้โดยอัตโนมัติ
          </div>
 
-         <button class="btnGray" onclick="showReward()">Back</button>
+         <button class="btnGray" onclick="cancelRewardClaimAndBack()">Back</button>
 
       </div>
 
@@ -4634,8 +4634,72 @@
          }
 
       }
+      function cancelRewardClaimAndBack() {
 
+         stopRewardPolling();
+
+         pendingRewardId = "";
+         pendingRewardName = "";
+         pendingRewardCost = 0;
+         pendingRewardImage = "";
+         pendingRewardToken = "";
+
+         const rewardListView =
+            document.getElementById("rewardListView");
+
+         const rewardClaimQrView =
+            document.getElementById("rewardClaimQrView");
+
+         const rewardSuccessView =
+            document.getElementById("rewardSuccessView");
+
+         const certificatePreviewView =
+            document.getElementById("certificatePreviewView");
+
+         const certificateEditorView =
+            document.getElementById("certificateEditorView");
+
+         const certificateSuccessView =
+            document.getElementById("certificateSuccessView");
+
+         if (rewardClaimQrView) {
+            rewardClaimQrView.style.display = "none";
+         }
+
+         if (rewardSuccessView) {
+            rewardSuccessView.style.display = "none";
+         }
+
+         if (certificatePreviewView) {
+            certificatePreviewView.style.display = "none";
+         }
+
+         if (certificateEditorView) {
+            certificateEditorView.style.display = "none";
+         }
+
+         if (certificateSuccessView) {
+            certificateSuccessView.style.display = "none";
+         }
+
+         if (rewardListView) {
+            rewardListView.style.display = "block";
+         }
+
+         showPage("rewardPage");
+
+         updateRewardPointFromCache();
+
+         if (typeof loadRewardPoint === "function") {
+            setTimeout(function () {
+               loadRewardPoint();
+            }, 80);
+         }
+
+      }
       function showReward() {
+
+         stopRewardPolling();
 
          if (!lastCode) {
             alert("Please login first.");
@@ -5866,99 +5930,100 @@
 
    </script>
 
-<script>
-   // MENU OVERLAY FUNCTIONS
-   function openMenuOverlay() {
-      document.getElementById("menuOverlay").style.display = "block";
-   }
-   function closeMenuOverlay() {
-      document.getElementById("menuOverlay").style.display = "none";
-   }
-
-   // PROFILE PAGE FUNCTIONS
-   let profileDataCache = null;
-
-   function showProfilePage() {
-      if (!lastCode) {
-         alert("Please login first.");
-         showLogin();
-         return;
+   <script>
+      // MENU OVERLAY FUNCTIONS
+      function openMenuOverlay() {
+         document.getElementById("menuOverlay").style.display = "block";
+      }
+      function closeMenuOverlay() {
+         document.getElementById("menuOverlay").style.display = "none";
       }
 
-      stopRewardPolling();
-      stopScannerSilent();
-      closeMenuOverlay();
+      // PROFILE PAGE FUNCTIONS
+      let profileDataCache = null;
 
-      showPage("profilePage");
-      loadProfileInfo();
-   }
+      function showProfilePage() {
+         if (!lastCode) {
+            alert("Please login first.");
+            showLogin();
+            return;
+         }
 
-   function loadProfileInfo() {
-      if (!lastCode) return;
-      apiCall("loginUser", { code: lastCode })
-         .then(function (result) {
-            if (result && result.success) {
-               profileDataCache = result;
-               document.getElementById("profileName").innerText = result.name || "-";
-               document.getElementById("profileAge").innerText = result.age || "-";
-               document.getElementById("profileEmail").innerText = result.email || "-";
-               document.getElementById("profileIdentity").innerText = result.identity || "-";
-               document.getElementById("profileCode").innerText = result.code || "-";
-               document.getElementById("profileCheckinTime").innerText = result.checkInTime ? formatDate(result.checkInTime) : "-";
-            } else {
-               alert("ไม่สามารถโหลดข้อมูลโปรไฟล์ได้");
-            }
-         })
-         .catch(function () {
-            alert("ไม่สามารถโหลดข้อมูลโปรไฟล์ได้");
-         });
-   }
+         stopRewardPolling();
+         stopScannerSilent();
+         closeMenuOverlay();
 
-   function showProfileEditor() {
-      if (!profileDataCache) {
+         showPage("profilePage");
          loadProfileInfo();
-         setTimeout(showProfileEditor, 300);
-         return;
       }
-      showPage("profileEditorPage");
-      document.getElementById("editProfileName").value = profileDataCache.name || "";
-      document.getElementById("editProfileAge").value = profileDataCache.age || "";
-      document.getElementById("editProfileEmail").value = profileDataCache.email || "";
-      document.getElementById("editProfileIdentity").value = profileDataCache.identity || "";
-   }
 
-   function saveProfileEditor() {
-      const name = document.getElementById("editProfileName").value.trim();
-      const age = document.getElementById("editProfileAge").value.trim();
-      const email = document.getElementById("editProfileEmail").value.trim();
-      const identity = document.getElementById("editProfileIdentity").value;
-      if (!name || !age || !email || !identity) {
-         alert("กรุณากรอกข้อมูลให้ครบ");
-         return;
+      function loadProfileInfo() {
+         if (!lastCode) return;
+         apiCall("loginUser", { code: lastCode })
+            .then(function (result) {
+               if (result && result.success) {
+                  profileDataCache = result;
+                  document.getElementById("profileName").innerText = result.name || "-";
+                  document.getElementById("profileAge").innerText = result.age || "-";
+                  document.getElementById("profileEmail").innerText = result.email || "-";
+                  document.getElementById("profileIdentity").innerText = result.identity || "-";
+                  document.getElementById("profileCode").innerText = result.code || "-";
+                  document.getElementById("profileCheckinTime").innerText = result.checkInTime ? formatDate(result.checkInTime) : "-";
+               } else {
+                  alert("ไม่สามารถโหลดข้อมูลโปรไฟล์ได้");
+               }
+            })
+            .catch(function () {
+               alert("ไม่สามารถโหลดข้อมูลโปรไฟล์ได้");
+            });
       }
-      showLoading();
-      apiCall("updateProfile", {
-         code: lastCode,
-         name: name,
-         age: age,
-         email: email,
-         identity: identity
-      })
-         .then(function (result) {
-            if (result && result.success) {
-               alert("บันทึกโปรไฟล์สำเร็จ");
-               showProfilePage();
-            } else {
-               alert(result && result.message ? result.message : "ไม่สามารถบันทึกข้อมูลได้");
-               showProfilePage();
-            }
+
+      function showProfileEditor() {
+         if (!profileDataCache) {
+            loadProfileInfo();
+            setTimeout(showProfileEditor, 300);
+            return;
+         }
+         showPage("profileEditorPage");
+         document.getElementById("editProfileName").value = profileDataCache.name || "";
+         document.getElementById("editProfileAge").value = profileDataCache.age || "";
+         document.getElementById("editProfileEmail").value = profileDataCache.email || "";
+         document.getElementById("editProfileIdentity").value = profileDataCache.identity || "";
+      }
+
+      function saveProfileEditor() {
+         const name = document.getElementById("editProfileName").value.trim();
+         const age = document.getElementById("editProfileAge").value.trim();
+         const email = document.getElementById("editProfileEmail").value.trim();
+         const identity = document.getElementById("editProfileIdentity").value;
+         if (!name || !age || !email || !identity) {
+            alert("กรุณากรอกข้อมูลให้ครบ");
+            return;
+         }
+         showLoading();
+         apiCall("updateProfile", {
+            code: lastCode,
+            name: name,
+            age: age,
+            email: email,
+            identity: identity
          })
-         .catch(function () {
-            alert("ไม่สามารถบันทึกข้อมูลได้");
-            showProfilePage();
-         });
-   }
-</script>
+            .then(function (result) {
+               if (result && result.success) {
+                  alert("บันทึกโปรไฟล์สำเร็จ");
+                  showProfilePage();
+               } else {
+                  alert(result && result.message ? result.message : "ไม่สามารถบันทึกข้อมูลได้");
+                  showProfilePage();
+               }
+            })
+            .catch(function () {
+               alert("ไม่สามารถบันทึกข้อมูลได้");
+               showProfilePage();
+            });
+      }
+   </script>
 
 </body>
+
 </html>
