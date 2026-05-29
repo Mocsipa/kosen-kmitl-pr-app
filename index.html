@@ -3280,8 +3280,6 @@
          หากหลุดออกจากระบบ สามารถใช้รหัส Login หรือให้เจ้าหน้าที่สแกน QR อีกครั้งได้
       </div>
 
-      <button class="btnBlue" onclick="loginFromCodePage()">Enter System</button>
-
       <button class="btnGray" onclick="showLogin()">Back</button>
 
    </div>
@@ -4176,24 +4174,32 @@
 
       function showCodeAndQr(code, qrUrl) {
 
-         lastCode =
-            code || "";
+         lastCode = code || "";
+
+         const appUrl =
+            window.location.origin +
+            window.location.pathname;
+
+         const fallbackQrUrl =
+            lastCode
+               ? appUrl + "?code=" + encodeURIComponent(lastCode)
+               : "";
 
          lastQrUrl =
-            qrUrl || "";
-
-         if (lastCode) {
-            localStorage.setItem(LOGIN_STORAGE_KEY, lastCode);
-         }
+            qrUrl || fallbackQrUrl;
 
          const showCode =
             document.getElementById("showCode");
 
          if (showCode) {
-            showCode.innerHTML = lastCode || "-";
+            showCode.innerHTML =
+               lastCode || "-";
          }
 
-         makeQrImage("showQr", lastQrUrl);
+         makeQrImage(
+            "showQr",
+            lastQrUrl
+         );
 
          showPage("codePage");
 
@@ -4446,7 +4452,7 @@
 
          showLoading();
 
-         apiCall("autoLoginByCode", {
+         apiRequest("loginUser", {
             code: AUTO_CODE
          })
             .then(function (result) {
@@ -4454,13 +4460,24 @@
                if (result && result.success) {
                   showMember(result);
                } else {
-                  alert(result && result.message ? result.message : "QR Code ไม่ถูกต้อง หรือไม่พบรหัสนี้");
+                  alert(
+                     result && result.message
+                        ? result.message
+                        : "QR Code ไม่ถูกต้อง หรือไม่พบรหัสนี้"
+                  );
                   showLogin();
                }
 
             })
             .catch(function (error) {
-               alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+               alert(
+                  "เกิดข้อผิดพลาด: " +
+                  (
+                     error && error.message
+                        ? error.message
+                        : error
+                  )
+               );
                showLogin();
             });
 
@@ -4701,7 +4718,7 @@
       function backFromRewardSuccessToList() {
          forceBackToRewardList();
       }
-      
+
       function forceBackToRewardList() {
 
          if (typeof stopRewardPolling === "function") {
@@ -5745,8 +5762,94 @@
 
       }
 
-      function sendPointQr(qrText) {
+      function extractLoginCodeFromQr(qrText) {
 
+         const rawText =
+            String(qrText || "").trim();
+
+         if (!rawText) {
+            return "";
+         }
+
+         const directCodeMatch =
+            rawText.match(/\bKM\d{3}[A-Z]{2}\b/i);
+
+         if (directCodeMatch) {
+            return directCodeMatch[0].toUpperCase();
+         }
+
+         try {
+            const url =
+               new URL(rawText);
+
+            const codeFromUrl =
+               url.searchParams.get("code");
+
+            if (codeFromUrl) {
+               return String(codeFromUrl)
+                  .trim()
+                  .toUpperCase();
+            }
+
+         } catch (error) {
+         }
+
+         return "";
+
+      }
+
+      function loginByScannedMemberCode(code) {
+
+         const scannedCode =
+            String(code || "").trim().toUpperCase();
+
+         if (!scannedCode) {
+            alert("ไม่พบรหัส Login ใน QR Code");
+            showScanPage();
+            return;
+         }
+
+         showLoading();
+
+         apiRequest("loginUser", {
+            code: scannedCode
+         })
+            .then(function (result) {
+
+               if (result && result.success) {
+                  showMember(result);
+               } else {
+                  alert(
+                     result && result.message
+                        ? result.message
+                        : "QR Login ไม่ถูกต้อง"
+                  );
+                  showScanPage();
+               }
+
+            })
+            .catch(function (error) {
+               alert(
+                  "เกิดข้อผิดพลาด: " +
+                  (
+                     error && error.message
+                        ? error.message
+                        : error
+                  )
+               );
+               showScanPage();
+            });
+
+      }
+
+      function sendPointQr(qrText) {
+         const possibleLoginCode =
+            extractLoginCodeFromQr(qrText);
+
+         if (possibleLoginCode) {
+            loginByScannedMemberCode(possibleLoginCode);
+            return;
+         }
          if (!qrText) {
             alert("QR ไม่ถูกต้อง");
             showPoint();
