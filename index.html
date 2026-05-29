@@ -5328,7 +5328,12 @@
 
          stopRewardPolling();
 
-         if (!currentRedeemId || !lastCode) {
+         const redeemIdForCheck =
+            typeof currentRedeemId !== "undefined" && currentRedeemId
+               ? currentRedeemId
+               : currentRedeemQrText;
+
+         if (!redeemIdForCheck || !lastCode) {
             return;
          }
 
@@ -5336,7 +5341,7 @@
             setInterval(function () {
 
                apiCall("checkRedeemStatus", {
-                  redeemId: currentRedeemId,
+                  redeemId: redeemIdForCheck,
                   code: lastCode
                })
                   .then(function (result) {
