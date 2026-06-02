@@ -4135,8 +4135,11 @@
          }
 
          const staff = staffSnap.data();
+         const staffIsActive =
+            staff.active === true ||
+            String(staff.active || "").trim().toLowerCase() === "true";
 
-         if (!staff.active) {
+         if (!staffIsActive) {
             return {
                success: false,
                message: "รหัสเจ้าหน้าที่นี้ถูกปิดใช้งาน"
