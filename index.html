@@ -6994,7 +6994,7 @@
 
       }
 
-      function loginByScannedMemberCode(code) {
+      async function loginByScannedMemberCode(code) {
 
          if (!requireStaffForScanAction("ยืนยันตัวตนผู้ใช้")) {
             return;
@@ -7011,42 +7011,38 @@
 
          showLoading();
 
-         staffCheckInMemberFirebase(lastCode, scannedCode)
-            .then(function (result) {
+         try {
+            const result = await staffCheckInMemberFirebase(lastCode, scannedCode);
+            console.log("staffCheckInMemberFirebase result=", result);
 
-               if (result && result.success) {
+            if (result && result.success) {
+               alert("ยืนยันตัวสำเร็จ");
+               showMember(result);
+               setTimeout(function () {
+                  showHome();
+               }, 50);
+               return;
+            }
 
-                  alert("ยืนยันตัวสำเร็จ");
+            alert(
+               result && result.message
+                  ? result.message
+                  : "QR Login ไม่ถูกต้อง"
+            );
 
-                  showMember(result);
+            showScanPage();
+         } catch (error) {
+            alert(
+               "เกิดข้อผิดพลาด: " +
+               (
+                  error && error.message
+                     ? error.message
+                     : error
+               )
+            );
 
-               } else {
-
-                  alert(
-                     result && result.message
-                        ? result.message
-                        : "QR Login ไม่ถูกต้อง"
-                  );
-
-                  showScanPage();
-
-               }
-
-            })
-            .catch(function (error) {
-
-               alert(
-                  "เกิดข้อผิดพลาด: " +
-                  (
-                     error && error.message
-                        ? error.message
-                        : error
-                  )
-               );
-
-               showScanPage();
-
-            });
+            showScanPage();
+         }
 
       }
 
