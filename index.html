@@ -5310,53 +5310,66 @@
 
          showPage("codePage");
 
-         startCodePagePolling();
+         listenCheckInStatusFirebase(lastCode);
       }
 
       function stopCodePagePolling() {
 
          if (codePagePollingTimer) {
-            clearInterval(codePagePollingTimer);
+            if (typeof codePagePollingTimer === "function") {
+               codePagePollingTimer();
+            } else {
+               clearInterval(codePagePollingTimer);
+            }
             codePagePollingTimer = null;
          }
 
       }
 
-      function startCodePagePolling() {
+      function listenCheckInStatusFirebase(code) {
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
 
-         stopCodePagePolling();
-
-         if (!lastCode) {
+         if (!db || !tools || !code) {
             return;
          }
 
-         codePagePollingTimer =
-            setInterval(function () {
+         stopCodePagePolling();
 
-               apiCall("getMemberStatus", {
-                  code: lastCode
-               })
-                  .then(function (result) {
+         const userRef = tools.doc(db, "users", normalizeCode(code));
 
-                     if (result && result.success && result.checkedIn) {
+         codePagePollingTimer = tools.onSnapshot(
+            userRef,
+            function (snapshot) {
+               if (!snapshot.exists()) {
+                  return;
+               }
 
-                        stopCodePagePolling();
+               const data = snapshot.data();
+               if (data && data.checkedIn === true) {
+                  stopCodePagePolling();
+                  showMember(data);
+               }
+            },
+            function (error) {
+               console.warn("listenCheckInStatusFirebase error:", error);
+            }
+         );
+      }
 
-                        showMember(result);
-
-                     }
-
-                  })
-                  .catch(function (error) {
-                  });
-
-            }, 1800);
-
+      function startCodePagePolling() {
+         // deprecated: use listenCheckInStatusFirebase instead
       }
 
       function showMember(result) {
 
-         if (!result || !result.success) {
+         if (result && result.success === false) {
+            alert("ไม่สามารถเข้าสู่ระบบได้");
+            showLogin();
+            return;
+         }
+
+         if (!result || (!result.code && !result.name)) {
             alert("ไม่สามารถเข้าสู่ระบบได้");
             showLogin();
             return;
@@ -5397,10 +5410,11 @@
          }
 
          if (memberCheckInTime) {
-            memberCheckInTime.innerHTML =
-               result.checkInTime
-                  ? formatDate(result.checkInTime)
-                  : "-";
+            let checkInTime = result.checkInTime || "";
+            if (checkInTime && typeof checkInTime.toDate === "function") {
+               checkInTime = checkInTime.toDate().toLocaleString();
+            }
+            memberCheckInTime.innerHTML = checkInTime || "-";
          }
 
          const status =
@@ -7016,11 +7030,8 @@
             console.log("staffCheckInMemberFirebase result=", result);
 
             if (result && result.success) {
-               alert("ยืนยันตัวสำเร็จ");
-               showMember(result);
-               setTimeout(function () {
-                  showHome();
-               }, 50);
+               alert("ยืนยันตัวตนสำเร็จ");
+               showScanPage();
                return;
             }
 
