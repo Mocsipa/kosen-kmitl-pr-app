@@ -3816,6 +3816,167 @@
          };
       }
 
+      function getPointValueFromQr(qrText) {
+         const text = String(qrText || "").trim();
+
+         const pointMap = {
+            KOSEN_POINT_1: 1,
+            KOSEN_POINT_2: 2,
+            KOSEN_POINT_3: 3,
+            KOSEN_POINT_4: 4,
+            KOSEN_POINT_5: 5,
+            KOSEN_POINT_10: 10
+         };
+
+         if (Object.prototype.hasOwnProperty.call(pointMap, text)) {
+            return pointMap[text];
+         }
+
+         const urlMatch = text.match(/[?&]point=(\d+)/i);
+
+         if (urlMatch && urlMatch[1]) {
+            return Number(urlMatch[1]) || 0;
+         }
+
+         const directMatch = text.match(/^KOSEN_POINT_(\d+)$/i);
+
+         if (directMatch && directMatch[1]) {
+            return Number(directMatch[1]) || 0;
+         }
+
+         return 0;
+      }
+
+      async function getUserPointFirebase(code) {
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+
+         if (!db || !tools) {
+            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
+         }
+
+         const targetCode = normalizeCode(code);
+
+         if (!targetCode) {
+            return {
+               success: false,
+               message: "ไม่พบรหัสผู้ใช้"
+            };
+         }
+
+         if (targetCode.startsWith("XX")) {
+            return {
+               success: true,
+               point: 0,
+               limit: 12
+            };
+         }
+
+         const userRef = tools.doc(db, "users", targetCode);
+         const userSnap = await tools.getDoc(userRef);
+
+         if (!userSnap.exists()) {
+            return {
+               success: false,
+               message: "ไม่พบรหัสผู้ใช้"
+            };
+         }
+
+         const user = userSnap.data();
+
+         return {
+            success: true,
+            point: Number(user.point) || 0,
+            limit: Number(user.pointLimit) || 12
+         };
+      }
+
+      async function addPointByQrFirebase(code, qrText) {
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+
+         if (!db || !tools) {
+            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
+         }
+
+         const targetCode = normalizeCode(code);
+         const scannedText = String(qrText || "").trim();
+         const addedPoint = getPointValueFromQr(scannedText);
+
+         if (!targetCode) {
+            return {
+               success: false,
+               message: "ไม่พบรหัสผู้ใช้"
+            };
+         }
+
+         if (targetCode.startsWith("XX")) {
+            return {
+               success: false,
+               message: "เจ้าหน้าที่ไม่สามารถเก็บคะแนนได้"
+            };
+         }
+
+         if (!addedPoint || addedPoint <= 0) {
+            return {
+               success: false,
+               message: "QR คะแนนไม่ถูกต้อง"
+            };
+         }
+
+         const userRef = tools.doc(db, "users", targetCode);
+         const userSnap = await tools.getDoc(userRef);
+
+         if (!userSnap.exists()) {
+            return {
+               success: false,
+               message: "ไม่พบรหัสผู้ใช้"
+            };
+         }
+
+         const user = userSnap.data();
+         const current = Number(user.point) || 0;
+         const limit = Number(user.pointLimit) || 12;
+         const nextPoint = Math.min(current + addedPoint, limit);
+         const actualAdded = nextPoint - current;
+
+         if (actualAdded <= 0) {
+            return {
+               success: false,
+               message: "คะแนนเต็มแล้ว",
+               point: current,
+               limit: limit
+            };
+         }
+
+         await tools.updateDoc(
+            userRef,
+            {
+               point: nextPoint,
+               updatedAt: tools.serverTimestamp()
+            }
+         );
+
+         await tools.addDoc(
+            tools.collection(db, "pointLogs"),
+            {
+               code: targetCode,
+               qrText: scannedText,
+               addedPoint: actualAdded,
+               beforePoint: current,
+               afterPoint: nextPoint,
+               createdAt: tools.serverTimestamp()
+            }
+         );
+
+         return {
+            success: true,
+            addedPoint: actualAdded,
+            point: nextPoint,
+            limit: limit
+         };
+      }
+
       function apiCall(action, params) {
 
          return new Promise(function (resolve, reject) {
@@ -4898,9 +5059,7 @@
             return;
          }
 
-         apiCall("getUserPoint", {
-            code: lastCode
-         })
+         getUserPointFirebase(lastCode)
             .then(function (result) {
 
                if (result && result.success) {
@@ -5305,13 +5464,12 @@
 
       function loadRewardPoint() {
 
-         apiCall("getUserPoint", {
-            code: lastCode
-         })
+         getUserPointFirebase(lastCode)
             .then(function (result) {
 
                if (result && result.success) {
                   currentPoint = Number(result.point) || 0;
+                  savePointToCache(result.point, result.limit);
                   updateRewardPointLabels(currentPoint);
                   renderRewardList();
                } else {
@@ -6437,10 +6595,7 @@
 
          showLoading();
 
-         apiCall("addPointByQr", {
-            code: lastCode,
-            qrText: scannedText
-         })
+         addPointByQrFirebase(lastCode, scannedText)
             .then(function (pointResult) {
 
                if (pointResult && pointResult.success) {
