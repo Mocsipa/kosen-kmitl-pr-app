@@ -6949,7 +6949,12 @@
                   try {
 
                      certificateImageBase64 =
-                        canvas.toDataURL("image/png");
+                        canvas.toDataURL("image/jpeg", 0.92);
+
+                     if (!certificateImageBase64 || certificateImageBase64.indexOf("data:image/jpeg") !== 0) {
+                        certificateImageBase64 =
+                           canvas.toDataURL("image/png");
+                     }
 
                   } catch (e) {
 
@@ -7171,6 +7176,8 @@
             }
          }
 
+         console.log("CERTIFICATE IMAGE SIZE =", certificateImageBase64.length);
+
          showLoading();
 
          try {
@@ -7189,7 +7196,8 @@
                   {
                      code: targetCode,
                      name: sendName,
-                     email: sendEmail
+                     email: sendEmail,
+                     imageBase64: certificateImageBase64
                   }
                );
 
