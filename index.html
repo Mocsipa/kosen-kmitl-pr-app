@@ -3770,6 +3770,212 @@
          };
       }
 
+      async function getProfileFirebase(code) {
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+
+         if (!db || !tools) {
+            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
+         }
+
+         const targetCode = normalizeCode(code);
+
+         if (!targetCode) {
+            return {
+               success: false,
+               message: "ไม่พบรหัสโปรไฟล์"
+            };
+         }
+
+         if (targetCode.startsWith("XX")) {
+            const staffRef = tools.doc(db, "staff", targetCode);
+            const staffSnap = await tools.getDoc(staffRef);
+
+            if (!staffSnap.exists()) {
+               return {
+                  success: false,
+                  message: "ไม่พบรหัสเจ้าหน้าที่"
+               };
+            }
+
+            const staff = staffSnap.data();
+            const staffIsActive =
+               staff.active === true ||
+               String(staff.active || "").trim().toLowerCase() === "true";
+
+            if (!staffIsActive) {
+               return {
+                  success: false,
+                  message: "รหัสเจ้าหน้าที่นี้ถูกปิดใช้งาน"
+               };
+            }
+
+            return {
+               success: true,
+               code: targetCode,
+               name: staff.name || "Staff",
+               age: "-",
+               email: "-",
+               identity: "Staff",
+               isStaff: true,
+               checkedIn: true,
+               checkInTime: new Date().toLocaleString(),
+               point: 0,
+               limit: 12,
+               qrUrl: makeUserQrUrl(targetCode)
+            };
+         }
+
+         const userRef = tools.doc(db, "users", targetCode);
+         const userSnap = await tools.getDoc(userRef);
+
+         if (!userSnap.exists()) {
+            return {
+               success: false,
+               message: "ไม่พบผู้ใช้"
+            };
+         }
+
+         const user = userSnap.data();
+
+         return {
+            success: true,
+            code: targetCode,
+            name: user.name || "-",
+            age: user.age || "-",
+            email: user.email || "-",
+            identity: user.identity || "-",
+            checkedIn: Boolean(user.checkedIn),
+            checkInTime: user.checkInTime || "",
+            point: Number(user.point) || 0,
+            limit: Number(user.pointLimit) || 12,
+            qrUrl: user.qrUrl || makeUserQrUrl(targetCode)
+         };
+      }
+
+      async function updateProfileFirebase(code, data) {
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+
+         if (!db || !tools) {
+            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
+         }
+
+         const targetCode = normalizeCode(code);
+
+         if (!targetCode) {
+            return {
+               success: false,
+               message: "ไม่พบรหัสผู้ใช้"
+            };
+         }
+
+         if (targetCode.startsWith("XX")) {
+            return {
+               success: false,
+               message: "ไม่สามารถแก้ไขโปรไฟล์เจ้าหน้าที่ได้"
+            };
+         }
+
+         const userRef = tools.doc(db, "users", targetCode);
+         const userSnap = await tools.getDoc(userRef);
+
+         if (!userSnap.exists()) {
+            return {
+               success: false,
+               message: "ไม่พบผู้ใช้"
+            };
+         }
+
+         await tools.updateDoc(userRef, {
+            name: String(data.name || "").trim(),
+            age: String(data.age || "").trim(),
+            email: String(data.email || "").trim(),
+            identity: String(data.identity || "").trim(),
+            updatedAt: tools.serverTimestamp()
+         });
+
+         return {
+            success: true
+         };
+      }
+
+      async function staffCheckInMemberFirebase(staffCode, targetCode) {
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+
+         if (!db || !tools) {
+            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
+         }
+
+         const normalizedStaffCode = normalizeCode(staffCode);
+         const normalizedTargetCode = normalizeCode(targetCode);
+
+         if (!normalizedStaffCode || !normalizedStaffCode.startsWith("XX")) {
+            return {
+               success: false,
+               message: "เฉพาะเจ้าหน้าที่เท่านั้นที่สามารถยืนยันตัวตนได้"
+            };
+         }
+
+         const staffRef = tools.doc(db, "staff", normalizedStaffCode);
+         const staffSnap = await tools.getDoc(staffRef);
+
+         if (!staffSnap.exists()) {
+            return {
+               success: false,
+               message: "ไม่พบรหัสเจ้าหน้าที่"
+            };
+         }
+
+         const staff = staffSnap.data();
+         const staffIsActive =
+            staff.active === true ||
+            String(staff.active || "").trim().toLowerCase() === "true";
+
+         if (!staffIsActive) {
+            return {
+               success: false,
+               message: "รหัสเจ้าหน้าที่นี้ถูกปิดใช้งาน"
+            };
+         }
+
+         const userRef = tools.doc(db, "users", normalizedTargetCode);
+         const userSnap = await tools.getDoc(userRef);
+
+         if (!userSnap.exists()) {
+            return {
+               success: false,
+               message: "ไม่พบผู้ใช้"
+            };
+         }
+
+         const user = userSnap.data();
+
+         await tools.updateDoc(userRef, {
+            checkedIn: true,
+            checkInTime: tools.serverTimestamp(),
+            checkedInBy: normalizedStaffCode,
+            updatedAt: tools.serverTimestamp()
+         });
+
+         await tools.addDoc(tools.collection(db, "checkInLogs"), {
+            staffCode: normalizedStaffCode,
+            targetCode: normalizedTargetCode,
+            action: "CHECK_IN",
+            createdAt: tools.serverTimestamp()
+         });
+
+         return {
+            success: true,
+            message: "ยืนยันตัวสำเร็จ",
+            code: normalizedTargetCode,
+            name: user.name || "-",
+            identity: user.identity || "-",
+            checkInTime: new Date().toLocaleString()
+         };
+      }
+
       async function findCodeFirebase(email) {
          const db = window.firebaseDb;
          const tools = window.firebaseTools;
@@ -6743,6 +6949,12 @@
             return "";
          }
 
+         const upperText = rawText.toUpperCase();
+
+         if (upperText.indexOf("KOSEN_REDEEM|") === 0) {
+            return "";
+         }
+
          const directCodeMatch =
             rawText.match(/\bKM\d{3}[A-Z]{2}\b/i);
 
@@ -6787,10 +6999,7 @@
 
          showLoading();
 
-         apiCall("staffCheckInMember", {
-            staffCode: lastCode,
-            targetCode: scannedCode
-         })
+         staffCheckInMemberFirebase(lastCode, scannedCode)
             .then(function (result) {
 
                if (result && result.success) {
@@ -7254,25 +7463,31 @@
          loadProfileInfo();
       }
 
-      function loadProfileInfo() {
+      async function loadProfileInfo() {
          if (!lastCode) return;
-         apiCall("loginUser", { code: lastCode })
-            .then(function (result) {
-               if (result && result.success) {
-                  profileDataCache = result;
-                  document.getElementById("profileName").innerText = result.name || "-";
-                  document.getElementById("profileAge").innerText = result.age || "-";
-                  document.getElementById("profileEmail").innerText = result.email || "-";
-                  document.getElementById("profileIdentity").innerText = result.identity || "-";
-                  document.getElementById("profileCode").innerText = result.code || "-";
-                  document.getElementById("profileCheckinTime").innerText = result.checkInTime ? formatDate(result.checkInTime) : "-";
-               } else {
-                  alert("ไม่สามารถโหลดข้อมูลโปรไฟล์ได้");
+
+         try {
+            const result = await getProfileFirebase(lastCode);
+
+            if (result && result.success) {
+               profileDataCache = result;
+               document.getElementById("profileName").innerText = result.name || "-";
+               document.getElementById("profileAge").innerText = result.age || "-";
+               document.getElementById("profileEmail").innerText = result.email || "-";
+               document.getElementById("profileIdentity").innerText = result.identity || "-";
+               document.getElementById("profileCode").innerText = result.code || "-";
+               let checkInTime = result.checkInTime || "";
+               if (checkInTime && typeof checkInTime.toDate === "function") {
+                  checkInTime = checkInTime.toDate().toLocaleString();
                }
-            })
-            .catch(function () {
-               alert("ไม่สามารถโหลดข้อมูลโปรไฟล์ได้");
-            });
+               document.getElementById("profileCheckinTime").innerText =
+                  checkInTime || "-";
+            } else {
+               alert(result && result.message ? result.message : "ไม่สามารถโหลดข้อมูลโปรไฟล์ได้");
+            }
+         } catch (error) {
+            alert("ไม่สามารถโหลดข้อมูลโปรไฟล์ได้");
+         }
       }
 
       function showProfileEditor() {
@@ -7288,7 +7503,7 @@
          document.getElementById("editProfileIdentity").value = profileDataCache.identity || "";
       }
 
-      function saveProfileEditor() {
+      async function saveProfileEditor() {
          const name = document.getElementById("editProfileName").value.trim();
          const age = document.getElementById("editProfileAge").value.trim();
          const email = document.getElementById("editProfileEmail").value.trim();
@@ -7297,27 +7512,28 @@
             alert("กรุณากรอกข้อมูลให้ครบ");
             return;
          }
+
          showLoading();
-         apiCall("updateProfile", {
-            code: lastCode,
-            name: name,
-            age: age,
-            email: email,
-            identity: identity
-         })
-            .then(function (result) {
-               if (result && result.success) {
-                  alert("บันทึกโปรไฟล์สำเร็จ");
-                  showProfilePage();
-               } else {
-                  alert(result && result.message ? result.message : "ไม่สามารถบันทึกข้อมูลได้");
-                  showProfilePage();
-               }
-            })
-            .catch(function () {
-               alert("ไม่สามารถบันทึกข้อมูลได้");
-               showProfilePage();
+
+         try {
+            const result = await updateProfileFirebase(lastCode, {
+               name: name,
+               age: age,
+               email: email,
+               identity: identity
             });
+
+            if (result && result.success) {
+               alert("บันทึกโปรไฟล์สำเร็จ");
+               showProfilePage();
+            } else {
+               alert(result && result.message ? result.message : "ไม่สามารถบันทึกข้อมูลได้");
+               showProfilePage();
+            }
+         } catch (error) {
+            alert("ไม่สามารถบันทึกข้อมูลได้");
+            showProfilePage();
+         }
       }
    </script>
 
