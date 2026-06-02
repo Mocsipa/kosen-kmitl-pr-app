@@ -3966,16 +3966,20 @@
             }
          );
 
-         await tools.addDoc(
-            tools.collection(db, "checkInLogs"),
-            {
-               staffCode: targetStaffCode,
-               targetCode: targetUserCode,
-               userName: user.name || "",
-               action: "CHECK_IN",
-               createdAt: tools.serverTimestamp()
-            }
-         );
+         try {
+            await tools.addDoc(
+               tools.collection(db, "checkInLogs"),
+               {
+                  staffCode: targetStaffCode,
+                  targetCode: targetUserCode,
+                  userName: user.name || "",
+                  action: "CHECK_IN",
+                  createdAt: tools.serverTimestamp()
+               }
+            );
+         } catch (logError) {
+            console.warn("CHECK-IN LOG WRITE FAILED =", logError);
+         }
 
          return {
             success: true,
