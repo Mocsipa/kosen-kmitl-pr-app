@@ -3908,17 +3908,24 @@
             throw new Error("Firebase ยังไม่พร้อมใช้งาน");
          }
 
-         const normalizedStaffCode = normalizeCode(staffCode);
-         const normalizedTargetCode = normalizeCode(targetCode);
+         const targetStaffCode = normalizeCode(staffCode);
+         const targetUserCode = normalizeCode(targetCode);
 
-         if (!normalizedStaffCode || !normalizedStaffCode.startsWith("XX")) {
+         if (!targetStaffCode || !targetStaffCode.startsWith("XX")) {
             return {
                success: false,
-               message: "เฉพาะเจ้าหน้าที่เท่านั้นที่สามารถยืนยันตัวตนได้"
+               message: "เฉพาะเจ้าหน้าที่เท่านั้นที่สามารถยืนยันตัวตนผู้ใช้ได้"
             };
          }
 
-         const staffRef = tools.doc(db, "staff", normalizedStaffCode);
+         if (!targetUserCode || targetUserCode.startsWith("XX")) {
+            return {
+               success: false,
+               message: "QR ผู้ใช้ไม่ถูกต้อง"
+            };
+         }
+
+         const staffRef = tools.doc(db, "staff", targetStaffCode);
          const staffSnap = await tools.getDoc(staffRef);
 
          if (!staffSnap.exists()) {
@@ -3929,18 +3936,15 @@
          }
 
          const staff = staffSnap.data();
-         const staffIsActive =
-            staff.active === true ||
-            String(staff.active || "").trim().toLowerCase() === "true";
 
-         if (!staffIsActive) {
+         if (staff.active !== true) {
             return {
                success: false,
                message: "รหัสเจ้าหน้าที่นี้ถูกปิดใช้งาน"
             };
          }
 
-         const userRef = tools.doc(db, "users", normalizedTargetCode);
+         const userRef = tools.doc(db, "users", targetUserCode);
          const userSnap = await tools.getDoc(userRef);
 
          if (!userSnap.exists()) {
@@ -3952,36 +3956,31 @@
 
          const user = userSnap.data();
 
-         try {
-            await tools.updateDoc(userRef, {
+         await tools.updateDoc(
+            userRef,
+            {
                checkedIn: true,
                checkInTime: tools.serverTimestamp(),
-               checkedInBy: normalizedStaffCode,
+               checkedInBy: targetStaffCode,
                updatedAt: tools.serverTimestamp()
-            });
-         } catch (updateError) {
-            return {
-               success: false,
-               message: "ไม่สามารถอัปเดตสถานะผู้ใช้ได้",
-               error: updateError && updateError.message ? updateError.message : String(updateError)
-            };
-         }
+            }
+         );
 
-         try {
-            await tools.addDoc(tools.collection(db, "checkInLogs"), {
-               staffCode: normalizedStaffCode,
-               targetCode: normalizedTargetCode,
+         await tools.addDoc(
+            tools.collection(db, "checkInLogs"),
+            {
+               staffCode: targetStaffCode,
+               targetCode: targetUserCode,
+               userName: user.name || "",
                action: "CHECK_IN",
                createdAt: tools.serverTimestamp()
-            });
-         } catch (logError) {
-            console.warn("Failed to write checkInLogs, but check-in succeeded", logError);
-         }
+            }
+         );
 
          return {
             success: true,
             message: "ยืนยันตัวสำเร็จ",
-            code: normalizedTargetCode,
+            code: targetUserCode,
             name: user.name || "-",
             identity: user.identity || "-",
             checkInTime: new Date().toLocaleString()
@@ -5310,7 +5309,7 @@
 
          showPage("codePage");
 
-         listenCheckInStatusFirebase(lastCode);
+         startCodePagePolling();
       }
 
       function stopCodePagePolling() {
@@ -5358,7 +5357,68 @@
       }
 
       function startCodePagePolling() {
-         // deprecated: use listenCheckInStatusFirebase instead
+         stopCodePagePolling();
+
+         if (!lastCode) {
+            return;
+         }
+
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+
+         if (!db || !tools) {
+            console.error("Firebase is not ready for code page listener");
+            return;
+         }
+
+         const targetCode = normalizeCode(lastCode);
+
+         if (!targetCode || targetCode.startsWith("XX")) {
+            return;
+         }
+
+         const userRef = tools.doc(db, "users", targetCode);
+
+         codePagePollingTimer = tools.onSnapshot(
+            userRef,
+            function (snapshot) {
+               if (!snapshot.exists()) {
+                  return;
+               }
+
+               const data = snapshot.data();
+
+               console.log("CODE PAGE USER SNAPSHOT =", data);
+
+               if (data.checkedIn === true) {
+                  stopCodePagePolling();
+
+                  const checkInTimeText =
+                     data.checkInTime && typeof data.checkInTime.toDate === "function"
+                        ? data.checkInTime.toDate().toLocaleString()
+                        : new Date().toLocaleString();
+
+                  const result = {
+                     success: true,
+                     code: data.code || targetCode,
+                     name: data.name || "-",
+                     age: data.age || "-",
+                     email: data.email || "-",
+                     identity: data.identity || "-",
+                     checkedIn: true,
+                     checkInTime: checkInTimeText,
+                     point: Number(data.point) || 0,
+                     limit: Number(data.pointLimit) || 12,
+                     qrUrl: data.qrUrl || makeUserQrUrl(targetCode)
+                  };
+
+                  showMember(result);
+               }
+            },
+            function (error) {
+               console.error("CODE PAGE LISTENER ERROR =", error);
+            }
+         );
       }
 
       function showMember(result) {
@@ -6975,9 +7035,7 @@
             return "";
          }
 
-         const upperText = rawText.toUpperCase();
-
-         if (upperText.indexOf("KOSEN_REDEEM|") === 0) {
+         if (rawText.indexOf("KOSEN_REDEEM|") === 0) {
             return "";
          }
 
@@ -7014,8 +7072,7 @@
             return;
          }
 
-         const scannedCode =
-            String(code || "").trim().toUpperCase();
+         const scannedCode = normalizeCode(code);
 
          if (!scannedCode) {
             alert("ไม่พบรหัส Login ใน QR Code");
@@ -7023,37 +7080,40 @@
             return;
          }
 
+         if (scannedCode.startsWith("XX")) {
+            alert("QR นี้เป็นรหัสเจ้าหน้าที่ ไม่ใช่รหัสผู้ใช้");
+            showScanPage();
+            return;
+         }
+
          showLoading();
 
-         try {
-            const result = await staffCheckInMemberFirebase(lastCode, scannedCode);
-            console.log("staffCheckInMemberFirebase result=", result);
+         staffCheckInMemberFirebase(lastCode, scannedCode)
+            .then(function (result) {
+               console.log("STAFF CHECK-IN RESULT =", result);
 
-            if (result && result.success) {
-               alert("ยืนยันตัวตนสำเร็จ");
+               if (result && result.success) {
+                  alert("ยืนยันตัวสำเร็จ");
+                  showScanPage();
+               } else {
+                  alert(result && result.message ? result.message : "QR Login ไม่ถูกต้อง");
+                  showScanPage();
+               }
+            })
+            .catch(function (error) {
+               console.error("STAFF CHECK-IN ERROR =", error);
+
+               alert(
+                  "เกิดข้อผิดพลาด: " +
+                  (
+                     error && error.message
+                        ? error.message
+                        : error
+                  )
+               );
+
                showScanPage();
-               return;
-            }
-
-            alert(
-               result && result.message
-                  ? result.message
-                  : "QR Login ไม่ถูกต้อง"
-            );
-
-            showScanPage();
-         } catch (error) {
-            alert(
-               "เกิดข้อผิดพลาด: " +
-               (
-                  error && error.message
-                     ? error.message
-                     : error
-               )
-            );
-
-            showScanPage();
-         }
+            });
 
       }
 
@@ -7104,9 +7164,6 @@
             upperQrText.indexOf("REDEEMID") !== -1 ||
             upperQrText.indexOf("REDEEMQRTEXT") !== -1;
 
-         const possibleLoginCode =
-            extractLoginCodeFromQr(scannedText);
-
          console.log("SCANNED QR =", scannedText);
 
          // ========================
@@ -7154,6 +7211,9 @@
 
             return;
          }
+
+         const possibleLoginCode =
+            extractLoginCodeFromQr(scannedText);
 
          // ========================
          // 2) QR Login / ยืนยันตัวตนผู้ใช้
