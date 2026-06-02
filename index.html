@@ -3460,7 +3460,11 @@
       function stopRewardPolling() {
 
          if (rewardPollingTimer) {
-            clearInterval(rewardPollingTimer);
+            if (typeof rewardPollingTimer === "function") {
+               rewardPollingTimer();
+            } else {
+               clearInterval(rewardPollingTimer);
+            }
             rewardPollingTimer = null;
          }
 
@@ -3975,6 +3979,380 @@
             point: nextPoint,
             limit: limit
          };
+      }
+
+      function makeRedeemId() {
+         return "RD" + Date.now() + Math.floor(1000 + Math.random() * 9000);
+      }
+
+      function parseRedeemQrText(qrText) {
+         const text = String(qrText || "").trim();
+         const parts = text.split("|");
+
+         if (parts.length >= 4 && parts[0] === "KOSEN_REDEEM") {
+            return {
+               valid: true,
+               redeemId: String(parts[1] || "").trim(),
+               code: normalizeCode(parts[2]),
+               rewardId: String(parts[3] || "").trim(),
+               rawText: text
+            };
+         }
+
+         return {
+            valid: false,
+            message: "QR แลกรางวัลไม่ถูกต้อง"
+         };
+      }
+
+      async function redeemRewardFirebase(code, rewardId, rewardName, costPoint) {
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+
+         if (!db || !tools) {
+            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
+         }
+
+         const targetCode = normalizeCode(code);
+         const cost = Number(costPoint) || 0;
+
+         if (!targetCode) {
+            return {
+               success: false,
+               message: "ไม่พบรหัสผู้ใช้"
+            };
+         }
+
+         if (targetCode.startsWith("XX")) {
+            return {
+               success: false,
+               message: "เจ้าหน้าที่ไม่สามารถแลกรางวัลแทนผู้ใช้ได้"
+            };
+         }
+
+         const userRef = tools.doc(db, "users", targetCode);
+         const userSnap = await tools.getDoc(userRef);
+
+         if (!userSnap.exists()) {
+            return {
+               success: false,
+               message: "ไม่พบผู้ใช้"
+            };
+         }
+
+         const user = userSnap.data();
+         const current = Number(user.point) || 0;
+         const limit = Number(user.pointLimit) || 12;
+
+         if (current < cost) {
+            return {
+               success: false,
+               message: "คะแนนไม่เพียงพอ",
+               point: current,
+               limit: limit
+            };
+         }
+
+         const redeemId = makeRedeemId();
+
+         const redeemQrText =
+            "KOSEN_REDEEM|" +
+            redeemId +
+            "|" +
+            targetCode +
+            "|" +
+            rewardId;
+
+         await tools.setDoc(
+            tools.doc(db, "rewardClaims", redeemId),
+            {
+               redeemId: redeemId,
+               redeemQrText: redeemQrText,
+               code: targetCode,
+               rewardId: rewardId,
+               rewardName: rewardName,
+               costPoint: cost,
+               status: "WAITING",
+               createdAt: tools.serverTimestamp(),
+               usedAt: null,
+               staffCode: "",
+               pointBeforeConfirm: current
+            }
+         );
+
+         return {
+            success: true,
+            redeemId: redeemId,
+            redeemQrText: redeemQrText,
+            rewardId: rewardId,
+            rewardName: rewardName,
+            costPoint: cost,
+            point: current,
+            limit: limit,
+            waitingConfirm: true
+         };
+      }
+
+      async function confirmRewardFirebase(redeemQrText, staffCode) {
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+
+         if (!db || !tools) {
+            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
+         }
+
+         const parsed = parseRedeemQrText(redeemQrText);
+
+         if (!parsed.valid) {
+            return {
+               success: false,
+               message: parsed.message || "QR แลกรางวัลไม่ถูกต้อง"
+            };
+         }
+
+         const targetStaffCode = normalizeCode(staffCode);
+
+         if (!targetStaffCode || !targetStaffCode.startsWith("XX")) {
+            return {
+               success: false,
+               message: "เฉพาะเจ้าหน้าที่เท่านั้นที่สามารถยืนยันแลกรางวัลได้"
+            };
+         }
+
+         const staffSnap = await tools.getDoc(
+            tools.doc(db, "staff", targetStaffCode)
+         );
+
+         if (!staffSnap.exists()) {
+            return {
+               success: false,
+               message: "ไม่พบรหัสเจ้าหน้าที่"
+            };
+         }
+
+         const staff = staffSnap.data();
+
+         if (staff.active === false) {
+            return {
+               success: false,
+               message: "รหัสเจ้าหน้าที่นี้ถูกปิดใช้งาน"
+            };
+         }
+
+         const claimRef = tools.doc(db, "rewardClaims", parsed.redeemId);
+         const claimSnap = await tools.getDoc(claimRef);
+
+         if (!claimSnap.exists()) {
+            return {
+               success: false,
+               message: "ไม่พบรายการแลกรางวัลนี้"
+            };
+         }
+
+         const claim = claimSnap.data();
+         const claimStatus = String(claim.status || "").toUpperCase();
+
+         if (
+            claimStatus === "USED" ||
+            claimStatus === "CONFIRMED" ||
+            claimStatus === "REDEEMED" ||
+            claimStatus === "SUCCESS"
+         ) {
+            return {
+               success: false,
+               message: "QR นี้ถูกใช้รับรางวัลแล้ว"
+            };
+         }
+
+         const userCode = normalizeCode(claim.code || parsed.code);
+         const userRef = tools.doc(db, "users", userCode);
+         const userSnap = await tools.getDoc(userRef);
+
+         if (!userSnap.exists()) {
+            return {
+               success: false,
+               message: "ไม่พบผู้ใช้"
+            };
+         }
+
+         const user = userSnap.data();
+         const current = Number(user.point) || 0;
+         const limit = Number(user.pointLimit) || 12;
+         const cost = Number(claim.costPoint) || 0;
+
+         if (current < cost) {
+            return {
+               success: false,
+               message: "คะแนนไม่เพียงพอสำหรับยืนยันรับรางวัล"
+            };
+         }
+
+         const newPoint = current - cost;
+
+         await tools.updateDoc(
+            userRef,
+            {
+               point: newPoint,
+               updatedAt: tools.serverTimestamp()
+            }
+         );
+
+         await tools.updateDoc(
+            claimRef,
+            {
+               status: "USED",
+               usedAt: tools.serverTimestamp(),
+               staffCode: targetStaffCode,
+               pointAfterConfirm: newPoint
+            }
+         );
+
+         return {
+            success: true,
+            message: "แลกรับสำเร็จ",
+            redeemId: parsed.redeemId,
+            code: userCode,
+            rewardId: claim.rewardId || parsed.rewardId,
+            rewardName: claim.rewardName || "",
+            costPoint: cost,
+            point: newPoint,
+            limit: limit,
+            confirmed: true,
+            redeemed: true,
+            used: true,
+            status: "USED"
+         };
+      }
+
+      async function checkRedeemStatusFirebase(redeemId, code) {
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+
+         if (!db || !tools) {
+            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
+         }
+
+         const targetRedeemId = String(redeemId || "").trim();
+         const targetCode = normalizeCode(code);
+
+         if (!targetRedeemId || !targetCode) {
+            return {
+               success: false,
+               message: "ข้อมูลตรวจสอบสถานะไม่ครบ"
+            };
+         }
+
+         const claimSnap = await tools.getDoc(
+            tools.doc(db, "rewardClaims", targetRedeemId)
+         );
+
+         if (!claimSnap.exists()) {
+            return {
+               success: false,
+               message: "ไม่พบรายการแลกรางวัลนี้"
+            };
+         }
+
+         const claim = claimSnap.data();
+
+         if (normalizeCode(claim.code) !== targetCode) {
+            return {
+               success: false,
+               message: "รหัสผู้ใช้ไม่ตรงกับรายการแลกรางวัล"
+            };
+         }
+
+         const status = String(claim.status || "").toUpperCase();
+
+         const isUsed =
+            status === "USED" ||
+            status === "CONFIRMED" ||
+            status === "REDEEMED" ||
+            status === "SUCCESS";
+
+         const pointResult =
+            await getUserPointFirebase(targetCode);
+
+         return {
+            success: true,
+            redeemId: targetRedeemId,
+            status: status,
+            confirmed: isUsed,
+            redeemed: isUsed,
+            used: isUsed,
+            point: pointResult && pointResult.success ? pointResult.point : 0,
+            limit: pointResult && pointResult.success ? pointResult.limit : 12
+         };
+      }
+
+      function listenRewardClaimStatusFirebase(redeemId) {
+         stopRewardPolling();
+
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+
+         if (!db || !tools || !redeemId || !lastCode) {
+            return;
+         }
+
+         const claimRef = tools.doc(db, "rewardClaims", redeemId);
+
+         rewardPollingTimer = tools.onSnapshot(
+            claimRef,
+            function (snapshot) {
+               if (!snapshot.exists()) {
+                  return;
+               }
+
+               const data = snapshot.data();
+               const status = String(data.status || "").toUpperCase();
+
+               if (
+                  status === "USED" ||
+                  status === "CONFIRMED" ||
+                  status === "REDEEMED" ||
+                  status === "SUCCESS"
+               ) {
+                  stopRewardPolling();
+
+                  getUserPointFirebase(lastCode)
+                     .then(function (pointResult) {
+                        if (pointResult && pointResult.success) {
+                           currentPoint = Number(pointResult.point) || 0;
+
+                           savePointToCache(
+                              pointResult.point,
+                              pointResult.limit
+                           );
+
+                           updatePointUI(
+                              pointResult.point,
+                              pointResult.limit
+                           );
+
+                           updateRewardPointFromCache();
+                        }
+
+                        showRewardSuccessView(
+                           pointResult || {
+                              success: true,
+                              point: currentPoint,
+                              limit: 12
+                           }
+                        );
+                     })
+                     .catch(function () {
+                        showRewardSuccessView({
+                           success: true,
+                           point: currentPoint,
+                           limit: 12
+                        });
+                     });
+               }
+            },
+            function () {
+            }
+         );
       }
 
       function apiCall(action, params) {
@@ -5681,7 +6059,7 @@
 
       }
 
-      function confirmRedeemReward() {
+      async function confirmRedeemReward() {
 
          if (!currentRewardData) {
             alert("ไม่พบข้อมูลรางวัล");
@@ -5720,44 +6098,34 @@
 
          showLoading();
 
-         apiCall("redeemReward", {
-            code: lastCode,
-            rewardName: currentRewardData.id,
-            costPoint: cost
-         })
-            .then(function (result) {
+         try {
+            const result =
+               await redeemRewardFirebase(
+                  lastCode,
+                  currentRewardData.id,
+                  currentRewardData.name,
+                  cost
+               );
 
-               if (result && result.success) {
+            if (result && result.success) {
+               currentRedeemToken =
+                  result.redeemId || "";
 
-                  currentRedeemToken =
-                     result.redeemId || "";
+               currentRedeemQrText =
+                  result.redeemQrText || "";
 
-                  currentRedeemQrText =
-                     result.redeemQrText || "";
+               currentRedeemId =
+                  result.redeemId || "";
 
-                  currentRedeemId =
-                     result.redeemId ||
-                     result.redeemQrText ||
-                     "";
-
-                  showRewardClaimQr(result);
-
-               } else {
-
-                  alert(result && result.message ? result.message : "แลกรางวัลไม่สำเร็จ");
-
-                  showReward();
-
-               }
-
-            })
-            .catch(function (error) {
-
-               alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
-
+               showRewardClaimQr(result);
+            } else {
+               alert(result && result.message ? result.message : "แลกรางวัลไม่สำเร็จ");
                showReward();
-
-            });
+            }
+         } catch (error) {
+            alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+            showReward();
+         }
 
       }
 
@@ -5814,7 +6182,7 @@
             currentRedeemId ||
             "";
 
-         startRewardPolling();
+         listenRewardClaimStatusFirebase(currentRedeemId);
 
       }
 
@@ -5825,7 +6193,6 @@
          const redeemIdForCheck =
             currentRedeemId ||
             currentRedeemToken ||
-            currentRedeemQrText ||
             "";
 
          if (!redeemIdForCheck || !lastCode) {
@@ -5833,14 +6200,8 @@
          }
 
          function checkOnce() {
-
-            apiCall("checkRedeemStatus", {
-               redeemId: redeemIdForCheck,
-               redeemQrText: currentRedeemQrText || "",
-               code: lastCode
-            })
+            checkRedeemStatusFirebase(redeemIdForCheck, lastCode)
                .then(function (result) {
-
                   if (!result || !result.success) {
                      return;
                   }
@@ -5860,18 +6221,13 @@
                      status === "USED";
 
                   if (isRedeemed) {
-
                      stopRewardPolling();
-
                      showRewardSuccessView(result);
-
                      return;
                   }
-
                })
                .catch(function () {
                });
-
          }
 
          checkOnce();
@@ -6530,18 +6886,11 @@
 
             showLoading();
 
-            apiCall("confirmReward", {
-               redeemQrText: scannedText,
-               staffCode: lastCode
-            })
+            confirmRewardFirebase(scannedText, lastCode)
                .then(function (rewardResult) {
-
                   if (rewardResult && rewardResult.success) {
-
                      alert("แลกรับสำเร็จ");
-
                      showScanPage();
-
                      return;
                   }
 
@@ -6552,10 +6901,8 @@
                   );
 
                   showScanPage();
-
                })
                .catch(function (error) {
-
                   alert(
                      "เกิดข้อผิดพลาด: " +
                      (
@@ -6566,7 +6913,6 @@
                   );
 
                   showScanPage();
-
                });
 
             return;
