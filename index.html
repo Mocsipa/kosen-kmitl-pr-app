@@ -4893,6 +4893,25 @@
 
       let isPageAnimating = false;
 
+      function cleanupTransitionPages(activeId) {
+         document
+            .querySelectorAll(".page.pageTransitioning")
+            .forEach(function (page) {
+               page.classList.remove(
+                  "pageTransitioning",
+                  "slideInFromRight",
+                  "slideInFromLeft",
+                  "slideOutToLeft",
+                  "slideOutToRight",
+                  "fadeInPage"
+               );
+
+               if (page.id !== activeId) {
+                  page.classList.remove("active");
+               }
+            });
+      }
+
       function showPage(id) {
 
          const nextPage =
@@ -4914,14 +4933,18 @@
          }
 
          if (currentPage.id === id) {
+            cleanupTransitionPages(id);
+            nextPage.classList.add("active");
             window.scrollTo(0, 0);
             resetActiveContentScroll(id);
+            isPageAnimating = false;
             return;
          }
 
          if (isPageAnimating) {
             hideAll();
             nextPage.classList.add("active");
+            cleanupTransitionPages(id);
             window.scrollTo(0, 0);
             resetActiveContentScroll(id);
             isPageAnimating = false;
@@ -6183,6 +6206,7 @@
          if (certificateSuccessView) { certificateSuccessView.style.display = "none"; }
 
          updateRewardPointFromCache();
+         renderRewardList();
 
          setTimeout(function () {
             loadRewardPoint();
@@ -6230,12 +6254,20 @@
                   updateRewardPointLabels(currentPoint);
                   renderRewardList();
                } else {
-                  alert(result && result.message ? result.message : "ไม่สามารถโหลดคะแนนได้");
+                  updateRewardPointFromCache();
+                  renderRewardList();
+                  console.warn(
+                     result && result.message
+                        ? result.message
+                        : "ไม่สามารถโหลดคะแนนได้"
+                  );
                }
 
             })
             .catch(function (error) {
-               alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+               updateRewardPointFromCache();
+               renderRewardList();
+               console.warn("REWARD POINT LOAD ERROR =", error);
             });
 
       }
