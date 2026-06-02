@@ -3558,6 +3558,264 @@
          }
       ];
 
+      function normalizeCode(value) {
+         return String(value || "").trim().toUpperCase();
+      }
+
+      function makeUserQrUrl(code) {
+         const appUrl =
+            window.location.origin +
+            window.location.pathname;
+
+         return appUrl +
+            "?code=" +
+            encodeURIComponent(code);
+      }
+
+      function generateMemberCodeClient() {
+         const number =
+            Math.floor(100 + Math.random() * 900);
+
+         const letters =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+         const randomLetters =
+            letters[Math.floor(Math.random() * letters.length)] +
+            letters[Math.floor(Math.random() * letters.length)];
+
+         return "KM" + number + randomLetters;
+      }
+
+      async function generateUniqueMemberCodeFirebase() {
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+
+         if (!db || !tools) {
+            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
+         }
+
+         let code = "";
+         let exists = true;
+         let tryCount = 0;
+
+         while (exists && tryCount < 50) {
+            code = generateMemberCodeClient();
+
+            const ref =
+               tools.doc(db, "users", code);
+
+            const snap =
+               await tools.getDoc(ref);
+
+            exists = snap.exists();
+            tryCount++;
+         }
+
+         if (!code || exists) {
+            throw new Error("สร้างรหัสผู้ใช้ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+         }
+
+         return code;
+      }
+
+      async function registerUserFirebase(name, age, email, identity) {
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+
+         if (!db || !tools) {
+            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
+         }
+
+         const code =
+            await generateUniqueMemberCodeFirebase();
+
+         const qrUrl =
+            makeUserQrUrl(code);
+
+         await tools.setDoc(
+            tools.doc(db, "users", code),
+            {
+               code: code,
+               name: name,
+               age: age,
+               email: email,
+               identity: identity,
+               checkedIn: false,
+               checkInTime: null,
+               point: 0,
+               pointLimit: 12,
+               qrUrl: qrUrl,
+               createdAt: tools.serverTimestamp(),
+               updatedAt: tools.serverTimestamp()
+            }
+         );
+
+         return {
+            success: true,
+            code: code,
+            name: name,
+            age: age,
+            email: email,
+            identity: identity,
+            checkedIn: false,
+            checkInTime: "",
+            point: 0,
+            limit: 12,
+            qrUrl: qrUrl
+         };
+      }
+
+      async function loginUserFirebase(code) {
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+
+         if (!db || !tools) {
+            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
+         }
+
+         const targetCode =
+            normalizeCode(code);
+
+         if (!targetCode) {
+            return {
+               success: false,
+               message: "กรุณากรอกรหัส"
+            };
+         }
+
+         if (targetCode.startsWith("XX")) {
+            const staffRef =
+               tools.doc(db, "staff", targetCode);
+
+            const staffSnap =
+               await tools.getDoc(staffRef);
+
+            if (!staffSnap.exists()) {
+               return {
+                  success: false,
+                  message: "ไม่พบรหัสเจ้าหน้าที่"
+               };
+            }
+
+            const staff =
+               staffSnap.data();
+
+            if (staff.active === false) {
+               return {
+                  success: false,
+                  message: "รหัสเจ้าหน้าที่นี้ถูกปิดใช้งาน"
+               };
+            }
+
+            return {
+               success: true,
+               code: targetCode,
+               name: staff.name || "Staff",
+               age: staff.age || "-",
+               email: staff.email || "-",
+               identity: "Staff",
+               isStaff: true,
+               checkedIn: true,
+               checkInTime: new Date().toLocaleString(),
+               point: 0,
+               limit: 12,
+               qrUrl: makeUserQrUrl(targetCode)
+            };
+         }
+
+         const userRef =
+            tools.doc(db, "users", targetCode);
+
+         const userSnap =
+            await tools.getDoc(userRef);
+
+         if (!userSnap.exists()) {
+            return {
+               success: false,
+               message: "ไม่พบรหัสนี้"
+            };
+         }
+
+         const user =
+            userSnap.data();
+
+         const checkInText =
+            new Date().toLocaleString();
+
+         await tools.updateDoc(
+            userRef,
+            {
+               checkedIn: true,
+               checkInTime: tools.serverTimestamp(),
+               updatedAt: tools.serverTimestamp()
+            }
+         );
+
+         return {
+            success: true,
+            code: user.code || targetCode,
+            name: user.name || "-",
+            age: user.age || "-",
+            email: user.email || "-",
+            identity: user.identity || "-",
+            checkedIn: true,
+            checkInTime: checkInText,
+            point: Number(user.point) || 0,
+            limit: Number(user.pointLimit) || 12,
+            qrUrl: user.qrUrl || makeUserQrUrl(targetCode)
+         };
+      }
+
+      async function findCodeFirebase(email) {
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+
+         if (!db || !tools) {
+            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
+         }
+
+         const targetEmail =
+            String(email || "").trim().toLowerCase();
+
+         if (!targetEmail) {
+            return {
+               success: false,
+               message: "กรุณากรอก Email"
+            };
+         }
+
+         const q =
+            tools.query(
+               tools.collection(db, "users"),
+               tools.where("email", "==", targetEmail)
+            );
+
+         const querySnapshot =
+            await tools.getDocs(q);
+
+         if (querySnapshot.empty) {
+            return {
+               success: false,
+               message: "ไม่พบ Email นี้"
+            };
+         }
+
+         const firstDoc =
+            querySnapshot.docs[0];
+
+         const data =
+            firstDoc.data();
+
+         const code =
+            data.code || firstDoc.id;
+
+         return {
+            success: true,
+            code: code,
+            qrUrl: data.qrUrl || makeUserQrUrl(code)
+         };
+      }
+
       function apiCall(action, params) {
 
          return new Promise(function (resolve, reject) {
@@ -4433,8 +4691,7 @@
 
       }
 
-      function registerUserUI() {
-
+      async function registerUserUI() {
          const name =
             document.getElementById("name").value.trim();
 
@@ -4442,7 +4699,7 @@
             document.getElementById("age").value.trim();
 
          const email =
-            document.getElementById("email").value.trim();
+            document.getElementById("email").value.trim().toLowerCase();
 
          const identity =
             document.getElementById("identity").value;
@@ -4454,33 +4711,37 @@
 
          showLoading();
 
-         apiCall("registerUser", {
-            name: name,
-            age: age,
-            email: email,
-            identity: identity
-         })
-            .then(function (result) {
+         try {
+            const result =
+               await registerUserFirebase(
+                  name,
+                  age,
+                  email,
+                  identity
+               );
 
-               if (result && result.success) {
-                  showCodeAndQr(result.code, result.qrUrl);
-               } else {
-                  alert(result && result.message ? result.message : "สมัครสมาชิกไม่สำเร็จ");
-                  showRegister();
-               }
-
-            })
-            .catch(function (error) {
-               alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+            if (result && result.success) {
+               showCodeAndQr(
+                  result.code,
+                  result.qrUrl
+               );
+            } else {
+               alert(result && result.message ? result.message : "สมัครสมาชิกไม่สำเร็จ");
                showRegister();
-            });
+            }
 
+         } catch (error) {
+            alert("สมัครสมาชิกไม่สำเร็จ: " + (error && error.message ? error.message : error));
+            showRegister();
+         }
       }
 
-      function login() {
+      async function login() {
 
          const code =
-            document.getElementById("loginCode").value.trim().toUpperCase();
+            normalizeCode(
+               document.getElementById("loginCode").value
+            );
 
          if (!code) {
             alert("กรุณากรอกรหัส");
@@ -4489,27 +4750,25 @@
 
          showLoading();
 
-         apiCall("loginUser", {
-            code: code
-         })
-            .then(function (result) {
+         try {
+            const result =
+               await loginUserFirebase(code);
 
-               if (result && result.success) {
-                  showMember(result);
-               } else {
-                  alert(result && result.message ? result.message : "Code ไม่ถูกต้อง");
-                  showLogin();
-               }
-
-            })
-            .catch(function (error) {
-               alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+            if (result && result.success) {
+               showMember(result);
+            } else {
+               alert(result && result.message ? result.message : "Code ไม่ถูกต้อง");
                showLogin();
-            });
+            }
+
+         } catch (error) {
+            alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+            showLogin();
+         }
 
       }
 
-      function loginFromCodePage() {
+      async function loginFromCodePage() {
 
          if (!lastCode) {
             alert("ไม่พบรหัส Login");
@@ -4519,30 +4778,28 @@
 
          showLoading();
 
-         apiCall("loginUser", {
-            code: lastCode
-         })
-            .then(function (result) {
+         try {
+            const result =
+               await loginUserFirebase(lastCode);
 
-               if (result && result.success) {
-                  showMember(result);
-               } else {
-                  alert(result && result.message ? result.message : "Code ไม่ถูกต้อง");
-                  showLogin();
-               }
-
-            })
-            .catch(function (error) {
-               alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+            if (result && result.success) {
+               showMember(result);
+            } else {
+               alert(result && result.message ? result.message : "Code ไม่ถูกต้อง");
                showLogin();
-            });
+            }
+
+         } catch (error) {
+            alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+            showLogin();
+         }
 
       }
 
-      function findMyCode() {
+      async function findMyCode() {
 
          const email =
-            document.getElementById("forgotEmail").value.trim();
+            document.getElementById("forgotEmail").value.trim().toLowerCase();
 
          if (!email) {
             alert("กรุณากรอก Email");
@@ -4551,27 +4808,25 @@
 
          showLoading();
 
-         apiCall("findCode", {
-            email: email
-         })
-            .then(function (result) {
+         try {
+            const result =
+               await findCodeFirebase(email);
 
-               if (result && result.success) {
-                  showCodeAndQr(result.code, result.qrUrl);
-               } else {
-                  alert(result && result.message ? result.message : "ไม่พบ Email นี้");
-                  showForgot();
-               }
-
-            })
-            .catch(function (error) {
-               alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+            if (result && result.success) {
+               showCodeAndQr(result.code, result.qrUrl);
+            } else {
+               alert(result && result.message ? result.message : "ไม่พบ Email นี้");
                showForgot();
-            });
+            }
+
+         } catch (error) {
+            alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+            showForgot();
+         }
 
       }
 
-      function autoLoginFromQr() {
+      async function autoLoginFromQr() {
 
          if (!AUTO_CODE) {
             return;
@@ -4579,44 +4834,21 @@
 
          showLoading();
 
-         apiCall("loginUser", {
-            code: AUTO_CODE
-         })
-            .then(function (result) {
+         try {
+            const result =
+               await loginUserFirebase(AUTO_CODE);
 
-               if (result && result.success) {
-
-                  alert("ยืนยันตัวสำเร็จ");
-
-                  showLogin();
-
-               } else {
-
-                  alert(
-                     result && result.message
-                        ? result.message
-                        : "QR Code ไม่ถูกต้อง หรือไม่พบรหัสนี้"
-                  );
-
-                  showLogin();
-
-               }
-
-            })
-            .catch(function (error) {
-
-               alert(
-                  "เกิดข้อผิดพลาด: " +
-                  (
-                     error && error.message
-                        ? error.message
-                        : error
-                  )
-               );
-
+            if (result && result.success) {
+               showMember(result);
+            } else {
+               alert(result && result.message ? result.message : "QR Code ไม่ถูกต้อง หรือไม่พบรหัสนี้");
                showLogin();
+            }
 
-            });
+         } catch (error) {
+            alert("เกิดข้อผิดพลาด: " + (error && error.message ? error.message : error));
+            showLogin();
+         }
 
       }
 
@@ -6460,10 +6692,10 @@
 
                showLoading();
 
-               apiCall("loginUser", {
-                  code: savedCode
-               })
-                  .then(function (result) {
+               (async function () {
+                  try {
+                     const result =
+                        await loginUserFirebase(savedCode);
 
                      if (result && result.success) {
                         showMember(result);
@@ -6472,11 +6704,11 @@
                         showLogin();
                      }
 
-                  })
-                  .catch(function () {
+                  } catch (error) {
                      localStorage.removeItem(LOGIN_STORAGE_KEY);
                      showLogin();
-                  });
+                  }
+               })();
 
             }
 
