@@ -3952,19 +3952,31 @@
 
          const user = userSnap.data();
 
-         await tools.updateDoc(userRef, {
-            checkedIn: true,
-            checkInTime: tools.serverTimestamp(),
-            checkedInBy: normalizedStaffCode,
-            updatedAt: tools.serverTimestamp()
-         });
+         try {
+            await tools.updateDoc(userRef, {
+               checkedIn: true,
+               checkInTime: tools.serverTimestamp(),
+               checkedInBy: normalizedStaffCode,
+               updatedAt: tools.serverTimestamp()
+            });
+         } catch (updateError) {
+            return {
+               success: false,
+               message: "ไม่สามารถอัปเดตสถานะผู้ใช้ได้",
+               error: updateError && updateError.message ? updateError.message : String(updateError)
+            };
+         }
 
-         await tools.addDoc(tools.collection(db, "checkInLogs"), {
-            staffCode: normalizedStaffCode,
-            targetCode: normalizedTargetCode,
-            action: "CHECK_IN",
-            createdAt: tools.serverTimestamp()
-         });
+         try {
+            await tools.addDoc(tools.collection(db, "checkInLogs"), {
+               staffCode: normalizedStaffCode,
+               targetCode: normalizedTargetCode,
+               action: "CHECK_IN",
+               createdAt: tools.serverTimestamp()
+            });
+         } catch (logError) {
+            console.warn("Failed to write checkInLogs, but check-in succeeded", logError);
+         }
 
          return {
             success: true,
