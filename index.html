@@ -274,8 +274,8 @@
          }
 
          to {
-            transform: translateX(-10%);
-            opacity: 0.96;
+            transform: translateX(-100%);
+            opacity: 1;
          }
       }
 
@@ -286,8 +286,8 @@
          }
 
          to {
-            transform: translateX(10%);
-            opacity: 0.96;
+            transform: translateX(100%);
+            opacity: 1;
          }
       }
 
@@ -4816,9 +4816,9 @@
          "memberPage",
          "homePage",
          "eventPage",
+         "scanPage",
          "pointPage",
          "rewardPage",
-         "scanPage",
          "profilePage",
          "profileEditorPage",
          "loadingPage"
@@ -4863,7 +4863,16 @@
 
          isPageAnimating = true;
 
-         const shouldSlideLeft = false;
+         const currentIndex =
+            pageOrder.indexOf(currentPage.id);
+
+         const nextIndex =
+            pageOrder.indexOf(id);
+
+         const shouldSlideLeft =
+            currentIndex !== -1 &&
+            nextIndex !== -1 &&
+            nextIndex > currentIndex;
 
          currentPage.classList.add("pageTransitioning");
          nextPage.classList.add("active", "pageTransitioning");
@@ -4899,7 +4908,7 @@
             resetActiveContentScroll(id);
 
             isPageAnimating = false;
-         }, 270);
+         }, 320);
 
       }
 
@@ -6568,7 +6577,118 @@
       const CERTIFICATE_TEMPLATE_URL =
          "https://mocsipa.github.io/kosen-now-images/CER002.png";
 
-      function showCertificatePreview() {
+      async function getCertificateProfileFirebase(code) {
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+
+         if (!db || !tools) {
+            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
+         }
+
+         const targetCode = normalizeCode(code);
+
+         if (!targetCode) {
+            return {
+               success: false,
+               message: "ไม่พบรหัสผู้ใช้"
+            };
+         }
+
+         if (targetCode.startsWith("XX")) {
+            return {
+               success: false,
+               message: "เจ้าหน้าที่ไม่สามารถรับ Certificate ได้"
+            };
+         }
+
+         const userRef = tools.doc(db, "users", targetCode);
+         const userSnap = await tools.getDoc(userRef);
+
+         if (!userSnap.exists()) {
+            return {
+               success: false,
+               message: "ไม่พบผู้ใช้"
+            };
+         }
+
+         const user = userSnap.data();
+
+         return {
+            success: true,
+            code: targetCode,
+            name: user.certificateName || user.name || "",
+            email: user.certificateEmail || user.email || "",
+            identity: user.identity || "-",
+            point: Number(user.point) || 0,
+            limit: Number(user.pointLimit) || 12
+         };
+      }
+
+      function isValidEmailSimple(email) {
+         const text = String(email || "").trim();
+         return text.indexOf("@") > 0 && text.indexOf(".") > text.indexOf("@") + 1;
+      }
+
+      async function saveCertificateDraftFirebase(code, name, email) {
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+         const targetCode = normalizeCode(code);
+
+         if (!db || !tools) {
+            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
+         }
+
+         if (!targetCode || targetCode.startsWith("XX")) {
+            return {
+               success: false,
+               message: "ไม่สามารถบันทึก Certificate ของเจ้าหน้าที่ได้"
+            };
+         }
+
+         await tools.updateDoc(
+            tools.doc(db, "users", targetCode),
+            {
+               certificateName: name,
+               certificateEmail: email,
+               certificateUpdatedAt: tools.serverTimestamp(),
+               updatedAt: tools.serverTimestamp()
+            }
+         );
+
+         return {
+            success: true
+         };
+      }
+
+      async function updateCertificateLogFirebase(code, data) {
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+         const targetCode = normalizeCode(code);
+
+         if (!db || !tools) {
+            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
+         }
+
+         await tools.setDoc(
+            tools.doc(db, "certificates", targetCode),
+            Object.assign(
+               {
+                  code: targetCode,
+                  updatedAt: tools.serverTimestamp()
+               },
+               data
+            ),
+            {
+               merge: true
+            }
+         );
+
+         return {
+            success: true
+         };
+      }
+
+      async function showCertificatePreview() {
 
          showPage("rewardPage");
 
@@ -6576,20 +6696,48 @@
 
          updateRewardPointLabels(currentPoint);
 
-         prepareCertificateDefaultData();
+         try {
+            await prepareCertificateDefaultData();
+         } catch (error) {
+            alert(
+               error && error.message
+                  ? error.message
+                  : "ไม่สามารถโหลดข้อมูล Certificate ได้"
+            );
+            showReward();
+            return;
+         }
 
          drawCertificatePreview();
 
       }
 
-      function prepareCertificateDefaultData() {
+      async function prepareCertificateDefaultData() {
 
          if (!certificateName) {
 
             if (profileDataCache && profileDataCache.name) {
                certificateName = profileDataCache.name;
             } else {
-               certificateName = "";
+               const result =
+                  await getCertificateProfileFirebase(lastCode);
+
+               if (result && result.success) {
+                  profileDataCache =
+                     Object.assign({}, profileDataCache || {}, result);
+
+                  certificateName = result.name || "";
+
+                  if (!certificateEmail) {
+                     certificateEmail = result.email || "";
+                  }
+               } else {
+                  throw new Error(
+                     result && result.message
+                        ? result.message
+                        : "ไม่สามารถโหลดข้อมูล Certificate ได้"
+                  );
+               }
             }
 
          }
@@ -6599,14 +6747,32 @@
             if (profileDataCache && profileDataCache.email) {
                certificateEmail = profileDataCache.email;
             } else {
-               certificateEmail = "";
+               const result =
+                  await getCertificateProfileFirebase(lastCode);
+
+               if (result && result.success) {
+                  profileDataCache =
+                     Object.assign({}, profileDataCache || {}, result);
+
+                  certificateEmail = result.email || "";
+
+                  if (!certificateName) {
+                     certificateName = result.name || "";
+                  }
+               } else {
+                  throw new Error(
+                     result && result.message
+                        ? result.message
+                        : "ไม่สามารถโหลดข้อมูล Certificate ได้"
+                  );
+               }
             }
 
          }
 
       }
 
-      function showCertificateEditor() {
+      async function showCertificateEditor() {
 
          showPage("rewardPage");
 
@@ -6614,7 +6780,17 @@
 
          updateRewardPointLabels(currentPoint);
 
-         prepareCertificateDefaultData();
+         try {
+            await prepareCertificateDefaultData();
+         } catch (error) {
+            alert(
+               error && error.message
+                  ? error.message
+                  : "ไม่สามารถโหลดข้อมูล Certificate ได้"
+            );
+            showCertificatePreview();
+            return;
+         }
 
          const nameInput =
             document.getElementById("cerName");
@@ -6632,7 +6808,7 @@
 
       }
 
-      function saveCertificateEditor() {
+      async function saveCertificateEditor() {
 
          const name =
             document
@@ -6651,17 +6827,63 @@
             return;
          }
 
+         if (!isValidEmailSimple(email)) {
+            alert("กรุณากรอก Email ให้ถูกต้อง");
+            return;
+         }
+
          certificateName =
             name;
 
          certificateEmail =
             email;
 
-         showCertificatePreview();
+         certificateImageBase64 =
+            "";
+
+         showLoading();
+
+         try {
+            const result =
+               await saveCertificateDraftFirebase(
+                  lastCode,
+                  certificateName,
+                  certificateEmail
+               );
+
+            if (result && result.success === false) {
+               alert(result.message || "ไม่สามารถบันทึก Certificate ได้");
+               showCertificateEditor();
+               return;
+            }
+
+            await showCertificatePreview();
+         } catch (error) {
+            alert(
+               "เกิดข้อผิดพลาด: " +
+               (
+                  error && error.message
+                     ? error.message
+                     : error
+               )
+            );
+            showCertificateEditor();
+         }
 
       }
 
       function drawCertificatePreview() {
+
+         if (!certificateName && profileDataCache && profileDataCache.name) {
+            certificateName = profileDataCache.name;
+         }
+
+         if (!certificateEmail && profileDataCache && profileDataCache.email) {
+            certificateEmail = profileDataCache.email;
+         }
+
+         console.log("CERTIFICATE NAME =", certificateName);
+         console.log("CERTIFICATE EMAIL =", certificateEmail);
 
          const canvas =
             document.getElementById("certificateCanvas");
@@ -6670,97 +6892,109 @@
             document.getElementById("cerPreviewLoading");
 
          if (!canvas) {
-            return;
+            return Promise.resolve(false);
          }
 
          if (loading) {
             loading.style.display = "block";
          }
 
-         const ctx =
-            canvas.getContext("2d");
+         return new Promise(function (resolve) {
 
-         const img =
-            new Image();
+            const ctx =
+               canvas.getContext("2d");
 
-         img.crossOrigin =
-            "anonymous";
+            const img =
+               new Image();
 
-         img.onload =
-            function () {
+            img.crossOrigin =
+               "anonymous";
 
-               canvas.width =
-                  img.naturalWidth;
+            img.onload =
+               function () {
 
-               canvas.height =
-                  img.naturalHeight;
+                  canvas.width =
+                     img.naturalWidth;
 
-               ctx.clearRect(
-                  0,
-                  0,
-                  canvas.width,
-                  canvas.height
-               );
+                  canvas.height =
+                     img.naturalHeight;
 
-               ctx.drawImage(
-                  img,
-                  0,
-                  0,
-                  canvas.width,
-                  canvas.height
-               );
-
-               const nameText =
-                  certificateName && certificateName.trim()
-                     ? certificateName.trim()
-                     : "Your Name";
-
-               drawCertificateName(
-                  ctx,
-                  canvas.width,
-                  canvas.height,
-                  nameText
-               );
-
-               try {
-
-                  certificateImageBase64 =
-                     canvas.toDataURL("image/png");
-
-               } catch (e) {
-
-                  certificateImageBase64 =
-                     "";
-
-                  alert(
-                     "ไม่สามารถสร้างภาพ Certificate ได้ กรุณาตรวจสอบว่าไฟล์ CER002.png อยู่บน GitHub Pages และเปิด public แล้ว"
+                  ctx.clearRect(
+                     0,
+                     0,
+                     canvas.width,
+                     canvas.height
                   );
 
-               }
+                  ctx.drawImage(
+                     img,
+                     0,
+                     0,
+                     canvas.width,
+                     canvas.height
+                  );
 
-               if (loading) {
-                  loading.style.display = "none";
-               }
+                  const nameText =
+                     certificateName && certificateName.trim()
+                        ? certificateName.trim()
+                        : "Your Name";
 
-            };
+                  drawCertificateName(
+                     ctx,
+                     canvas.width,
+                     canvas.height,
+                     nameText
+                  );
 
-         img.onerror =
-            function () {
+                  try {
 
-               if (loading) {
-                  loading.style.display = "none";
-               }
+                     certificateImageBase64 =
+                        canvas.toDataURL("image/png");
 
-               alert(
-                  "โหลดภาพ Certificate ไม่สำเร็จ กรุณาตรวจสอบไฟล์ CER002.png ใน GitHub Pages"
-               );
+                  } catch (e) {
 
-            };
+                     certificateImageBase64 =
+                        "";
 
-         img.src =
-            CERTIFICATE_TEMPLATE_URL +
-            "?v=" +
-            new Date().getTime();
+                     alert(
+                        "ไม่สามารถสร้างภาพ Certificate ได้ กรุณาตรวจสอบว่าไฟล์ CER002.png อยู่บน GitHub Pages และเปิด public แล้ว"
+                     );
+
+                  }
+
+                  console.log("CERTIFICATE IMAGE READY =", !!certificateImageBase64);
+
+                  if (loading) {
+                     loading.style.display = "none";
+                  }
+
+                  resolve(!!certificateImageBase64);
+
+               };
+
+            img.onerror =
+               function () {
+
+                  if (loading) {
+                     loading.style.display = "none";
+                  }
+
+                  console.log("CERTIFICATE IMAGE READY =", false);
+
+                  alert(
+                     "โหลดภาพ Certificate ไม่สำเร็จ กรุณาตรวจสอบไฟล์ CER002.png ใน GitHub Pages"
+                  );
+
+                  resolve(false);
+
+               };
+
+            img.src =
+               CERTIFICATE_TEMPLATE_URL +
+               "?v=" +
+               new Date().getTime();
+
+         });
 
       }
 
@@ -6827,11 +7061,20 @@
 
       }
 
-      function sendCertificateEmail() {
+      async function sendCertificateEmail() {
 
          if (!lastCode) {
             alert("Please login first.");
             showLogin();
+            return;
+         }
+
+         const targetCode =
+            normalizeCode(lastCode);
+
+         if (!targetCode || targetCode.startsWith("XX")) {
+            alert("เจ้าหน้าที่ไม่สามารถรับ Certificate ได้");
+            showReward();
             return;
          }
 
@@ -6841,59 +7084,29 @@
          const emailInput =
             document.getElementById("cerEmail");
 
-         const profileName =
-            document.getElementById("profileName");
+         let firestoreProfile =
+            null;
 
-         const profileEmail =
-            document.getElementById("profileEmail");
+         if (!certificateName || !certificateEmail) {
+            try {
+               const profileResult =
+                  await getCertificateProfileFirebase(targetCode);
 
-         const sendName =
-            nameInput && nameInput.value.trim()
-               ? nameInput.value.trim()
-               : profileName
-                  ? profileName.innerText.trim()
-                  : "";
+               if (profileResult && profileResult.success) {
+                  firestoreProfile = profileResult;
 
-         const sendEmail =
-            emailInput && emailInput.value.trim()
-               ? emailInput.value.trim()
-               : profileEmail
-                  ? profileEmail.innerText.trim()
-                  : "";
-
-         if (!sendName || !sendEmail) {
-            alert("กรุณากรอกชื่อและอีเมลก่อนส่ง Certificate");
-            showCertificateEditor();
-            return;
-         }
-
-         showLoading();
-
-         apiCall(
-            "sendCertificateEmail",
-            {
-               code: lastCode,
-               name: sendName,
-               email: sendEmail
-            }
-         )
-            .then(function (result) {
-
-               if (result && result.success) {
-                  showCertificateSuccess();
+                  profileDataCache =
+                     Object.assign({}, profileDataCache || {}, profileResult);
                } else {
                   alert(
-                     result && result.message
-                        ? result.message
-                        : "ส่ง Certificate ไม่สำเร็จ"
+                     profileResult && profileResult.message
+                        ? profileResult.message
+                        : "ไม่สามารถโหลดข้อมูล Certificate ได้"
                   );
-
                   showCertificatePreview();
+                  return;
                }
-
-            })
-            .catch(function (error) {
-
+            } catch (error) {
                alert(
                   "เกิดข้อผิดพลาด: " +
                   (
@@ -6902,10 +7115,147 @@
                         : error
                   )
                );
-
                showCertificatePreview();
+               return;
+            }
+         }
 
-            });
+         const sendName =
+            nameInput && nameInput.value.trim()
+               ? nameInput.value.trim()
+               : certificateName
+                  ? certificateName.trim()
+                  : profileDataCache && profileDataCache.name
+                     ? profileDataCache.name
+                     : firestoreProfile && firestoreProfile.name
+                        ? firestoreProfile.name
+                        : "";
+
+         const sendEmail =
+            emailInput && emailInput.value.trim()
+               ? emailInput.value.trim()
+               : certificateEmail
+                  ? certificateEmail.trim()
+                  : profileDataCache && profileDataCache.email
+                     ? profileDataCache.email
+                     : firestoreProfile && firestoreProfile.email
+                        ? firestoreProfile.email
+                        : "";
+
+         if (!sendName || !sendEmail) {
+            alert("กรุณากรอกชื่อและอีเมลก่อนส่ง Certificate");
+            showCertificateEditor();
+            return;
+         }
+
+         if (!isValidEmailSimple(sendEmail)) {
+            alert("กรุณากรอก Email ให้ถูกต้อง");
+            showCertificateEditor();
+            return;
+         }
+
+         certificateName =
+            sendName;
+
+         certificateEmail =
+            sendEmail;
+
+         if (!certificateImageBase64) {
+            const imageReady =
+               await drawCertificatePreview();
+
+            if (!imageReady || !certificateImageBase64) {
+               alert("กรุณากด Preview ใหม่อีกครั้งก่อนส่ง Certificate");
+               showCertificatePreview();
+               return;
+            }
+         }
+
+         showLoading();
+
+         try {
+            await updateCertificateLogFirebase(
+               targetCode,
+               {
+                  name: sendName,
+                  email: sendEmail,
+                  status: "SENDING"
+               }
+            );
+
+            const result =
+               await apiCall(
+                  "sendCertificateEmail",
+                  {
+                     code: targetCode,
+                     name: sendName,
+                     email: sendEmail
+                  }
+               );
+
+            if (result && result.success) {
+               await updateCertificateLogFirebase(
+                  targetCode,
+                  {
+                     name: sendName,
+                     email: sendEmail,
+                     status: "SENT",
+                     sentAt: window.firebaseTools.serverTimestamp(),
+                     message: result.message || ""
+                  }
+               );
+
+               showCertificateSuccess();
+               return;
+            }
+
+            await updateCertificateLogFirebase(
+               targetCode,
+               {
+                  name: sendName,
+                  email: sendEmail,
+                  status: "FAILED",
+                  error: result && result.message
+                     ? result.message
+                     : "ส่ง Certificate ไม่สำเร็จ"
+               }
+            );
+
+            alert(
+               result && result.message
+                  ? result.message
+                  : "ส่ง Certificate ไม่สำเร็จ"
+            );
+
+            showCertificatePreview();
+         } catch (error) {
+            try {
+               await updateCertificateLogFirebase(
+                  targetCode,
+                  {
+                     name: sendName,
+                     email: sendEmail,
+                     status: "FAILED",
+                     error: error && error.message
+                        ? error.message
+                        : String(error)
+                  }
+               );
+            } catch (logError) {
+               console.warn("CERTIFICATE FAILED LOG WRITE ERROR =", logError);
+            }
+
+            alert(
+               "เกิดข้อผิดพลาด: " +
+               (
+                  error && error.message
+                     ? error.message
+                     : error
+               )
+            );
+
+            showCertificatePreview();
+         }
 
       }
 
