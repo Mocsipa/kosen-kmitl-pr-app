@@ -3989,7 +3989,10 @@
          const text = String(qrText || "").trim();
          const parts = text.split("|");
 
-         if (parts.length >= 4 && parts[0] === "KOSEN_REDEEM") {
+         if (
+            parts.length >= 4 &&
+            String(parts[0] || "").trim().toUpperCase() === "KOSEN_REDEEM"
+         ) {
             return {
                valid: true,
                redeemId: String(parts[1] || "").trim(),
@@ -4076,7 +4079,8 @@
                createdAt: tools.serverTimestamp(),
                usedAt: null,
                staffCode: "",
-               pointBeforeConfirm: current
+               pointBeforeConfirm: current,
+               pointAfterConfirm: null
             }
          );
 
@@ -4132,7 +4136,7 @@
 
          const staff = staffSnap.data();
 
-         if (staff.active === false) {
+         if (!staff.active) {
             return {
                success: false,
                message: "รหัสเจ้าหน้าที่นี้ถูกปิดใช้งาน"
@@ -6178,8 +6182,7 @@
 
          currentRedeemId =
             result.redeemId ||
-            result.redeemQrText ||
-            currentRedeemId ||
+            (parseRedeemQrText(currentRedeemQrText).redeemId || currentRedeemId) ||
             "";
 
          listenRewardClaimStatusFirebase(currentRedeemId);
@@ -6862,23 +6865,25 @@
             return;
          }
 
-         const looksLikeRewardQr =
-            scannedText.indexOf("REWARD") !== -1 ||
-            scannedText.indexOf("REDEEM") !== -1 ||
-            scannedText.indexOf("redeem") !== -1 ||
-            scannedText.indexOf("reward") !== -1 ||
-            scannedText.indexOf("redeemId") !== -1 ||
-            scannedText.indexOf("redeemQrText") !== -1;
+         const upperQrText = scannedText.toUpperCase();
+         const isRewardQr =
+            upperQrText.indexOf("KOSEN_REDEEM|") === 0 ||
+            upperQrText.indexOf("REWARD") !== -1 ||
+            upperQrText.indexOf("REDEEM") !== -1 ||
+            upperQrText.indexOf("REDEEMID") !== -1 ||
+            upperQrText.indexOf("REDEEMQRTEXT") !== -1;
 
          const possibleLoginCode =
             extractLoginCodeFromQr(scannedText);
+
+         console.log("SCANNED QR =", scannedText);
 
          // ========================
          // 1) QR แลกรางวัล
          // เจ้าหน้าที่เท่านั้น
          // ========================
 
-         if (looksLikeRewardQr) {
+         if (isRewardQr) {
 
             if (!requireStaffForScanAction("ยืนยันแลกรางวัล")) {
                return;
@@ -6888,6 +6893,7 @@
 
             confirmRewardFirebase(scannedText, lastCode)
                .then(function (rewardResult) {
+                  console.log("CONFIRM REWARD RESULT =", rewardResult);
                   if (rewardResult && rewardResult.success) {
                      alert("แลกรับสำเร็จ");
                      showScanPage();
@@ -6943,6 +6949,7 @@
 
          addPointByQrFirebase(lastCode, scannedText)
             .then(function (pointResult) {
+               console.log("ADD POINT RESULT =", pointResult);
 
                if (pointResult && pointResult.success) {
 
