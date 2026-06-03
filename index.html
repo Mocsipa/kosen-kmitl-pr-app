@@ -201,6 +201,7 @@
       .pageTransitioning.slideInFromRight>.homeContent,
       .pageTransitioning.slideInFromRight>.eventContent,
       .pageTransitioning.slideInFromRight>.pointContent,
+      .pageTransitioning.slideInFromRight>.dashboardContent,
       .pageTransitioning.slideInFromRight>.rewardContent,
       .pageTransitioning.slideInFromRight>.scanContent {
          animation: slideInFromRight 0.32s ease forwards;
@@ -209,6 +210,7 @@
       .pageTransitioning.slideInFromLeft>.homeContent,
       .pageTransitioning.slideInFromLeft>.eventContent,
       .pageTransitioning.slideInFromLeft>.pointContent,
+      .pageTransitioning.slideInFromLeft>.dashboardContent,
       .pageTransitioning.slideInFromLeft>.rewardContent,
       .pageTransitioning.slideInFromLeft>.scanContent {
          animation: slideInFromLeft 0.32s ease forwards;
@@ -217,6 +219,7 @@
       .pageTransitioning.slideOutToLeft>.homeContent,
       .pageTransitioning.slideOutToLeft>.eventContent,
       .pageTransitioning.slideOutToLeft>.pointContent,
+      .pageTransitioning.slideOutToLeft>.dashboardContent,
       .pageTransitioning.slideOutToLeft>.rewardContent,
       .pageTransitioning.slideOutToLeft>.scanContent {
          animation: slideOutToLeft 0.32s ease forwards;
@@ -225,6 +228,7 @@
       .pageTransitioning.slideOutToRight>.homeContent,
       .pageTransitioning.slideOutToRight>.eventContent,
       .pageTransitioning.slideOutToRight>.pointContent,
+      .pageTransitioning.slideOutToRight>.dashboardContent,
       .pageTransitioning.slideOutToRight>.rewardContent,
       .pageTransitioning.slideOutToRight>.scanContent {
          animation: slideOutToRight 0.32s ease forwards;
@@ -1182,6 +1186,96 @@
          margin: 0 auto 30px;
       }
 
+      .dashboardContent {
+         display: none;
+         padding: 150px 24px 120px;
+         text-align: center;
+         background: white;
+         min-height: 100%;
+      }
+
+      .dashboardTitle {
+         font-size: 72px;
+         font-weight: 900;
+         color: #000;
+         margin-bottom: 48px;
+         letter-spacing: 0;
+      }
+
+      .dashboardMetric {
+         width: 86%;
+         max-width: 680px;
+         margin: 0 auto 26px;
+      }
+
+      .dashboardMetricLabel {
+         font-size: 34px;
+         font-weight: 900;
+         color: #000;
+         margin-bottom: 14px;
+      }
+
+      .dashboardBar {
+         height: 74px;
+         border: 5px solid var(--dashboard-color);
+         border-radius: 48px;
+         background: white;
+         overflow: hidden;
+         position: relative;
+      }
+
+      .dashboardBarFill {
+         position: absolute;
+         top: 0;
+         left: 0;
+         bottom: 0;
+         width: 0%;
+         min-width: 56px;
+         border-radius: 48px;
+         background: var(--dashboard-color);
+         transition: width .28s ease;
+      }
+
+      .dashboardBarText {
+         position: absolute;
+         inset: 0;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         font-size: 30px;
+         font-weight: 900;
+         color: #000;
+      }
+
+      .dashboardDateSelect {
+         width: 330px;
+         max-width: 78%;
+         height: 66px;
+         margin: 36px auto 70px;
+         border: 0;
+         border-radius: 38px;
+         background: #d9d9d9;
+         color: #000;
+         text-align: center;
+         text-align-last: center;
+         font-size: 28px;
+         font-weight: 900;
+         letter-spacing: 2px;
+         padding: 0 46px 0 24px;
+      }
+
+      .dashboardBackBtn {
+         width: 260px;
+         max-width: 70%;
+         height: 66px;
+         border: 0;
+         border-radius: 36px;
+         background: #d9d9d9;
+         color: #777;
+         font-size: 26px;
+         font-weight: 900;
+      }
+
       /* ========================
    REWARD
 ======================== */
@@ -2072,6 +2166,52 @@
             font-size: 18px;
          }
 
+         .dashboardContent {
+            padding: 125px 14px 100px;
+         }
+
+         .dashboardTitle {
+            font-size: 46px;
+            margin-bottom: 42px;
+         }
+
+         .dashboardMetric {
+            width: 88%;
+            margin-bottom: 20px;
+         }
+
+         .dashboardMetricLabel {
+            font-size: 24px;
+            margin-bottom: 10px;
+         }
+
+         .dashboardBar {
+            height: 52px;
+            border-width: 4px;
+         }
+
+         .dashboardBarFill {
+            min-width: 42px;
+         }
+
+         .dashboardBarText {
+            font-size: 20px;
+         }
+
+         .dashboardDateSelect {
+            width: 240px;
+            height: 52px;
+            margin: 30px auto 62px;
+            font-size: 20px;
+            letter-spacing: 1px;
+         }
+
+         .dashboardBackBtn {
+            width: 210px;
+            height: 52px;
+            font-size: 20px;
+         }
+
          .rewardContent {
             padding: 125px 16px 100px;
          }
@@ -2378,6 +2518,7 @@
       .homePage.active .homeContent,
       .eventPage.active .eventContent,
       .pointPage.active .pointContent,
+      .pointPage.active .dashboardContent,
       .rewardPage.active .rewardContent,
       .scanPage.active .scanContent,
       #profilePage.active .profileContent,
@@ -2405,6 +2546,7 @@
       }
 
       .pointPage.active .pointContent,
+      .pointPage.active .dashboardContent,
       .rewardPage.active .rewardContent,
       .scanPage.active .scanContent,
       #profilePage.active .profileContent,
@@ -2463,6 +2605,7 @@
          .homePage.active .homeContent,
          .eventPage.active .eventContent,
          .pointPage.active .pointContent,
+         .pointPage.active .dashboardContent,
          .rewardPage.active .rewardContent,
          .scanPage.active .scanContent,
          #profilePage.active .profileContent,
@@ -2472,6 +2615,7 @@
          }
 
          .pointPage.active .pointContent,
+         .pointPage.active .dashboardContent,
          .rewardPage.active .rewardContent,
          .scanPage.active .scanContent,
          #profilePage.active .profileContent,
@@ -2498,6 +2642,7 @@
       .pageTransitioning.slideInFromRight>.homeContent,
       .pageTransitioning.slideInFromRight>.eventContent,
       .pageTransitioning.slideInFromRight>.pointContent,
+      .pageTransitioning.slideInFromRight>.dashboardContent,
       .pageTransitioning.slideInFromRight>.rewardContent,
       .pageTransitioning.slideInFromRight>.scanContent,
       .pageTransitioning.slideInFromRight>.profileContent {
@@ -2507,6 +2652,7 @@
       .pageTransitioning.slideInFromLeft>.homeContent,
       .pageTransitioning.slideInFromLeft>.eventContent,
       .pageTransitioning.slideInFromLeft>.pointContent,
+      .pageTransitioning.slideInFromLeft>.dashboardContent,
       .pageTransitioning.slideInFromLeft>.rewardContent,
       .pageTransitioning.slideInFromLeft>.scanContent,
       .pageTransitioning.slideInFromLeft>.profileContent {
@@ -2516,6 +2662,7 @@
       .pageTransitioning.slideOutToLeft>.homeContent,
       .pageTransitioning.slideOutToLeft>.eventContent,
       .pageTransitioning.slideOutToLeft>.pointContent,
+      .pageTransitioning.slideOutToLeft>.dashboardContent,
       .pageTransitioning.slideOutToLeft>.rewardContent,
       .pageTransitioning.slideOutToLeft>.scanContent,
       .pageTransitioning.slideOutToLeft>.profileContent {
@@ -2525,6 +2672,7 @@
       .pageTransitioning.slideOutToRight>.homeContent,
       .pageTransitioning.slideOutToRight>.eventContent,
       .pageTransitioning.slideOutToRight>.pointContent,
+      .pageTransitioning.slideOutToRight>.dashboardContent,
       .pageTransitioning.slideOutToRight>.rewardContent,
       .pageTransitioning.slideOutToRight>.scanContent,
       .pageTransitioning.slideOutToRight>.profileContent {
@@ -2961,7 +3109,7 @@
          <div class="menuIcon" onclick="openMenuOverlay()"><span></span><span></span><span></span></div>
       </div>
 
-      <div class="pointContent">
+      <div id="pointUserContent" class="pointContent">
 
          <div class="pointTitle">POINT</div>
 
@@ -2982,6 +3130,50 @@
 
       </div>
 
+      <div id="staffDashboardContent" class="dashboardContent">
+
+         <div class="dashboardTitle">DASH BOARD</div>
+
+         <div class="dashboardMetric" style="--dashboard-color:#ff914d;">
+            <div class="dashboardMetricLabel">จำนวนผู้เข้าร่วมงาน</div>
+            <div class="dashboardBar">
+               <div id="dashboardTotalFill" class="dashboardBarFill"></div>
+               <div id="dashboardTotalText" class="dashboardBarText">0 คน</div>
+            </div>
+         </div>
+
+         <div class="dashboardMetric" style="--dashboard-color:#58d4d9;">
+            <div class="dashboardMetricLabel">นักเรียน</div>
+            <div class="dashboardBar">
+               <div id="dashboardStudentFill" class="dashboardBarFill"></div>
+               <div id="dashboardStudentText" class="dashboardBarText">0 คน</div>
+            </div>
+         </div>
+
+         <div class="dashboardMetric" style="--dashboard-color:#ffdf58;">
+            <div class="dashboardMetricLabel">ผู้ปกครอง</div>
+            <div class="dashboardBar">
+               <div id="dashboardParentFill" class="dashboardBarFill"></div>
+               <div id="dashboardParentText" class="dashboardBarText">0 คน</div>
+            </div>
+         </div>
+
+         <div class="dashboardMetric" style="--dashboard-color:#d99bea;">
+            <div class="dashboardMetricLabel">ครู/อาจารย์</div>
+            <div class="dashboardBar">
+               <div id="dashboardTeacherFill" class="dashboardBarFill"></div>
+               <div id="dashboardTeacherText" class="dashboardBarText">0 คน</div>
+            </div>
+         </div>
+
+         <select id="dashboardDateSelect" class="dashboardDateSelect" onchange="changeDashboardDate(this.value)">
+            <option value="">-- / -- / ----</option>
+         </select>
+
+         <button class="dashboardBackBtn" onclick="showHome()">Back</button>
+
+      </div>
+
       <div class="bottomNav">
          <div class="navItem disabledNav" onclick="showHome()">
             <div class="navIcon">🏠</div>
@@ -2997,7 +3189,7 @@
          </div>
          <div class="navItem activeNav" onclick="showPoint()">
             <div class="navIcon">⭐</div>
-            <div>POINT</div>
+            <div id="pointPageNavLabel">POINT</div>
          </div>
          <div class="navItem disabledNav" onclick="showReward()">
             <div class="navIcon">🎁</div>
@@ -3543,6 +3735,10 @@
       let currentRedeemId = "";
       let rewardPollingTimer = null;
       let codePagePollingTimer = null;
+      let dashboardUnsubscribe = null;
+      let dashboardLogs = [];
+      let dashboardSelectedDate = "";
+      let dashboardRenderToken = 0;
 
       function stopRewardPolling() {
 
@@ -4573,7 +4769,7 @@
 
             const content =
                page.querySelector(
-                  ".homeContent, .eventContent, .pointContent, .rewardContent, .scanContent, .profileContent"
+                  ".homeContent, .eventContent, .pointContent, .dashboardContent, .rewardContent, .scanContent, .profileContent"
                );
 
             if (content) {
@@ -4665,6 +4861,10 @@
       function showPage(id) {
 
          clearPageTransitionTimer();
+
+         if (id !== "pointPage") {
+            stopStaffDashboardRealtime();
+         }
 
          const nextPage =
             document.getElementById(id);
@@ -5614,6 +5814,14 @@
             return;
          }
 
+         if (isStaffCode(lastCode)) {
+            showStaffDashboard();
+            return;
+         }
+
+         stopStaffDashboardRealtime();
+         setPointPageMode(false);
+
          showPage("pointPage");
 
          loadPointFromCache();
@@ -5622,6 +5830,257 @@
             loadPoint();
          }, 80);
 
+      }
+
+      function setPointPageMode(isStaffDashboard) {
+         const pointUserContent =
+            document.getElementById("pointUserContent");
+
+         const staffDashboardContent =
+            document.getElementById("staffDashboardContent");
+
+         const pointPageNavLabel =
+            document.getElementById("pointPageNavLabel");
+
+         if (pointUserContent) {
+            pointUserContent.style.display = isStaffDashboard ? "none" : "";
+         }
+
+         if (staffDashboardContent) {
+            staffDashboardContent.style.display = isStaffDashboard ? "block" : "none";
+         }
+
+         if (pointPageNavLabel) {
+            pointPageNavLabel.innerHTML = isStaffDashboard ? "DASHBOARD" : "POINT";
+         }
+      }
+
+      function showStaffDashboard() {
+         setPointPageMode(true);
+         showPage("pointPage");
+         startStaffDashboardRealtime();
+      }
+
+      function stopStaffDashboardRealtime() {
+         if (dashboardUnsubscribe) {
+            dashboardUnsubscribe();
+            dashboardUnsubscribe = null;
+         }
+      }
+
+      function startStaffDashboardRealtime() {
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+
+         if (!db || !tools) {
+            return;
+         }
+
+         stopStaffDashboardRealtime();
+
+         dashboardUnsubscribe = tools.onSnapshot(
+            tools.collection(db, "checkInLogs"),
+            function (snapshot) {
+               dashboardLogs = [];
+
+               snapshot.forEach(function (docSnap) {
+                  const data = docSnap.data() || {};
+
+                  if (String(data.action || "").toUpperCase() === "CHECK_IN") {
+                     dashboardLogs.push(data);
+                  }
+               });
+
+               renderDashboardDateOptions();
+               renderStaffDashboard();
+            },
+            function (error) {
+               console.error("DASHBOARD LISTENER ERROR =", error);
+               alert("โหลด Dashboard ไม่สำเร็จ: " + (error && error.message ? error.message : error));
+            }
+         );
+      }
+
+      function getDashboardDateKey(value) {
+         if (!value) {
+            return "";
+         }
+
+         let dateValue = value;
+
+         if (dateValue && typeof dateValue.toDate === "function") {
+            dateValue = dateValue.toDate();
+         } else {
+            dateValue = new Date(dateValue);
+         }
+
+         if (!dateValue || isNaN(dateValue.getTime())) {
+            return "";
+         }
+
+         const year = dateValue.getFullYear();
+         const month = String(dateValue.getMonth() + 1).padStart(2, "0");
+         const day = String(dateValue.getDate()).padStart(2, "0");
+
+         return year + "-" + month + "-" + day;
+      }
+
+      function formatDashboardDate(key) {
+         const parts = String(key || "").split("-");
+
+         if (parts.length !== 3) {
+            return "-- / -- / ----";
+         }
+
+         return parts[2] + " / " + parts[1] + " / " + parts[0];
+      }
+
+      function getTodayDashboardKey() {
+         const today = new Date();
+         const year = today.getFullYear();
+         const month = String(today.getMonth() + 1).padStart(2, "0");
+         const day = String(today.getDate()).padStart(2, "0");
+
+         return year + "-" + month + "-" + day;
+      }
+
+      function renderDashboardDateOptions() {
+         const select =
+            document.getElementById("dashboardDateSelect");
+
+         if (!select) {
+            return;
+         }
+
+         const dateMap = {};
+
+         dashboardLogs.forEach(function (log) {
+            const key = getDashboardDateKey(log.createdAt);
+
+            if (key) {
+               dateMap[key] = true;
+            }
+         });
+
+         const dates =
+            Object.keys(dateMap)
+               .sort()
+               .reverse();
+
+         if (!dashboardSelectedDate) {
+            dashboardSelectedDate = dates[0] || getTodayDashboardKey();
+         }
+
+         if (dates.indexOf(dashboardSelectedDate) === -1) {
+            dates.unshift(dashboardSelectedDate);
+         }
+
+         select.innerHTML = dates
+            .map(function (key) {
+               return "<option value=\"" + key + "\">" + formatDashboardDate(key) + "</option>";
+            })
+            .join("");
+
+         select.value = dashboardSelectedDate;
+      }
+
+      function changeDashboardDate(value) {
+         dashboardSelectedDate = value || getTodayDashboardKey();
+         renderStaffDashboard();
+      }
+
+      async function renderStaffDashboard() {
+         const tools = window.firebaseTools;
+         const db = window.firebaseDb;
+         const renderToken = ++dashboardRenderToken;
+         const selectedDate = dashboardSelectedDate || getTodayDashboardKey();
+         const userCodeMap = {};
+
+         dashboardLogs.forEach(function (log) {
+            const key = getDashboardDateKey(log.createdAt);
+            const targetCode = normalizeCode(log.targetCode);
+
+            if (key === selectedDate && targetCode) {
+               userCodeMap[targetCode] = true;
+            }
+         });
+
+         const userCodes =
+            Object.keys(userCodeMap);
+
+         const counts = {
+            total: userCodes.length,
+            student: 0,
+            parent: 0,
+            teacher: 0
+         };
+
+         if (tools && db && userCodes.length > 0) {
+            await Promise.all(
+               userCodes.map(async function (code) {
+                  try {
+                     const snap = await tools.getDoc(
+                        tools.doc(db, "users", code)
+                     );
+
+                     if (!snap.exists()) {
+                        return;
+                     }
+
+                     const user = snap.data() || {};
+                     const identity = String(user.identity || "").trim().toLowerCase();
+
+                     if (identity === "student") {
+                        counts.student++;
+                     } else if (identity === "parent") {
+                        counts.parent++;
+                     } else if (identity === "teacher") {
+                        counts.teacher++;
+                     }
+                  } catch (error) {
+                     console.warn("DASHBOARD USER LOAD ERROR =", code, error);
+                  }
+               })
+            );
+         }
+
+         if (renderToken !== dashboardRenderToken) {
+            return;
+         }
+
+         updateDashboardBars(counts);
+      }
+
+      function updateDashboardBars(counts) {
+         const total = Number(counts.total) || 0;
+         const maxValue = Math.max(total, 1);
+
+         updateDashboardBar("dashboardTotal", total, total, maxValue);
+         updateDashboardBar("dashboardStudent", counts.student, counts.student, maxValue);
+         updateDashboardBar("dashboardParent", counts.parent, counts.parent, maxValue);
+         updateDashboardBar("dashboardTeacher", counts.teacher, counts.teacher, maxValue);
+      }
+
+      function updateDashboardBar(idPrefix, value, labelValue, maxValue) {
+         const fill =
+            document.getElementById(idPrefix + "Fill");
+
+         const text =
+            document.getElementById(idPrefix + "Text");
+
+         const safeValue =
+            Number(value) || 0;
+
+         const percent =
+            Math.max(0, Math.min(100, (safeValue / Math.max(Number(maxValue) || 1, 1)) * 100));
+
+         if (fill) {
+            fill.style.width = percent + "%";
+         }
+
+         if (text) {
+            text.innerHTML = (Number(labelValue) || 0) + " คน";
+         }
       }
 
       function loadPoint() {
