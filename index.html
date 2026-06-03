@@ -1188,7 +1188,7 @@
 
       .dashboardContent {
          display: none;
-         padding: 150px 24px 120px;
+         padding: 135px 24px 240px;
          text-align: center;
          background: white;
          min-height: 100%;
@@ -1198,60 +1198,94 @@
          font-size: 72px;
          font-weight: 900;
          color: #000;
-         margin-bottom: 48px;
+         margin-bottom: 32px;
          letter-spacing: 0;
       }
 
-      .dashboardMetric {
+      .dashboardGrid {
          width: 86%;
          max-width: 680px;
-         margin: 0 auto 26px;
+         margin: 0 auto;
+         display: grid;
+         grid-template-columns: repeat(6, 1fr);
+         gap: 18px;
       }
 
-      .dashboardMetricLabel {
-         font-size: 34px;
-         font-weight: 900;
-         color: #000;
-         margin-bottom: 14px;
-      }
-
-      .dashboardBar {
-         height: 74px;
-         border: 5px solid var(--dashboard-color);
-         border-radius: 48px;
+      .dashboardCard {
+         min-height: 150px;
+         border: 6px solid #dedede;
+         border-radius: 42px;
          background: white;
-         overflow: hidden;
-         position: relative;
-      }
-
-      .dashboardBarFill {
-         position: absolute;
-         top: 0;
-         left: 0;
-         bottom: 0;
-         width: 0%;
-         min-width: 56px;
-         border-radius: 48px;
-         background: var(--dashboard-color);
-         transition: width .28s ease;
-      }
-
-      .dashboardBarText {
-         position: absolute;
-         inset: 0;
          display: flex;
+         flex-direction: column;
          align-items: center;
          justify-content: center;
-         font-size: 30px;
+         padding: 16px 12px;
+      }
+
+      .dashboardCardWide {
+         grid-column: span 3;
+      }
+
+      .dashboardCardThird {
+         grid-column: span 2;
+      }
+
+      .dashboardCardLarge {
+         grid-column: span 4;
+      }
+
+      .dashboardCardSmall {
+         grid-column: span 2;
+      }
+
+      .dashboardCardFull {
+         grid-column: span 6;
+         min-height: 96px;
+         flex-direction: row;
+         gap: 42px;
+      }
+
+      .dashboardCardLabel {
+         font-size: 28px;
          font-weight: 900;
          color: #000;
+         line-height: 1.15;
+         margin-bottom: 20px;
+      }
+
+      .dashboardCardFull .dashboardCardLabel {
+         margin-bottom: 0;
+      }
+
+      .dashboardCardNumber {
+         font-size: 74px;
+         line-height: 1;
+         font-weight: 900;
+         color: #000;
+      }
+
+      .dashboardCardWide .dashboardCardNumber {
+         font-size: 86px;
+      }
+
+      .dashboardCardFull .dashboardCardNumber {
+         font-size: 42px;
+      }
+
+      .dashboardNumberOrange {
+         color: #ff5c1a;
+      }
+
+      .dashboardNumberBlue {
+         color: #238bff;
       }
 
       .dashboardDateSelect {
          width: 330px;
          max-width: 78%;
          height: 66px;
-         margin: 36px auto 70px;
+         margin: 50px auto 110px;
          border: 0;
          border-radius: 38px;
          background: #d9d9d9;
@@ -2167,41 +2201,52 @@
          }
 
          .dashboardContent {
-            padding: 125px 14px 100px;
+            padding: 125px 14px 220px;
          }
 
          .dashboardTitle {
-            font-size: 46px;
-            margin-bottom: 42px;
+            font-size: 44px;
+            margin-bottom: 28px;
          }
 
-         .dashboardMetric {
-            width: 88%;
-            margin-bottom: 20px;
+         .dashboardGrid {
+            width: 86%;
+            gap: 12px;
          }
 
-         .dashboardMetricLabel {
-            font-size: 24px;
-            margin-bottom: 10px;
+         .dashboardCard {
+            min-height: 104px;
+            border-width: 5px;
+            border-radius: 28px;
+            padding: 10px 8px;
          }
 
-         .dashboardBar {
-            height: 52px;
-            border-width: 4px;
+         .dashboardCardFull {
+            min-height: 70px;
+            gap: 28px;
          }
 
-         .dashboardBarFill {
-            min-width: 42px;
+         .dashboardCardLabel {
+            font-size: 18px;
+            margin-bottom: 14px;
          }
 
-         .dashboardBarText {
-            font-size: 20px;
+         .dashboardCardNumber {
+            font-size: 38px;
+         }
+
+         .dashboardCardWide .dashboardCardNumber {
+            font-size: 56px;
+         }
+
+         .dashboardCardFull .dashboardCardNumber {
+            font-size: 30px;
          }
 
          .dashboardDateSelect {
             width: 240px;
             height: 52px;
-            margin: 30px auto 62px;
+            margin: 34px auto 96px;
             font-size: 20px;
             letter-spacing: 1px;
          }
@@ -3134,36 +3179,48 @@
 
          <div class="dashboardTitle">DASH BOARD</div>
 
-         <div class="dashboardMetric" style="--dashboard-color:#ff914d;">
-            <div class="dashboardMetricLabel">จำนวนผู้เข้าร่วมงาน</div>
-            <div class="dashboardBar">
-               <div id="dashboardTotalFill" class="dashboardBarFill"></div>
-               <div id="dashboardTotalText" class="dashboardBarText">0 คน</div>
-            </div>
-         </div>
+         <div class="dashboardGrid">
 
-         <div class="dashboardMetric" style="--dashboard-color:#58d4d9;">
-            <div class="dashboardMetricLabel">นักเรียน</div>
-            <div class="dashboardBar">
-               <div id="dashboardStudentFill" class="dashboardBarFill"></div>
-               <div id="dashboardStudentText" class="dashboardBarText">0 คน</div>
+            <div class="dashboardCard dashboardCardWide">
+               <div class="dashboardCardLabel">Total Users</div>
+               <div id="dashboardTotalUsersText" class="dashboardCardNumber dashboardNumberOrange">0</div>
             </div>
-         </div>
 
-         <div class="dashboardMetric" style="--dashboard-color:#ffdf58;">
-            <div class="dashboardMetricLabel">ผู้ปกครอง</div>
-            <div class="dashboardBar">
-               <div id="dashboardParentFill" class="dashboardBarFill"></div>
-               <div id="dashboardParentText" class="dashboardBarText">0 คน</div>
+            <div class="dashboardCard dashboardCardWide">
+               <div class="dashboardCardLabel">Checked-in Users</div>
+               <div id="dashboardCheckedInText" class="dashboardCardNumber dashboardNumberBlue">0</div>
             </div>
-         </div>
 
-         <div class="dashboardMetric" style="--dashboard-color:#d99bea;">
-            <div class="dashboardMetricLabel">ครู/อาจารย์</div>
-            <div class="dashboardBar">
-               <div id="dashboardTeacherFill" class="dashboardBarFill"></div>
-               <div id="dashboardTeacherText" class="dashboardBarText">0 คน</div>
+            <div class="dashboardCard dashboardCardThird">
+               <div class="dashboardCardLabel">Students</div>
+               <div id="dashboardStudentText" class="dashboardCardNumber">0</div>
             </div>
+
+            <div class="dashboardCard dashboardCardThird">
+               <div class="dashboardCardLabel">Parents</div>
+               <div id="dashboardParentText" class="dashboardCardNumber">0</div>
+            </div>
+
+            <div class="dashboardCard dashboardCardThird">
+               <div class="dashboardCardLabel">Teachers</div>
+               <div id="dashboardTeacherText" class="dashboardCardNumber">0</div>
+            </div>
+
+            <div class="dashboardCard dashboardCardLarge">
+               <div class="dashboardCardLabel">Total Point Scans</div>
+               <div id="dashboardPointScansText" class="dashboardCardNumber">0</div>
+            </div>
+
+            <div class="dashboardCard dashboardCardSmall">
+               <div class="dashboardCardLabel">Total Rewards<br>Redeemed</div>
+               <div id="dashboardRewardsText" class="dashboardCardNumber">0</div>
+            </div>
+
+            <div class="dashboardCard dashboardCardFull">
+               <div class="dashboardCardLabel">Certificates Sent :</div>
+               <div id="dashboardCertificatesText" class="dashboardCardNumber">0</div>
+            </div>
+
          </div>
 
          <select id="dashboardDateSelect" class="dashboardDateSelect" onchange="changeDashboardDate(this.value)">
@@ -3735,8 +3792,14 @@
       let currentRedeemId = "";
       let rewardPollingTimer = null;
       let codePagePollingTimer = null;
-      let dashboardUnsubscribe = null;
-      let dashboardLogs = [];
+      let dashboardUnsubscribes = [];
+      let dashboardData = {
+         users: [],
+         checkInLogs: [],
+         pointLogs: [],
+         rewardClaims: [],
+         certificates: []
+      };
       let dashboardSelectedDate = "";
       let dashboardRenderToken = 0;
 
@@ -5862,10 +5925,13 @@
       }
 
       function stopStaffDashboardRealtime() {
-         if (dashboardUnsubscribe) {
-            dashboardUnsubscribe();
-            dashboardUnsubscribe = null;
-         }
+         dashboardUnsubscribes.forEach(function (unsubscribe) {
+            if (typeof unsubscribe === "function") {
+               unsubscribe();
+            }
+         });
+
+         dashboardUnsubscribes = [];
       }
 
       function startStaffDashboardRealtime() {
@@ -5878,27 +5944,41 @@
 
          stopStaffDashboardRealtime();
 
-         dashboardUnsubscribe = tools.onSnapshot(
-            tools.collection(db, "checkInLogs"),
-            function (snapshot) {
-               dashboardLogs = [];
+         dashboardData = {
+            users: [],
+            checkInLogs: [],
+            pointLogs: [],
+            rewardClaims: [],
+            certificates: []
+         };
 
-               snapshot.forEach(function (docSnap) {
-                  const data = docSnap.data() || {};
+         [
+            { collectionName: "users", key: "users" },
+            { collectionName: "checkInLogs", key: "checkInLogs" },
+            { collectionName: "pointLogs", key: "pointLogs" },
+            { collectionName: "rewardClaims", key: "rewardClaims" },
+            { collectionName: "certificates", key: "certificates" }
+         ].forEach(function (source) {
+            const unsubscribe = tools.onSnapshot(
+               tools.collection(db, source.collectionName),
+               function (snapshot) {
+                  const rows = [];
 
-                  if (String(data.action || "").toUpperCase() === "CHECK_IN") {
-                     dashboardLogs.push(data);
-                  }
-               });
+                  snapshot.forEach(function (docSnap) {
+                     rows.push(docSnap.data() || {});
+                  });
 
-               renderDashboardDateOptions();
-               renderStaffDashboard();
-            },
-            function (error) {
-               console.error("DASHBOARD LISTENER ERROR =", error);
-               alert("โหลด Dashboard ไม่สำเร็จ: " + (error && error.message ? error.message : error));
-            }
-         );
+                  dashboardData[source.key] = rows;
+                  renderDashboardDateOptions();
+                  renderStaffDashboard();
+               },
+               function (error) {
+                  console.error("DASHBOARD LISTENER ERROR =", source.collectionName, error);
+               }
+            );
+
+            dashboardUnsubscribes.push(unsubscribe);
+         });
       }
 
       function getDashboardDateKey(value) {
@@ -5954,8 +6034,8 @@
 
          const dateMap = {};
 
-         dashboardLogs.forEach(function (log) {
-            const key = getDashboardDateKey(log.createdAt);
+         getDashboardRowsForDateOptions().forEach(function (item) {
+            const key = getDashboardDateKey(item.dateValue);
 
             if (key) {
                dateMap[key] = true;
@@ -5989,97 +6069,145 @@
          renderStaffDashboard();
       }
 
-      async function renderStaffDashboard() {
-         const tools = window.firebaseTools;
-         const db = window.firebaseDb;
+      function getDashboardRowsForDateOptions() {
+         const rows = [];
+
+         dashboardData.users.forEach(function (user) {
+            rows.push({ dateValue: user.createdAt || user.updatedAt });
+         });
+
+         dashboardData.checkInLogs.forEach(function (log) {
+            rows.push({ dateValue: log.createdAt });
+         });
+
+         dashboardData.pointLogs.forEach(function (log) {
+            rows.push({ dateValue: log.createdAt });
+         });
+
+         dashboardData.rewardClaims.forEach(function (claim) {
+            rows.push({ dateValue: claim.usedAt || claim.createdAt });
+         });
+
+         dashboardData.certificates.forEach(function (certificate) {
+            rows.push({ dateValue: certificate.updatedAt || certificate.createdAt });
+         });
+
+         return rows;
+      }
+
+      function isDashboardUsedRewardStatus(status) {
+         const text = String(status || "").trim().toUpperCase();
+
+         return (
+            text === "USED" ||
+            text === "CONFIRMED" ||
+            text === "REDEEMED" ||
+            text === "SUCCESS"
+         );
+      }
+
+      function isDashboardSentCertificateStatus(status) {
+         return String(status || "").trim().toUpperCase() === "SENT";
+      }
+
+      function renderStaffDashboard() {
          const renderToken = ++dashboardRenderToken;
          const selectedDate = dashboardSelectedDate || getTodayDashboardKey();
-         const userCodeMap = {};
 
-         dashboardLogs.forEach(function (log) {
-            const key = getDashboardDateKey(log.createdAt);
-            const targetCode = normalizeCode(log.targetCode);
+         const counts = {
+            totalUsers: 0,
+            checkedIn: 0,
+            student: 0,
+            parent: 0,
+            teacher: 0,
+            pointScans: 0,
+            rewards: 0,
+            certificates: 0
+         };
 
-            if (key === selectedDate && targetCode) {
-               userCodeMap[targetCode] = true;
+         dashboardData.users.forEach(function (user) {
+            counts.totalUsers++;
+
+            const identity = String(user.identity || "").trim().toLowerCase();
+
+            if (identity === "student") {
+               counts.student++;
+            } else if (identity === "parent") {
+               counts.parent++;
+            } else if (identity === "teacher") {
+               counts.teacher++;
             }
          });
 
-         const userCodes =
-            Object.keys(userCodeMap);
+         const checkedInMap = {};
 
-         const counts = {
-            total: userCodes.length,
-            student: 0,
-            parent: 0,
-            teacher: 0
-         };
+         dashboardData.checkInLogs.forEach(function (log) {
+            const key = getDashboardDateKey(log.createdAt);
+            const targetCode = normalizeCode(log.targetCode);
 
-         if (tools && db && userCodes.length > 0) {
-            await Promise.all(
-               userCodes.map(async function (code) {
-                  try {
-                     const snap = await tools.getDoc(
-                        tools.doc(db, "users", code)
-                     );
+            if (
+               key === selectedDate &&
+               targetCode &&
+               String(log.action || "").toUpperCase() === "CHECK_IN"
+            ) {
+               checkedInMap[targetCode] = true;
+            }
+         });
 
-                     if (!snap.exists()) {
-                        return;
-                     }
+         counts.checkedIn = Object.keys(checkedInMap).length;
 
-                     const user = snap.data() || {};
-                     const identity = String(user.identity || "").trim().toLowerCase();
+         dashboardData.pointLogs.forEach(function (log) {
+            if (getDashboardDateKey(log.createdAt) === selectedDate) {
+               counts.pointScans++;
+            }
+         });
 
-                     if (identity === "student") {
-                        counts.student++;
-                     } else if (identity === "parent") {
-                        counts.parent++;
-                     } else if (identity === "teacher") {
-                        counts.teacher++;
-                     }
-                  } catch (error) {
-                     console.warn("DASHBOARD USER LOAD ERROR =", code, error);
-                  }
-               })
-            );
-         }
+         dashboardData.rewardClaims.forEach(function (claim) {
+            const key = getDashboardDateKey(claim.usedAt || claim.createdAt);
+
+            if (
+               key === selectedDate &&
+               isDashboardUsedRewardStatus(claim.status)
+            ) {
+               counts.rewards++;
+            }
+         });
+
+         dashboardData.certificates.forEach(function (certificate) {
+            const key = getDashboardDateKey(certificate.updatedAt || certificate.createdAt);
+
+            if (
+               key === selectedDate &&
+               isDashboardSentCertificateStatus(certificate.status)
+            ) {
+               counts.certificates++;
+            }
+         });
 
          if (renderToken !== dashboardRenderToken) {
             return;
          }
 
-         updateDashboardBars(counts);
+         updateDashboardCards(counts);
       }
 
-      function updateDashboardBars(counts) {
-         const total = Number(counts.total) || 0;
-         const maxValue = Math.max(total, 1);
-
-         updateDashboardBar("dashboardTotal", total, total, maxValue);
-         updateDashboardBar("dashboardStudent", counts.student, counts.student, maxValue);
-         updateDashboardBar("dashboardParent", counts.parent, counts.parent, maxValue);
-         updateDashboardBar("dashboardTeacher", counts.teacher, counts.teacher, maxValue);
+      function updateDashboardCards(counts) {
+         setDashboardText("dashboardTotalUsersText", counts.totalUsers);
+         setDashboardText("dashboardCheckedInText", counts.checkedIn);
+         setDashboardText("dashboardStudentText", counts.student);
+         setDashboardText("dashboardParentText", counts.parent);
+         setDashboardText("dashboardTeacherText", counts.teacher);
+         setDashboardText("dashboardPointScansText", counts.pointScans);
+         setDashboardText("dashboardRewardsText", counts.rewards);
+         setDashboardText("dashboardCertificatesText", counts.certificates);
       }
 
-      function updateDashboardBar(idPrefix, value, labelValue, maxValue) {
-         const fill =
-            document.getElementById(idPrefix + "Fill");
+      function setDashboardText(id, value) {
+         const target =
+            document.getElementById(id);
 
-         const text =
-            document.getElementById(idPrefix + "Text");
-
-         const safeValue =
-            Number(value) || 0;
-
-         const percent =
-            Math.max(0, Math.min(100, (safeValue / Math.max(Number(maxValue) || 1, 1)) * 100));
-
-         if (fill) {
-            fill.style.width = percent + "%";
-         }
-
-         if (text) {
-            text.innerHTML = (Number(labelValue) || 0) + " คน";
+         if (target) {
+            target.innerHTML = String(Number(value) || 0);
          }
       }
 
