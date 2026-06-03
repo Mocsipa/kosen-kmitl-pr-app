@@ -4412,8 +4412,11 @@
                "fadeInPage"
             );
 
-            loadingPage.style.display = "";
-            loadingPage.style.pointerEvents = "none";
+            loadingPage.style.setProperty("display", "none", "important");
+            loadingPage.style.setProperty("pointer-events", "none", "important");
+            loadingPage.style.setProperty("visibility", "hidden", "important");
+            loadingPage.style.setProperty("opacity", "0", "important");
+            loadingPage.style.setProperty("z-index", "-1", "important");
          }
 
          document
@@ -4423,6 +4426,39 @@
                   page.style.pointerEvents = "";
                }
             });
+      }
+
+      let loadingOverlayGuardInstalled = false;
+
+      function installLoadingOverlayGuard() {
+         if (loadingOverlayGuardInstalled) {
+            return;
+         }
+
+         const homePage = document.getElementById("homePage");
+         const loadingPage = document.getElementById("loadingPage");
+
+         if (!homePage || !loadingPage || typeof MutationObserver === "undefined") {
+            return;
+         }
+
+         loadingOverlayGuardInstalled = true;
+
+         const guard = function () {
+            if (
+               homePage.classList.contains("active") &&
+               loadingPage.classList.contains("active")
+            ) {
+               forceHideLoading();
+               console.log("LOADING OVERLAY REMOVED AFTER HOME =", Array.from(document.querySelectorAll(".page.active")).map(p => p.id));
+            }
+         };
+
+         const observer = new MutationObserver(guard);
+         observer.observe(homePage, { attributes: true, attributeFilter: ["class"] });
+         observer.observe(loadingPage, { attributes: true, attributeFilter: ["class", "style"] });
+
+         guard();
       }
 
       const appPageIds = [
@@ -4598,6 +4634,40 @@
             });
       }
 
+      function showPageImmediately(id) {
+         clearPageTransitionTimer();
+         isPageAnimating = false;
+
+         const nextPage =
+            document.getElementById(id);
+
+         if (!nextPage) {
+            return;
+         }
+
+         document
+            .querySelectorAll(".page")
+            .forEach(function (page) {
+               page.classList.remove(
+                  "active",
+                  "pageTransitioning",
+                  "slideInFromRight",
+                  "slideInFromLeft",
+                  "slideOutToLeft",
+                  "slideOutToRight",
+                  "fadeInPage"
+               );
+
+               page.style.pointerEvents = "";
+            });
+
+         forceHideLoading();
+
+         nextPage.classList.add("active");
+         window.scrollTo(0, 0);
+         resetActiveContentScroll(id);
+      }
+
       function showPage(id) {
 
          clearPageTransitionTimer();
@@ -4745,6 +4815,11 @@
          const loadingPage = document.getElementById("loadingPage");
 
          if (loadingPage) {
+            loadingPage.style.removeProperty("display");
+            loadingPage.style.removeProperty("visibility");
+            loadingPage.style.removeProperty("opacity");
+            loadingPage.style.removeProperty("z-index");
+            loadingPage.style.removeProperty("pointer-events");
             loadingPage.style.pointerEvents = "auto";
             hideAll();
             loadingPage.classList.add("active");
@@ -4756,13 +4831,17 @@
 
       }
 
-      function showHome() {
+      function showHome(skipAnimation) {
 
          stopRewardPolling();
          stopCodePagePolling();
          stopScannerSilent();
 
-         showPage("homePage");
+         if (skipAnimation === true) {
+            showPageImmediately("homePage");
+         } else {
+            showPage("homePage");
+         }
 
          forceHideLoading();
 
@@ -5305,7 +5384,11 @@
 
          forceHideLoading();
 
-         showHome();
+         const isStaffLogin =
+            result.isStaff === true ||
+            normalizeCode(result.code).startsWith("XX");
+
+         showHome(isStaffLogin);
 
       }
 
@@ -7649,6 +7732,8 @@
 
       window.onload =
          function () {
+
+            installLoadingOverlayGuard();
 
             if (AUTO_CODE) {
                autoLoginFromQr();
