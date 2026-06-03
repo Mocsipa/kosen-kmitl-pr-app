@@ -3830,17 +3830,11 @@
          const user =
             userSnap.data();
 
-         const checkInText =
-            new Date().toLocaleString();
+         let checkInText = user.checkInTime || "";
 
-         await tools.updateDoc(
-            userRef,
-            {
-               checkedIn: true,
-               checkInTime: tools.serverTimestamp(),
-               updatedAt: tools.serverTimestamp()
-            }
-         );
+         if (checkInText && typeof checkInText.toDate === "function") {
+            checkInText = checkInText.toDate().toLocaleString();
+         }
 
          return {
             success: true,
@@ -3849,8 +3843,8 @@
             age: user.age || "-",
             email: user.email || "-",
             identity: user.identity || "-",
-            checkedIn: true,
-            checkInTime: checkInText,
+            checkedIn: Boolean(user.checkedIn),
+            checkInTime: checkInText || "-",
             point: Number(user.point) || 0,
             limit: Number(user.pointLimit) || 12,
             qrUrl: user.qrUrl || makeUserQrUrl(targetCode)
