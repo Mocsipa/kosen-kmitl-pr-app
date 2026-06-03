@@ -3494,8 +3494,23 @@
       const LOGIN_STORAGE_KEY =
          "KOSEN_NOW_LOGIN_CODE";
 
+      const WORKER_API_BASE =
+         "https://kosen-now-api.kosen-now-api.workers.dev";
+
       const DEBUG_MODE =
          true;
+
+      async function workerApi(path, data) {
+         const response = await fetch(WORKER_API_BASE + path, {
+            method: "POST",
+            headers: {
+               "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data || {})
+         });
+
+         return await response.json();
+      }
 
       function debugLog() {
          if (!DEBUG_MODE) {
@@ -3968,94 +3983,10 @@
       }
 
       async function staffCheckInMemberFirebase(staffCode, targetCode) {
-         const db = window.firebaseDb;
-         const tools = window.firebaseTools;
-
-         if (!db || !tools) {
-            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
-         }
-
-         const targetStaffCode = normalizeCode(staffCode);
-         const targetUserCode = normalizeCode(targetCode);
-
-         if (!targetStaffCode || !targetStaffCode.startsWith("XX")) {
-            return {
-               success: false,
-               message: "เฉพาะเจ้าหน้าที่เท่านั้นที่สามารถยืนยันตัวตนผู้ใช้ได้"
-            };
-         }
-
-         if (!targetUserCode || targetUserCode.startsWith("XX")) {
-            return {
-               success: false,
-               message: "QR ผู้ใช้ไม่ถูกต้อง"
-            };
-         }
-
-         const staffRef = tools.doc(db, "staff", targetStaffCode);
-         const staffSnap = await tools.getDoc(staffRef);
-
-         if (!staffSnap.exists()) {
-            return {
-               success: false,
-               message: "ไม่พบรหัสเจ้าหน้าที่"
-            };
-         }
-
-         const staff = staffSnap.data();
-
-         if (staff.active !== true) {
-            return {
-               success: false,
-               message: "รหัสเจ้าหน้าที่นี้ถูกปิดใช้งาน"
-            };
-         }
-
-         const userRef = tools.doc(db, "users", targetUserCode);
-         const userSnap = await tools.getDoc(userRef);
-
-         if (!userSnap.exists()) {
-            return {
-               success: false,
-               message: "ไม่พบผู้ใช้"
-            };
-         }
-
-         const user = userSnap.data();
-
-         await tools.updateDoc(
-            userRef,
-            {
-               checkedIn: true,
-               checkInTime: tools.serverTimestamp(),
-               checkedInBy: targetStaffCode,
-               updatedAt: tools.serverTimestamp()
-            }
-         );
-
-         try {
-            await tools.addDoc(
-               tools.collection(db, "checkInLogs"),
-               {
-                  staffCode: targetStaffCode,
-                  targetCode: targetUserCode,
-                  userName: user.name || "",
-                  action: "CHECK_IN",
-                  createdAt: tools.serverTimestamp()
-               }
-            );
-         } catch (logError) {
-            console.warn("CHECK-IN LOG WRITE FAILED =", logError);
-         }
-
-         return {
-            success: true,
-            message: "ยืนยันตัวสำเร็จ",
-            code: targetUserCode,
-            name: user.name || "-",
-            identity: user.identity || "-",
-            checkInTime: new Date().toLocaleString()
-         };
+         return await workerApi("/api/staff-check-in", {
+            staffCode: staffCode,
+            targetCode: targetCode
+         });
       }
 
       async function findCodeFirebase(email) {
@@ -4184,89 +4115,10 @@
       }
 
       async function addPointByQrFirebase(code, qrText) {
-         const db = window.firebaseDb;
-         const tools = window.firebaseTools;
-
-         if (!db || !tools) {
-            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
-         }
-
-         const targetCode = normalizeCode(code);
-         const scannedText = String(qrText || "").trim();
-         const addedPoint = getPointValueFromQr(scannedText);
-
-         if (!targetCode) {
-            return {
-               success: false,
-               message: "ไม่พบรหัสผู้ใช้"
-            };
-         }
-
-         if (targetCode.startsWith("XX")) {
-            return {
-               success: false,
-               message: "เจ้าหน้าที่ไม่สามารถเก็บคะแนนได้"
-            };
-         }
-
-         if (!addedPoint || addedPoint <= 0) {
-            return {
-               success: false,
-               message: "QR คะแนนไม่ถูกต้อง"
-            };
-         }
-
-         const userRef = tools.doc(db, "users", targetCode);
-         const userSnap = await tools.getDoc(userRef);
-
-         if (!userSnap.exists()) {
-            return {
-               success: false,
-               message: "ไม่พบรหัสผู้ใช้"
-            };
-         }
-
-         const user = userSnap.data();
-         const current = Number(user.point) || 0;
-         const limit = Number(user.pointLimit) || 12;
-         const nextPoint = Math.min(current + addedPoint, limit);
-         const actualAdded = nextPoint - current;
-
-         if (actualAdded <= 0) {
-            return {
-               success: false,
-               message: "คะแนนเต็มแล้ว",
-               point: current,
-               limit: limit
-            };
-         }
-
-         await tools.updateDoc(
-            userRef,
-            {
-               point: nextPoint,
-               updatedAt: tools.serverTimestamp()
-            }
-         );
-
-         await tools.addDoc(
-            tools.collection(db, "pointLogs"),
-            {
-               code: targetCode,
-               qrText: scannedText,
-               addedPoint: actualAdded,
-               beforePoint: current,
-               afterPoint: nextPoint,
-               createdAt: tools.serverTimestamp()
-            }
-         );
-
-         return {
-            success: true,
-            addedPoint: actualAdded,
-            point: nextPoint,
-            limit: limit
-         };
+         return await workerApi("/api/add-point", {
+            code: code,
+            qrText: qrText
+         });
       }
 
       function makeRedeemId() {
@@ -4297,226 +4149,19 @@
       }
 
       async function redeemRewardFirebase(code, rewardId, rewardName, costPoint) {
-         const db = window.firebaseDb;
-         const tools = window.firebaseTools;
-
-         if (!db || !tools) {
-            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
-         }
-
-         const targetCode = normalizeCode(code);
-         const cost = Number(costPoint) || 0;
-
-         if (!targetCode) {
-            return {
-               success: false,
-               message: "ไม่พบรหัสผู้ใช้"
-            };
-         }
-
-         if (targetCode.startsWith("XX")) {
-            return {
-               success: false,
-               message: "เจ้าหน้าที่ไม่สามารถแลกรางวัลแทนผู้ใช้ได้"
-            };
-         }
-
-         const userRef = tools.doc(db, "users", targetCode);
-         const userSnap = await tools.getDoc(userRef);
-
-         if (!userSnap.exists()) {
-            return {
-               success: false,
-               message: "ไม่พบผู้ใช้"
-            };
-         }
-
-         const user = userSnap.data();
-         const current = Number(user.point) || 0;
-         const limit = Number(user.pointLimit) || 12;
-
-         if (current < cost) {
-            return {
-               success: false,
-               message: "คะแนนไม่เพียงพอ",
-               point: current,
-               limit: limit
-            };
-         }
-
-         const redeemId = makeRedeemId();
-
-         const redeemQrText =
-            "KOSEN_REDEEM|" +
-            redeemId +
-            "|" +
-            targetCode +
-            "|" +
-            rewardId;
-
-         await tools.setDoc(
-            tools.doc(db, "rewardClaims", redeemId),
-            {
-               redeemId: redeemId,
-               redeemQrText: redeemQrText,
-               code: targetCode,
-               rewardId: rewardId,
-               rewardName: rewardName,
-               costPoint: cost,
-               status: "WAITING",
-               createdAt: tools.serverTimestamp(),
-               usedAt: null,
-               staffCode: "",
-               pointBeforeConfirm: current,
-               pointAfterConfirm: null
-            }
-         );
-
-         return {
-            success: true,
-            redeemId: redeemId,
-            redeemQrText: redeemQrText,
+         return await workerApi("/api/create-reward-claim", {
+            code: code,
             rewardId: rewardId,
             rewardName: rewardName,
-            costPoint: cost,
-            point: current,
-            limit: limit,
-            waitingConfirm: true
-         };
+            costPoint: costPoint
+         });
       }
 
       async function confirmRewardFirebase(redeemQrText, staffCode) {
-         const db = window.firebaseDb;
-         const tools = window.firebaseTools;
-
-         if (!db || !tools) {
-            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
-         }
-
-         const parsed = parseRedeemQrText(redeemQrText);
-
-         if (!parsed.valid) {
-            return {
-               success: false,
-               message: parsed.message || "QR แลกรางวัลไม่ถูกต้อง"
-            };
-         }
-
-         const targetStaffCode = normalizeCode(staffCode);
-
-         if (!targetStaffCode || !targetStaffCode.startsWith("XX")) {
-            return {
-               success: false,
-               message: "เฉพาะเจ้าหน้าที่เท่านั้นที่สามารถยืนยันแลกรางวัลได้"
-            };
-         }
-
-         const staffSnap = await tools.getDoc(
-            tools.doc(db, "staff", targetStaffCode)
-         );
-
-         if (!staffSnap.exists()) {
-            return {
-               success: false,
-               message: "ไม่พบรหัสเจ้าหน้าที่"
-            };
-         }
-
-         const staff = staffSnap.data();
-         const staffIsActive =
-            staff.active === true ||
-            String(staff.active || "").trim().toLowerCase() === "true";
-
-         if (!staffIsActive) {
-            return {
-               success: false,
-               message: "รหัสเจ้าหน้าที่นี้ถูกปิดใช้งาน"
-            };
-         }
-
-         const claimRef = tools.doc(db, "rewardClaims", parsed.redeemId);
-         const claimSnap = await tools.getDoc(claimRef);
-
-         if (!claimSnap.exists()) {
-            return {
-               success: false,
-               message: "ไม่พบรายการแลกรางวัลนี้"
-            };
-         }
-
-         const claim = claimSnap.data();
-         const claimStatus = String(claim.status || "").toUpperCase();
-
-         if (
-            claimStatus === "USED" ||
-            claimStatus === "CONFIRMED" ||
-            claimStatus === "REDEEMED" ||
-            claimStatus === "SUCCESS"
-         ) {
-            return {
-               success: false,
-               message: "QR นี้ถูกใช้รับรางวัลแล้ว"
-            };
-         }
-
-         const userCode = normalizeCode(claim.code || parsed.code);
-         const userRef = tools.doc(db, "users", userCode);
-         const userSnap = await tools.getDoc(userRef);
-
-         if (!userSnap.exists()) {
-            return {
-               success: false,
-               message: "ไม่พบผู้ใช้"
-            };
-         }
-
-         const user = userSnap.data();
-         const current = Number(user.point) || 0;
-         const limit = Number(user.pointLimit) || 12;
-         const cost = Number(claim.costPoint) || 0;
-
-         if (current < cost) {
-            return {
-               success: false,
-               message: "คะแนนไม่เพียงพอสำหรับยืนยันรับรางวัล"
-            };
-         }
-
-         const newPoint = current - cost;
-
-         await tools.updateDoc(
-            userRef,
-            {
-               point: newPoint,
-               updatedAt: tools.serverTimestamp()
-            }
-         );
-
-         await tools.updateDoc(
-            claimRef,
-            {
-               status: "USED",
-               usedAt: tools.serverTimestamp(),
-               staffCode: targetStaffCode,
-               pointAfterConfirm: newPoint
-            }
-         );
-
-         return {
-            success: true,
-            message: "แลกรับสำเร็จ",
-            redeemId: parsed.redeemId,
-            code: userCode,
-            rewardId: claim.rewardId || parsed.rewardId,
-            rewardName: claim.rewardName || "",
-            costPoint: cost,
-            point: newPoint,
-            limit: limit,
-            confirmed: true,
-            redeemed: true,
-            used: true,
-            status: "USED"
-         };
+         return await workerApi("/api/confirm-reward", {
+            redeemQrText: redeemQrText,
+            staffCode: staffCode
+         });
       }
 
       async function checkRedeemStatusFirebase(redeemId, code) {
