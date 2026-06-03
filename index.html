@@ -6951,6 +6951,9 @@
          }
 
          summaryRoomList.innerHTML = Object.keys(roomCounts)
+            .sort(function (a, b) {
+               return Number(a) - Number(b);
+            })
             .map(function (roomNumber) {
                return (
                   "<div class=\"summaryRoomItem\">" +
