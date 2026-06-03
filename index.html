@@ -53,6 +53,11 @@
          display: block;
       }
 
+      #loadingPage:not(.active) {
+         display: none !important;
+         pointer-events: none !important;
+      }
+
       /* ========================
    PAGE TRANSITION ANIMATION
 ======================== */
@@ -4392,6 +4397,34 @@
          hideFixedBars();
 
       }
+
+      function forceHideLoading() {
+         const loadingPage = document.getElementById("loadingPage");
+
+         if (loadingPage) {
+            loadingPage.classList.remove(
+               "active",
+               "pageTransitioning",
+               "slideInFromRight",
+               "slideInFromLeft",
+               "slideOutToLeft",
+               "slideOutToRight",
+               "fadeInPage"
+            );
+
+            loadingPage.style.display = "";
+            loadingPage.style.pointerEvents = "none";
+         }
+
+         document
+            .querySelectorAll(".page")
+            .forEach(function (page) {
+               if (page.id !== "loadingPage") {
+                  page.style.pointerEvents = "";
+               }
+            });
+      }
+
       const appPageIds = [
          "homePage",
          "eventPage",
@@ -4695,6 +4728,12 @@
 
       function showLoading() {
 
+         const loadingPage = document.getElementById("loadingPage");
+
+         if (loadingPage) {
+            loadingPage.style.pointerEvents = "auto";
+         }
+
          showPage("loadingPage");
 
       }
@@ -4706,6 +4745,10 @@
          stopScannerSilent();
 
          showPage("homePage");
+
+         forceHideLoading();
+
+         console.log("SHOW HOME ACTIVE PAGES =", Array.from(document.querySelectorAll(".page.active")).map(p => p.id));
 
          startSlideshow();
 
@@ -5239,6 +5282,8 @@
 
          clearAllInputs();
 
+         forceHideLoading();
+
          showHome();
 
       }
@@ -5341,6 +5386,7 @@
                await loginUserFirebase(code);
 
             if (result && result.success) {
+               forceHideLoading();
                showMember(result);
             } else {
                alert(result && result.message ? result.message : "Code ไม่ถูกต้อง");
@@ -5369,6 +5415,7 @@
                await loginUserFirebase(lastCode);
 
             if (result && result.success) {
+               forceHideLoading();
                showMember(result);
             } else {
                alert(result && result.message ? result.message : "Code ไม่ถูกต้อง");
@@ -5425,6 +5472,7 @@
                await loginUserFirebase(AUTO_CODE);
 
             if (result && result.success) {
+               forceHideLoading();
                showMember(result);
             } else {
                alert(result && result.message ? result.message : "QR Code ไม่ถูกต้อง หรือไม่พบรหัสนี้");
@@ -7602,6 +7650,7 @@
                         await loginUserFirebase(savedCode);
 
                      if (result && result.success) {
+                        forceHideLoading();
                         showMember(result);
                      } else {
                         localStorage.removeItem(LOGIN_STORAGE_KEY);
