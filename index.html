@@ -4570,6 +4570,14 @@
       ];
 
       let isPageAnimating = false;
+      let pageTransitionTimer = null;
+
+      function clearPageTransitionTimer() {
+         if (pageTransitionTimer) {
+            clearTimeout(pageTransitionTimer);
+            pageTransitionTimer = null;
+         }
+      }
 
       function cleanupTransitionPages(activeId) {
          document
@@ -4591,6 +4599,8 @@
       }
 
       function showPage(id) {
+
+         clearPageTransitionTimer();
 
          const nextPage =
             document.getElementById(id);
@@ -4656,7 +4666,7 @@
          window.scrollTo(0, 0);
          resetActiveContentScroll(id);
 
-         setTimeout(function () {
+         pageTransitionTimer = setTimeout(function () {
 
             currentPage.classList.remove(
                "active",
@@ -4676,6 +4686,7 @@
             resetActiveContentScroll(id);
 
             isPageAnimating = false;
+            pageTransitionTimer = null;
          }, 320);
 
       }
@@ -4728,10 +4739,17 @@
 
       function showLoading() {
 
+         clearPageTransitionTimer();
+         isPageAnimating = false;
+
          const loadingPage = document.getElementById("loadingPage");
 
          if (loadingPage) {
             loadingPage.style.pointerEvents = "auto";
+            hideAll();
+            loadingPage.classList.add("active");
+            window.scrollTo(0, 0);
+            return;
          }
 
          showPage("loadingPage");
@@ -4748,7 +4766,10 @@
 
          forceHideLoading();
 
-         console.log("SHOW HOME ACTIVE PAGES =", Array.from(document.querySelectorAll(".page.active")).map(p => p.id));
+         setTimeout(function () {
+            forceHideLoading();
+            console.log("SHOW HOME ACTIVE PAGES =", Array.from(document.querySelectorAll(".page.active")).map(p => p.id));
+         }, 340);
 
          startSlideshow();
 
