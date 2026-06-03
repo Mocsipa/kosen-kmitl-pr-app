@@ -1319,6 +1319,88 @@
          text-align: center;
       }
 
+      .summaryContent {
+         display: none;
+         padding-bottom: 230px;
+         background: white;
+      }
+
+      .summaryTitle {
+         font-size: 64px;
+         font-weight: 900;
+         color: #000;
+         line-height: 1;
+         margin-bottom: 8px;
+      }
+
+      .summarySubtitle {
+         font-size: 28px;
+         color: #000;
+         margin-bottom: 34px;
+      }
+
+      .summaryRoomList {
+         width: 86%;
+         max-width: 680px;
+         margin: 0 auto;
+         display: flex;
+         flex-direction: column;
+         gap: 26px;
+      }
+
+      .summaryRoomItem {
+         min-height: 108px;
+         border: 6px solid #dedede;
+         border-radius: 48px;
+         background: white;
+         display: grid;
+         grid-template-columns: 1fr 170px;
+         align-items: center;
+         padding: 14px 42px;
+      }
+
+      .summaryRoomName {
+         font-size: 48px;
+         font-weight: 900;
+         color: #000;
+         text-align: center;
+      }
+
+      .summaryRoomCountBox {
+         text-align: center;
+      }
+
+      .summaryRoomCountLabel {
+         font-size: 18px;
+         font-weight: 900;
+         color: #000;
+         margin-bottom: 2px;
+      }
+
+      .summaryRoomCount {
+         font-size: 48px;
+         line-height: 1;
+         font-weight: 900;
+         color: #ff5c1a;
+      }
+
+      .summaryDateSelect {
+         width: 330px;
+         max-width: 78%;
+         height: 66px;
+         margin: 58px auto 90px;
+         border: 0;
+         border-radius: 38px;
+         background: #d9d9d9;
+         color: #000;
+         text-align: center;
+         text-align-last: center;
+         font-size: 28px;
+         font-weight: 900;
+         letter-spacing: 2px;
+         padding: 0 46px 0 24px;
+      }
+
       .rewardTopRow {
          display: flex;
          justify-content: space-between;
@@ -2259,6 +2341,53 @@
 
          .rewardContent {
             padding: 125px 16px 100px;
+         }
+
+         .summaryContent {
+            padding-bottom: 210px;
+         }
+
+         .summaryTitle {
+            font-size: 42px;
+            margin-bottom: 6px;
+         }
+
+         .summarySubtitle {
+            font-size: 18px;
+            margin-bottom: 28px;
+         }
+
+         .summaryRoomList {
+            width: 86%;
+            gap: 18px;
+         }
+
+         .summaryRoomItem {
+            min-height: 78px;
+            border-width: 5px;
+            border-radius: 36px;
+            grid-template-columns: 1fr 92px;
+            padding: 10px 24px;
+         }
+
+         .summaryRoomName {
+            font-size: 32px;
+         }
+
+         .summaryRoomCountLabel {
+            font-size: 13px;
+         }
+
+         .summaryRoomCount {
+            font-size: 34px;
+         }
+
+         .summaryDateSelect {
+            width: 240px;
+            height: 52px;
+            margin: 42px auto 96px;
+            font-size: 20px;
+            letter-spacing: 1px;
          }
 
          .rewardTopRow {
@@ -3428,6 +3557,20 @@
 
       </div>
 
+      <div id="staffSummaryContent" class="rewardContent summaryContent">
+
+         <div class="summaryTitle">SUMMARIZE</div>
+
+         <div class="summarySubtitle">the number of participants in each room.</div>
+
+         <div id="summaryRoomList" class="summaryRoomList"></div>
+
+         <select id="summaryDateSelect" class="summaryDateSelect" onchange="changeSummaryDate(this.value)">
+            <option value="">-- / -- / ----</option>
+         </select>
+
+      </div>
+
       <div class="bottomNav">
          <div class="navItem disabledNav" onclick="showHome()">
             <div class="navIcon">🏠</div>
@@ -3802,6 +3945,9 @@
       };
       let dashboardSelectedDate = "";
       let dashboardRenderToken = 0;
+      let summaryUnsubscribe = null;
+      let summaryScans = [];
+      let summarySelectedDate = "";
 
       function stopRewardPolling() {
 
@@ -4772,6 +4918,7 @@
       }
 
       function updateFixedNavActive(id) {
+         updateStaffNavLabels();
 
          const navMap = {
             homePage: "fixedNavHome",
@@ -4817,6 +4964,71 @@
             activeNav.classList.remove("disabledNav");
          }
 
+      }
+
+      function updateStaffNavLabels() {
+         const isStaff =
+            isStaffCode(lastCode);
+
+         const pointIcon =
+            isStaff ? "📑" : "⭐";
+
+         const pointLabel =
+            isStaff ? "DASHBOARD" : "POINT";
+
+         const rewardIcon =
+            isStaff ? "📋" : "🎁";
+
+         const rewardLabel =
+            isStaff ? "SUMMARY" : "REWARD";
+
+         document
+            .querySelectorAll(".bottomNav")
+            .forEach(function (nav) {
+               const items =
+                  nav.querySelectorAll(".navItem");
+
+               updateNavItemLabel(items[3], pointIcon, pointLabel);
+               updateNavItemLabel(items[4], rewardIcon, rewardLabel);
+            });
+
+         updateNavItemLabel(
+            document.getElementById("fixedNavPoint"),
+            pointIcon,
+            pointLabel
+         );
+
+         updateNavItemLabel(
+            document.getElementById("fixedNavReward"),
+            rewardIcon,
+            rewardLabel
+         );
+      }
+
+      function updateNavItemLabel(item, icon, label) {
+         if (!item) {
+            return;
+         }
+
+         const iconEl =
+            item.querySelector(".navIcon");
+
+         if (iconEl) {
+            iconEl.innerHTML = icon;
+         }
+
+         const textEls =
+            Array.from(item.children)
+               .filter(function (child) {
+                  return !child.classList.contains("navIcon");
+               });
+
+         const textEl =
+            textEls[0];
+
+         if (textEl) {
+            textEl.innerHTML = label;
+         }
       }
 
       function resetActiveContentScroll(pageId) {
@@ -4890,6 +5102,15 @@
       function showPageImmediately(id) {
          clearPageTransitionTimer();
          isPageAnimating = false;
+         updateStaffNavLabels();
+
+         if (id !== "pointPage") {
+            stopStaffDashboardRealtime();
+         }
+
+         if (id !== "rewardPage") {
+            stopStaffSummaryRealtime();
+         }
 
          const nextPage =
             document.getElementById(id);
@@ -4924,9 +5145,14 @@
       function showPage(id) {
 
          clearPageTransitionTimer();
+         updateStaffNavLabels();
 
          if (id !== "pointPage") {
             stopStaffDashboardRealtime();
+         }
+
+         if (id !== "rewardPage") {
+            stopStaffSummaryRealtime();
          }
 
          const nextPage =
@@ -5033,12 +5259,15 @@
          stopRewardPolling();
          stopCodePagePolling();
          stopScannerSilent();
+         stopStaffSummaryRealtime();
 
          localStorage.removeItem(LOGIN_STORAGE_KEY);
 
          lastCode = "";
          lastQrUrl = "";
          currentPoint = 0;
+
+         updateStaffNavLabels();
 
          clearAllInputs();
 
@@ -5592,6 +5821,8 @@
          if (lastCode) {
             localStorage.setItem(LOGIN_STORAGE_KEY, lastCode);
          }
+
+         updateStaffNavLabels();
 
          const memberName =
             document.getElementById("memberName");
@@ -6567,6 +6798,12 @@
             return;
          }
 
+         if (isStaffCode(lastCode)) {
+            showStaffSummary();
+            return;
+         }
+
+         stopStaffSummaryRealtime();
          showPage("rewardPage");
 
          const rewardListView = document.getElementById("rewardListView");
@@ -6575,6 +6812,7 @@
          const certificatePreviewView = document.getElementById("certificatePreviewView");
          const certificateEditorView = document.getElementById("certificateEditorView");
          const certificateSuccessView = document.getElementById("certificateSuccessView");
+         const staffSummaryContent = document.getElementById("staffSummaryContent");
 
          if (rewardListView) { rewardListView.style.display = "block"; }
          if (rewardClaimQrView) { rewardClaimQrView.style.display = "none"; }
@@ -6582,6 +6820,7 @@
          if (certificatePreviewView) { certificatePreviewView.style.display = "none"; }
          if (certificateEditorView) { certificateEditorView.style.display = "none"; }
          if (certificateSuccessView) { certificateSuccessView.style.display = "none"; }
+         if (staffSummaryContent) { staffSummaryContent.style.display = "none"; }
 
          updateRewardPointFromCache();
          renderRewardList();
@@ -6592,6 +6831,161 @@
 
       }
 
+      function showStaffSummary() {
+         showPage("rewardPage");
+         showRewardView("staffSummaryContent");
+         startStaffSummaryRealtime();
+      }
+
+      function stopStaffSummaryRealtime() {
+         if (summaryUnsubscribe) {
+            summaryUnsubscribe();
+            summaryUnsubscribe = null;
+         }
+      }
+
+      function startStaffSummaryRealtime() {
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+
+         if (!db || !tools) {
+            return;
+         }
+
+         stopStaffSummaryRealtime();
+
+         summaryUnsubscribe = tools.onSnapshot(
+            tools.collection(db, "pointScans"),
+            function (snapshot) {
+               summaryScans = [];
+
+               snapshot.forEach(function (docSnap) {
+                  summaryScans.push(docSnap.data() || {});
+               });
+
+               renderSummaryDateOptions();
+               renderStaffSummary();
+            },
+            function (error) {
+               console.error("SUMMARY LISTENER ERROR =", error);
+            }
+         );
+      }
+
+      function renderSummaryDateOptions() {
+         const select =
+            document.getElementById("summaryDateSelect");
+
+         if (!select) {
+            return;
+         }
+
+         const dateMap = {};
+
+         summaryScans.forEach(function (scan) {
+            const key = getDashboardDateKey(scan.createdAt);
+
+            if (key) {
+               dateMap[key] = true;
+            }
+         });
+
+         const dates =
+            Object.keys(dateMap)
+               .sort()
+               .reverse();
+
+         if (!summarySelectedDate) {
+            summarySelectedDate = dates[0] || getTodayDashboardKey();
+         }
+
+         if (dates.indexOf(summarySelectedDate) === -1) {
+            dates.unshift(summarySelectedDate);
+         }
+
+         select.innerHTML = dates
+            .map(function (key) {
+               return "<option value=\"" + key + "\">" + formatDashboardDate(key) + "</option>";
+            })
+            .join("");
+
+         select.value = summarySelectedDate;
+      }
+
+      function changeSummaryDate(value) {
+         summarySelectedDate = value || getTodayDashboardKey();
+         renderStaffSummary();
+      }
+
+      function renderStaffSummary() {
+         const selectedDate =
+            summarySelectedDate || getTodayDashboardKey();
+
+         const roomCounts = {};
+
+         for (let i = 1; i <= 12; i++) {
+            roomCounts[String(i).padStart(2, "0")] = 0;
+         }
+
+         summaryScans.forEach(function (scan) {
+            const key =
+               getDashboardDateKey(scan.createdAt);
+
+            if (key !== selectedDate) {
+               return;
+            }
+
+            const roomNumber =
+               getSummaryRoomNumber(scan.roomId || scan.qrText);
+
+            if (roomNumber && Object.prototype.hasOwnProperty.call(roomCounts, roomNumber)) {
+               roomCounts[roomNumber]++;
+            }
+         });
+
+         const summaryRoomList =
+            document.getElementById("summaryRoomList");
+
+         if (!summaryRoomList) {
+            return;
+         }
+
+         summaryRoomList.innerHTML = Object.keys(roomCounts)
+            .map(function (roomNumber) {
+               return (
+                  "<div class=\"summaryRoomItem\">" +
+                     "<div class=\"summaryRoomName\">Room " + Number(roomNumber) + "</div>" +
+                     "<div class=\"summaryRoomCountBox\">" +
+                        "<div class=\"summaryRoomCountLabel\">Total Users</div>" +
+                        "<div class=\"summaryRoomCount\">" + roomCounts[roomNumber] + "</div>" +
+                     "</div>" +
+                  "</div>"
+               );
+            })
+            .join("");
+      }
+
+      function getSummaryRoomNumber(value) {
+         const text =
+            String(value || "").trim().toUpperCase();
+
+         const roomIdMatch =
+            text.match(/^ROOM_(0[1-9]|1[0-2])$/);
+
+         if (roomIdMatch) {
+            return roomIdMatch[1];
+         }
+
+         const qrMatch =
+            text.match(/^KOSEN_ROOM_(0[1-9]|1[0-2])$/);
+
+         if (qrMatch) {
+            return qrMatch[1];
+         }
+
+         return "";
+      }
+
       function showRewardView(id) {
 
          [
@@ -6600,7 +6994,8 @@
             "rewardSuccessView",
             "certificatePreviewView",
             "certificateEditorView",
-            "certificateSuccessView"
+            "certificateSuccessView",
+            "staffSummaryContent"
          ].forEach(function (viewId) {
 
             const view =
