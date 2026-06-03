@@ -8105,6 +8105,15 @@
 
                   updateRewardPointFromCache();
 
+               } else if (pointResult && pointResult.duplicate === true) {
+
+                  alert(
+                     pointResult.message ||
+                     "คุณได้รับคะแนนจาก QR นี้แล้ว"
+                  );
+
+                  showPoint();
+
                } else {
 
                   alert(
