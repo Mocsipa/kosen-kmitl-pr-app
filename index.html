@@ -4344,50 +4344,12 @@
       }
 
       async function registerUserFirebase(name, age, email, identity) {
-         const db = window.firebaseDb;
-         const tools = window.firebaseTools;
-
-         if (!db || !tools) {
-            throw new Error("Firebase ยังไม่พร้อมใช้งาน");
-         }
-
-         const code =
-            await generateUniqueMemberCodeFirebase();
-
-         const qrUrl =
-            makeUserQrUrl(code);
-
-         await tools.setDoc(
-            tools.doc(db, "users", code),
-            {
-               code: code,
-               name: name,
-               age: age,
-               email: email,
-               identity: identity,
-               checkedIn: false,
-               checkInTime: null,
-               point: 0,
-               pointLimit: 12,
-               qrUrl: qrUrl,
-               createdAt: tools.serverTimestamp(),
-               updatedAt: tools.serverTimestamp()
-            }
-         );
-
-         return {
-            success: true,
-            code: code,
+         return await workerApi("/api/register", {
             name: name,
             age: age,
             email: email,
-            identity: identity,
-            checkedIn: false,
-            checkInTime: "",
-            point: 0,
-            limit: 12,
-            qrUrl: qrUrl
-         };
+            identity: identity
+         });
       }
 
       async function loginUserFirebase(code) {
