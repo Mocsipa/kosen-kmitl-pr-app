@@ -165,10 +165,14 @@
       }
 
       .pageTransitioning.slideInFromRight,
-      .pageTransitioning.slideInFromLeft,
+      .pageTransitioning.slideInFromLeft {
+         animation: fadeInPage 0.26s ease forwards !important;
+         transform: none !important;
+      }
+
       .pageTransitioning.slideOutToLeft,
       .pageTransitioning.slideOutToRight {
-         animation: none !important;
+         animation: fadeOutPage 0.26s ease forwards !important;
          transform: none !important;
       }
 
@@ -204,7 +208,7 @@
       .pageTransitioning.slideInFromRight>.dashboardContent,
       .pageTransitioning.slideInFromRight>.rewardContent,
       .pageTransitioning.slideInFromRight>.scanContent {
-         animation: slideInFromRight 0.32s ease forwards;
+         animation: fadeInPage 0.26s ease forwards;
       }
 
       .pageTransitioning.slideInFromLeft>.homeContent,
@@ -213,7 +217,7 @@
       .pageTransitioning.slideInFromLeft>.dashboardContent,
       .pageTransitioning.slideInFromLeft>.rewardContent,
       .pageTransitioning.slideInFromLeft>.scanContent {
-         animation: slideInFromLeft 0.32s ease forwards;
+         animation: fadeInPage 0.26s ease forwards;
       }
 
       .pageTransitioning.slideOutToLeft>.homeContent,
@@ -222,7 +226,7 @@
       .pageTransitioning.slideOutToLeft>.dashboardContent,
       .pageTransitioning.slideOutToLeft>.rewardContent,
       .pageTransitioning.slideOutToLeft>.scanContent {
-         animation: slideOutToLeft 0.32s ease forwards;
+         animation: fadeOutPage 0.26s ease forwards;
       }
 
       .pageTransitioning.slideOutToRight>.homeContent,
@@ -231,72 +235,72 @@
       .pageTransitioning.slideOutToRight>.dashboardContent,
       .pageTransitioning.slideOutToRight>.rewardContent,
       .pageTransitioning.slideOutToRight>.scanContent {
-         animation: slideOutToRight 0.32s ease forwards;
+         animation: fadeOutPage 0.26s ease forwards;
       }
 
       /* Profile content animation */
 
       .pageTransitioning.slideInFromRight>.profileContent {
-         animation: slideInFromRight 0.32s ease forwards;
+         animation: fadeInPage 0.26s ease forwards;
       }
 
       .pageTransitioning.slideInFromLeft>.profileContent {
-         animation: slideInFromLeft 0.32s ease forwards;
+         animation: fadeInPage 0.26s ease forwards;
       }
 
       .pageTransitioning.slideOutToLeft>.profileContent {
-         animation: slideOutToLeft 0.32s ease forwards;
+         animation: fadeOutPage 0.26s ease forwards;
       }
 
       .pageTransitioning.slideOutToRight>.profileContent {
-         animation: slideOutToRight 0.32s ease forwards;
+         animation: fadeOutPage 0.26s ease forwards;
       }
 
       @keyframes slideInFromRight {
          from {
-            transform: translateX(100%);
-            opacity: 0.95;
+            transform: none;
+            opacity: 0;
          }
 
          to {
-            transform: translateX(0);
+            transform: none;
             opacity: 1;
          }
       }
 
       @keyframes slideInFromLeft {
          from {
-            transform: translateX(-100%);
-            opacity: 0.95;
+            transform: none;
+            opacity: 0;
          }
 
          to {
-            transform: translateX(0);
+            transform: none;
             opacity: 1;
          }
       }
 
       @keyframes slideOutToLeft {
          from {
-            transform: translateX(0);
+            transform: none;
             opacity: 1;
          }
 
          to {
-            transform: translateX(-100%);
-            opacity: 1;
+            transform: none;
+            opacity: 0;
          }
       }
 
       @keyframes slideOutToRight {
          from {
-            transform: translateX(0);
+            transform: none;
             opacity: 1;
          }
 
          to {
-            transform: translateX(100%);
-            opacity: 1;
+            transform: none;
+            opacity: 0;
          }
       }
 
@@ -307,6 +311,16 @@
 
          to {
             opacity: 1;
+         }
+      }
+
+      @keyframes fadeOutPage {
+         from {
+            opacity: 1;
+         }
+
+         to {
+            opacity: 0;
          }
       }
 
@@ -2893,8 +2907,8 @@
       }
 
       /* ========================
-   SMOOTH PAGE TRANSITION OVERRIDE
-   Make forward/back feel equally smooth
+   FADE PAGE TRANSITION OVERRIDE
+   Keep every page change consistent
 ======================== */
 
       .slideInFromRight,
@@ -2902,7 +2916,21 @@
       .slideOutToLeft,
       .slideOutToRight {
          animation-duration: 0.26s !important;
-         animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1) !important;
+         animation-timing-function: ease !important;
+      }
+
+      .pageTransitioning.slideInFromRight,
+      .pageTransitioning.slideInFromLeft {
+         animation: fadeInPage 0.26s ease forwards !important;
+         transform: none !important;
+         -webkit-transform: none !important;
+      }
+
+      .pageTransitioning.slideOutToLeft,
+      .pageTransitioning.slideOutToRight {
+         animation: fadeOutPage 0.26s ease forwards !important;
+         transform: none !important;
+         -webkit-transform: none !important;
       }
 
       .pageTransitioning.slideInFromRight>.homeContent,
@@ -2912,7 +2940,7 @@
       .pageTransitioning.slideInFromRight>.rewardContent,
       .pageTransitioning.slideInFromRight>.scanContent,
       .pageTransitioning.slideInFromRight>.profileContent {
-         animation: slideInFromRight 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) forwards !important;
+         animation: fadeInPage 0.26s ease forwards !important;
       }
 
       .pageTransitioning.slideInFromLeft>.homeContent,
@@ -2922,7 +2950,7 @@
       .pageTransitioning.slideInFromLeft>.rewardContent,
       .pageTransitioning.slideInFromLeft>.scanContent,
       .pageTransitioning.slideInFromLeft>.profileContent {
-         animation: slideInFromLeft 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) forwards !important;
+         animation: fadeInPage 0.26s ease forwards !important;
       }
 
       .pageTransitioning.slideOutToLeft>.homeContent,
@@ -2932,7 +2960,7 @@
       .pageTransitioning.slideOutToLeft>.rewardContent,
       .pageTransitioning.slideOutToLeft>.scanContent,
       .pageTransitioning.slideOutToLeft>.profileContent {
-         animation: slideOutToLeft 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) forwards !important;
+         animation: fadeOutPage 0.26s ease forwards !important;
       }
 
       .pageTransitioning.slideOutToRight>.homeContent,
@@ -2942,7 +2970,7 @@
       .pageTransitioning.slideOutToRight>.rewardContent,
       .pageTransitioning.slideOutToRight>.scanContent,
       .pageTransitioning.slideOutToRight>.profileContent {
-         animation: slideOutToRight 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) forwards !important;
+         animation: fadeOutPage 0.26s ease forwards !important;
       }
    </style>
 
