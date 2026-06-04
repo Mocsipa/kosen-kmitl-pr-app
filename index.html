@@ -4078,9 +4078,14 @@
       let dashboardSearchResults = [];
       let dashboardDataLoadedAt = 0;
       let dashboardLoadPromise = null;
+      let dashboardStatsData = null;
+      let dashboardStatsDates = [];
+      let dashboardSearchTimer = null;
       const DASHBOARD_CACHE_MS = 60000;
       let summaryUnsubscribe = null;
       let summaryScans = [];
+      let summaryStatsData = null;
+      let summaryStatsDates = [];
       let summarySelectedDate = "";
       let firestoreUnsubscribers = {};
 
@@ -6439,20 +6444,9 @@
       }
 
       async function startStaffDashboardRealtime() {
-         const db = window.firebaseDb;
-         const tools = window.firebaseTools;
-
-         if (!db || !tools) {
+         if (!lastCode || !isStaffCode(lastCode)) {
             return;
          }
-
-         const dashboardSources = [
-            { collectionName: "users", key: "users" },
-            { collectionName: "checkInLogs", key: "checkInLogs" },
-            { collectionName: "pointLogs", key: "pointLogs" },
-            { collectionName: "rewardClaims", key: "rewardClaims" },
-            { collectionName: "certificates", key: "certificates" }
-         ];
 
          const now = Date.now();
          const hasFreshDashboardCache =
@@ -6474,41 +6468,29 @@
 
          stopStaffDashboardRealtime();
 
-         dashboardData = {
-            users: [],
-            checkInLogs: [],
-            pointLogs: [],
-            rewardClaims: [],
-            certificates: []
-         };
+         const selectedDate =
+            dashboardSelectedDate || getTodayDashboardKey();
 
-         dashboardLoadPromise = Promise.all(
-               dashboardSources.map(async function (source) {
-                  const snapshot =
-                     await getFirestoreDocs(
-                        tools.collection(db, source.collectionName),
-                        "staffDashboard/" + source.collectionName
-                     );
-
-                  const rows = [];
-
-                  snapshot.forEach(function (docSnap) {
-                     rows.push(
-                        Object.assign(
-                           {
-                              id: docSnap.id
-                           },
-                           docSnap.data() || {}
-                        )
-                     );
-                  });
-
-                  dashboardData[source.key] = rows;
-               })
-         );
+         dashboardLoadPromise = workerApi("/api/dashboard-stats", {
+            staffCode: lastCode,
+            date: selectedDate
+         });
 
          try {
-            await dashboardLoadPromise;
+            const result =
+               await dashboardLoadPromise;
+
+            if (!result || result.success === false) {
+               throw new Error(
+                  result && result.message
+                     ? result.message
+                     : "โหลด Dashboard ไม่สำเร็จ"
+               );
+            }
+
+            dashboardSelectedDate = result.date || selectedDate;
+            dashboardStatsData = result.stats || null;
+            dashboardStatsDates = Array.isArray(result.dates) ? result.dates : [];
 
             dashboardDataLoadedAt = Date.now();
             renderDashboardDateOptions();
@@ -6571,18 +6553,10 @@
             return;
          }
 
-         const dateMap = {};
-
-         getDashboardRowsForDateOptions().forEach(function (item) {
-            const key = getDashboardDateKey(item.dateValue);
-
-            if (key) {
-               dateMap[key] = true;
-            }
-         });
-
          const dates =
-            Object.keys(dateMap)
+            (dashboardStatsDates.length
+               ? dashboardStatsDates.slice()
+               : [dashboardSelectedDate || getTodayDashboardKey()])
                .sort()
                .reverse();
 
@@ -6605,7 +6579,8 @@
 
       function changeDashboardDate(value) {
          dashboardSelectedDate = value || getTodayDashboardKey();
-         renderStaffDashboard();
+         dashboardDataLoadedAt = 0;
+         startStaffDashboardRealtime();
       }
 
       function getDashboardRowsForDateOptions() {
@@ -6690,84 +6665,19 @@
 
       function renderStaffDashboard() {
          const renderToken = ++dashboardRenderToken;
-         const selectedDate = dashboardSelectedDate || getTodayDashboardKey();
-         const memberUsers =
-            getDashboardMemberUsers();
+         const stats =
+            dashboardStatsData || {};
 
          const counts = {
-            totalUsers: 0,
-            checkedIn: 0,
-            student: 0,
-            parent: 0,
-            teacher: 0,
-            pointScans: 0,
-            rewards: 0,
-            certificates: 0
+            totalUsers: Number(stats.totalUsers) || 0,
+            checkedIn: Number(stats.checkedIn) || 0,
+            student: Number(stats.student) || 0,
+            parent: Number(stats.parent) || 0,
+            teacher: Number(stats.teacher) || 0,
+            pointScans: Number(stats.pointScans) || 0,
+            rewards: Number(stats.rewards) || 0,
+            certificates: Number(stats.certificates) || 0
          };
-
-         memberUsers.forEach(function (user) {
-            counts.totalUsers++;
-
-            const identity = String(user.identity || "").trim().toLowerCase();
-
-            if (identity === "student") {
-               counts.student++;
-            } else if (identity === "parent") {
-               counts.parent++;
-            } else if (identity === "teacher") {
-               counts.teacher++;
-            }
-         });
-
-         const checkedInMap = {};
-
-         dashboardData.checkInLogs.forEach(function (log) {
-            const key = getDashboardDateKey(log.createdAt);
-            const targetCode = normalizeCode(log.targetCode);
-
-            if (
-               key === selectedDate &&
-               isDashboardUserCode(targetCode) &&
-               String(log.action || "").toUpperCase() === "CHECK_IN"
-            ) {
-               checkedInMap[targetCode] = true;
-            }
-         });
-
-         counts.checkedIn = Object.keys(checkedInMap).length;
-
-         dashboardData.pointLogs.forEach(function (log) {
-            if (
-               getDashboardDateKey(log.createdAt) === selectedDate &&
-               isDashboardUserCode(log.code || log.userCode)
-            ) {
-               counts.pointScans++;
-            }
-         });
-
-         dashboardData.rewardClaims.forEach(function (claim) {
-            const key = getDashboardDateKey(claim.usedAt || claim.createdAt);
-
-            if (
-               key === selectedDate &&
-               isDashboardUsedRewardStatus(claim.status) &&
-               isDashboardUserCode(claim.code || claim.userCode)
-            ) {
-               counts.rewards++;
-            }
-         });
-
-         dashboardData.certificates.forEach(function (certificate) {
-            const key = getDashboardDateKey(certificate.updatedAt || certificate.createdAt);
-
-            if (
-               key === selectedDate &&
-               isDashboardSentCertificateStatus(certificate.status) &&
-               isDashboardUserCode(certificate.code || certificate.userCode || certificate.id)
-            ) {
-               counts.certificates++;
-            }
-         });
 
          if (renderToken !== dashboardRenderToken) {
             return;
@@ -6798,7 +6708,14 @@
       }
 
       function handleDashboardSearchInput() {
-         renderDashboardSearchResults();
+         if (dashboardSearchTimer) {
+            clearTimeout(dashboardSearchTimer);
+         }
+
+         dashboardSearchTimer =
+            setTimeout(function () {
+               renderDashboardSearchResults();
+            }, 500);
       }
 
       function getDashboardSearchText() {
@@ -6808,7 +6725,7 @@
          return input ? String(input.value || "").trim() : "";
       }
 
-      function renderDashboardSearchResults() {
+      async function renderDashboardSearchResults() {
          const resultsBox =
             document.getElementById("dashboardSearchResults");
 
@@ -6833,29 +6750,40 @@
             return;
          }
 
-         const lowerSearch =
-            searchText.toLowerCase();
+         resultsBox.innerHTML =
+            "<div class=\"dashboardUserCard\">กำลังค้นหา...</div>";
 
-         dashboardSearchResults = getDashboardMemberUsers()
-            .filter(function (user) {
-               if (lowerSearch === "all") {
-                  return true;
-               }
+         try {
+            const result =
+               await workerApi("/api/search-users", {
+                  staffCode: lastCode,
+                  search: searchText,
+                  date: dashboardSelectedDate || getTodayDashboardKey()
+               });
 
-               const name =
-                  String(user.name || "").toLowerCase();
-
-               const email =
-                  String(user.email || "").toLowerCase();
-
-               return (
-                  name.indexOf(lowerSearch) !== -1 ||
-                  email.indexOf(lowerSearch) !== -1
+            if (!result || result.success === false) {
+               throw new Error(
+                  result && result.message
+                     ? result.message
+                     : "ค้นหาข้อมูลไม่สำเร็จ"
                );
-            })
-            .sort(function (a, b) {
-               return String(a.name || "").localeCompare(String(b.name || ""));
-            });
+            }
+
+            dashboardSearchResults = Array.isArray(result.users)
+               ? result.users
+               : [];
+         } catch (error) {
+            dashboardSearchResults = [];
+            resultsBox.innerHTML =
+               "<div class=\"dashboardUserCard\">ค้นหาข้อมูลไม่สำเร็จ</div>";
+
+            if (downloadBtn) {
+               downloadBtn.style.display = "none";
+            }
+
+            console.error("DASHBOARD SEARCH ERROR =", error);
+            return;
+         }
 
          if (downloadBtn) {
             downloadBtn.style.display =
@@ -6943,11 +6871,24 @@
             .replace(/'/g, "&#039;");
       }
 
-      function downloadDashboardSearchExcel() {
-         const rows =
+      async function downloadDashboardSearchExcel() {
+         let rows =
             dashboardSearchResults.length
                ? dashboardSearchResults
-               : getDashboardMemberUsers();
+               : [];
+
+         if (!rows.length) {
+            const result =
+               await workerApi("/api/search-users", {
+                  staffCode: lastCode,
+                  search: "All",
+                  date: dashboardSelectedDate || getTodayDashboardKey()
+               });
+
+            rows = result && result.success && Array.isArray(result.users)
+               ? result.users
+               : [];
+         }
 
          if (!rows.length) {
             alert("ไม่มีข้อมูลสำหรับดาวน์โหลด");
@@ -7416,39 +7357,31 @@
          summaryUnsubscribe = null;
       }
 
-      function startStaffSummaryRealtime() {
-         const db = window.firebaseDb;
-         const tools = window.firebaseTools;
-
-         if (!db || !tools) {
+      async function startStaffSummaryRealtime() {
+         if (!lastCode || !isStaffCode(lastCode)) {
             return;
          }
 
-         if (isFirestoreListenerActive("staffSummary:pointScans")) {
-            renderSummaryDateOptions();
-            renderStaffSummary();
+         const result =
+            await workerApi("/api/dashboard-stats", {
+               staffCode: lastCode,
+               date: summarySelectedDate || getTodayDashboardKey()
+            });
+
+         if (!result || result.success === false) {
+            console.error(
+               "SUMMARY LOAD ERROR =",
+               result && result.message ? result.message : result
+            );
             return;
          }
 
-         stopStaffSummaryRealtime();
+         summarySelectedDate = result.date || summarySelectedDate || getTodayDashboardKey();
+         summaryStatsData = result.stats || null;
+         summaryStatsDates = Array.isArray(result.dates) ? result.dates : [];
 
-         summaryUnsubscribe = listenFirestoreSnapshot(
-            "staffSummary:pointScans",
-            tools.collection(db, "pointScans"),
-            function (snapshot) {
-               summaryScans = [];
-
-               snapshot.forEach(function (docSnap) {
-                  summaryScans.push(docSnap.data() || {});
-               });
-
-               renderSummaryDateOptions();
-               renderStaffSummary();
-            },
-            function (error) {
-               console.error("SUMMARY LISTENER ERROR =", error);
-            }
-         );
+         renderSummaryDateOptions();
+         renderStaffSummary();
       }
 
       function renderSummaryDateOptions() {
@@ -7459,18 +7392,10 @@
             return;
          }
 
-         const dateMap = {};
-
-         summaryScans.forEach(function (scan) {
-            const key = getDashboardDateKey(scan.createdAt);
-
-            if (key) {
-               dateMap[key] = true;
-            }
-         });
-
          const dates =
-            Object.keys(dateMap)
+            (summaryStatsDates.length
+               ? summaryStatsDates.slice()
+               : [summarySelectedDate || getTodayDashboardKey()])
                .sort()
                .reverse();
 
@@ -7493,34 +7418,24 @@
 
       function changeSummaryDate(value) {
          summarySelectedDate = value || getTodayDashboardKey();
-         renderStaffSummary();
+         startStaffSummaryRealtime();
       }
 
       function renderStaffSummary() {
-         const selectedDate =
-            summarySelectedDate || getTodayDashboardKey();
+         const rooms =
+            summaryStatsData && summaryStatsData.rooms
+               ? summaryStatsData.rooms
+               : {};
 
          const roomCounts = {};
 
          for (let i = 1; i <= 12; i++) {
-            roomCounts[String(i).padStart(2, "0")] = 0;
+            const roomKey =
+               "ROOM_" + String(i).padStart(2, "0");
+
+            roomCounts[String(i).padStart(2, "0")] =
+               Number(rooms[roomKey]) || 0;
          }
-
-         summaryScans.forEach(function (scan) {
-            const key =
-               getDashboardDateKey(scan.createdAt);
-
-            if (key !== selectedDate) {
-               return;
-            }
-
-            const roomNumber =
-               getSummaryRoomNumber(scan.roomId || scan.qrText);
-
-            if (roomNumber && Object.prototype.hasOwnProperty.call(roomCounts, roomNumber)) {
-               roomCounts[roomNumber]++;
-            }
-         });
 
          const summaryRoomList =
             document.getElementById("summaryRoomList");
@@ -8665,6 +8580,14 @@
                      message: result.message || ""
                   }
                );
+
+               try {
+                  await workerApi("/api/record-certificate-sent", {
+                     code: targetCode
+                  });
+               } catch (statsError) {
+                  console.warn("CERTIFICATE STATS UPDATE ERROR =", statsError);
+               }
 
                showCertificateSuccess();
                return;
