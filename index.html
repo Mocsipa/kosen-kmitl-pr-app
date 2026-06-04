@@ -1188,7 +1188,7 @@
 
       .dashboardContent {
          display: none;
-         padding: 135px 24px 240px;
+         padding: 135px 24px 360px;
          text-align: center;
          background: white;
          min-height: 100%;
@@ -1348,7 +1348,7 @@
       .dashboardSearchResults {
          width: 86%;
          max-width: 680px;
-         margin: 0 auto 60px;
+         margin: 0 auto 170px;
          display: flex;
          flex-direction: column;
          gap: 18px;
@@ -2338,7 +2338,7 @@
          }
 
          .dashboardContent {
-            padding: 125px 14px 220px;
+            padding: 125px 14px 340px;
          }
 
          .dashboardTitle {
@@ -2413,7 +2413,7 @@
          .dashboardSearchResults {
             width: 86%;
             gap: 14px;
-            margin-bottom: 72px;
+            margin-bottom: 180px;
          }
 
          .dashboardUserCard {
@@ -2838,6 +2838,10 @@
          z-index: 10000 !important;
       }
 
+      .pointPage.active .dashboardContent {
+         padding-bottom: 360px !important;
+      }
+
       @media screen and (max-width: 480px) {
 
          .homePage.active .homeHeader,
@@ -2880,6 +2884,10 @@
          #profileEditorPage.active .profileContent {
             padding-top: 28px !important;
             padding-bottom: 28px !important;
+         }
+
+         .pointPage.active .dashboardContent {
+            padding-bottom: 340px !important;
          }
 
       }
@@ -3076,10 +3084,10 @@
                <button onclick="showEvent();closeMenuOverlay();"
                   class="menuButton" style="color:#ff5c1a;">🗺️
                   Event</button>
-               <button onclick="showPoint();closeMenuOverlay();"
+               <button id="menuNavPoint" onclick="showPoint();closeMenuOverlay();"
                   class="menuButton" style="color:#18a957;">⭐
                   Point</button>
-               <button onclick="showReward();closeMenuOverlay();"
+               <button id="menuNavReward" onclick="showReward();closeMenuOverlay();"
                   class="menuButton" style="color:#238bff;">🎁
                   Reward</button>
                <button onclick="showScanPage();closeMenuOverlay();"
@@ -3451,8 +3459,6 @@
          </button>
 
          <div id="dashboardSearchResults" class="dashboardSearchResults"></div>
-
-         <button class="dashboardBackBtn" onclick="showHome()">Back</button>
 
       </div>
 
@@ -5100,6 +5106,18 @@
             rewardIcon,
             rewardLabel
          );
+
+         updateMenuButtonLabel(
+            document.getElementById("menuNavPoint"),
+            pointIcon,
+            pointLabel
+         );
+
+         updateMenuButtonLabel(
+            document.getElementById("menuNavReward"),
+            rewardIcon,
+            rewardLabel
+         );
       }
 
       function updateNavItemLabel(item, icon, label) {
@@ -5126,6 +5144,15 @@
          if (textEl) {
             textEl.innerHTML = label;
          }
+      }
+
+      function updateMenuButtonLabel(button, icon, label) {
+         if (!button) {
+            return;
+         }
+
+         button.innerHTML =
+            icon + " " + label;
       }
 
       function resetActiveContentScroll(pageId) {
@@ -9095,6 +9122,10 @@
          if (menuOverlayCloseTimer) {
             clearTimeout(menuOverlayCloseTimer);
             menuOverlayCloseTimer = null;
+         }
+
+         if (typeof updateStaffNavLabels === "function") {
+            updateStaffNavLabels();
          }
 
          overlay.style.display = "block";
