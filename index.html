@@ -4076,11 +4076,104 @@
       let dashboardSelectedDate = "";
       let dashboardRenderToken = 0;
       let dashboardSearchResults = [];
+      let dashboardDataLoadedAt = 0;
+      let dashboardLoadPromise = null;
+      const DASHBOARD_CACHE_MS = 60000;
       let summaryUnsubscribe = null;
       let summaryScans = [];
       let summarySelectedDate = "";
+      let firestoreUnsubscribers = {};
+
+      window.firestoreReadDebug = {
+         getDoc: 0,
+         getDocs: 0,
+         onSnapshot: 0
+      };
+
+      function debugFirestoreRead(type, label) {
+         if (!window.firestoreReadDebug[type]) {
+            window.firestoreReadDebug[type] = 0;
+         }
+
+         window.firestoreReadDebug[type]++;
+
+         console.log(
+            "[Firestore Read]",
+            type,
+            label,
+            window.firestoreReadDebug
+         );
+      }
+
+      function stopFirestoreListener(key) {
+         if (firestoreUnsubscribers[key]) {
+            try {
+               firestoreUnsubscribers[key]();
+            } catch (error) {
+               console.warn("Failed to unsubscribe:", key, error);
+            }
+
+            firestoreUnsubscribers[key] = null;
+            delete firestoreUnsubscribers[key];
+         }
+      }
+
+      function stopFirestoreListenersByPrefix(prefix) {
+         Object.keys(firestoreUnsubscribers)
+            .forEach(function (key) {
+               if (key.indexOf(prefix) === 0) {
+                  stopFirestoreListener(key);
+               }
+            });
+      }
+
+      function stopAllFirestoreListeners() {
+         Object.keys(firestoreUnsubscribers)
+            .forEach(function (key) {
+               stopFirestoreListener(key);
+            });
+      }
+
+      function isFirestoreListenerActive(key) {
+         return typeof firestoreUnsubscribers[key] === "function";
+      }
+
+      function startFirestoreListener(key, unsubscribeFn) {
+         stopFirestoreListener(key);
+         firestoreUnsubscribers[key] = unsubscribeFn;
+      }
+
+      async function getFirestoreDoc(ref, label) {
+         debugFirestoreRead("getDoc", label);
+         return await window.firebaseTools.getDoc(ref);
+      }
+
+      async function getFirestoreDocs(queryRef, label) {
+         debugFirestoreRead("getDocs", label);
+         return await window.firebaseTools.getDocs(queryRef);
+      }
+
+      function listenFirestoreSnapshot(key, ref, nextFn, errorFn) {
+         debugFirestoreRead("onSnapshot", key);
+
+         const unsubscribe =
+            window.firebaseTools.onSnapshot(
+               ref,
+               nextFn,
+               errorFn
+            );
+
+         startFirestoreListener(key, unsubscribe);
+
+         return unsubscribe;
+      }
 
       function stopRewardPolling() {
+
+         if (isFirestoreListenerActive("rewardClaimStatus")) {
+            stopFirestoreListener("rewardClaimStatus");
+            rewardPollingTimer = null;
+         }
 
          if (rewardPollingTimer) {
             if (typeof rewardPollingTimer === "function") {
@@ -4232,7 +4325,7 @@
                tools.doc(db, "users", code);
 
             const snap =
-               await tools.getDoc(ref);
+               await getFirestoreDoc(ref, "generateUniqueMemberCodeFirebase/users/" + code);
 
             exists = snap.exists();
             tryCount++;
@@ -4315,7 +4408,7 @@
                tools.doc(db, "staff", targetCode);
 
             const staffSnap =
-               await tools.getDoc(staffRef);
+               await getFirestoreDoc(staffRef, "loginUserFirebase/staff/" + targetCode);
 
             if (!staffSnap.exists()) {
                return {
@@ -4354,7 +4447,7 @@
             tools.doc(db, "users", targetCode);
 
          const userSnap =
-            await tools.getDoc(userRef);
+            await getFirestoreDoc(userRef, "loginUserFirebase/users/" + targetCode);
 
          if (!userSnap.exists()) {
             return {
@@ -4406,7 +4499,7 @@
 
          if (targetCode.startsWith("XX")) {
             const staffRef = tools.doc(db, "staff", targetCode);
-            const staffSnap = await tools.getDoc(staffRef);
+            const staffSnap = await getFirestoreDoc(staffRef, "getProfileFirebase/staff/" + targetCode);
 
             if (!staffSnap.exists()) {
                return {
@@ -4444,7 +4537,7 @@
          }
 
          const userRef = tools.doc(db, "users", targetCode);
-         const userSnap = await tools.getDoc(userRef);
+         const userSnap = await getFirestoreDoc(userRef, "getProfileFirebase/users/" + targetCode);
 
          if (!userSnap.exists()) {
             return {
@@ -4495,7 +4588,7 @@
          }
 
          const userRef = tools.doc(db, "users", targetCode);
-         const userSnap = await tools.getDoc(userRef);
+         const userSnap = await getFirestoreDoc(userRef, "updateProfileFirebase/users/" + targetCode);
 
          if (!userSnap.exists()) {
             return {
@@ -4549,7 +4642,7 @@
             );
 
          const querySnapshot =
-            await tools.getDocs(q);
+            await getFirestoreDocs(q, "findCodeFirebase/usersByEmail");
 
          if (querySnapshot.empty) {
             return {
@@ -4631,7 +4724,7 @@
          }
 
          const userRef = tools.doc(db, "users", targetCode);
-         const userSnap = await tools.getDoc(userRef);
+         const userSnap = await getFirestoreDoc(userRef, "getUserPointFirebase/users/" + targetCode);
 
          if (!userSnap.exists()) {
             return {
@@ -4717,8 +4810,9 @@
             };
          }
 
-         const claimSnap = await tools.getDoc(
-            tools.doc(db, "rewardClaims", targetRedeemId)
+         const claimSnap = await getFirestoreDoc(
+            tools.doc(db, "rewardClaims", targetRedeemId),
+            "checkRedeemStatusFirebase/rewardClaims/" + targetRedeemId
          );
 
          if (!claimSnap.exists()) {
@@ -4772,7 +4866,8 @@
 
          const claimRef = tools.doc(db, "rewardClaims", redeemId);
 
-         rewardPollingTimer = tools.onSnapshot(
+         rewardPollingTimer = listenFirestoreSnapshot(
+            "rewardClaimStatus",
             claimRef,
             function (snapshot) {
                if (!snapshot.exists()) {
@@ -5412,12 +5507,18 @@
          stopCodePagePolling();
          stopScannerSilent();
          stopStaffSummaryRealtime();
+         stopAllFirestoreListeners();
 
          localStorage.removeItem(LOGIN_STORAGE_KEY);
 
          lastCode = "";
          lastQrUrl = "";
          currentPoint = 0;
+         dashboardDataLoadedAt = 0;
+         dashboardLoadPromise = null;
+         dashboardSearchResults = [];
+         summaryScans = [];
+         profileDataCache = null;
 
          updateStaffNavLabels();
 
@@ -5847,6 +5948,11 @@
 
       function stopCodePagePolling() {
 
+         if (isFirestoreListenerActive("codePageCheckIn")) {
+            stopFirestoreListener("codePageCheckIn");
+            codePagePollingTimer = null;
+         }
+
          if (codePagePollingTimer) {
             if (typeof codePagePollingTimer === "function") {
                codePagePollingTimer();
@@ -5870,7 +5976,8 @@
 
          const userRef = tools.doc(db, "users", normalizeCode(code));
 
-         codePagePollingTimer = tools.onSnapshot(
+         codePagePollingTimer = listenFirestoreSnapshot(
+            "codePageCheckIn",
             userRef,
             function (snapshot) {
                if (!snapshot.exists()) {
@@ -5912,7 +6019,8 @@
 
          const userRef = tools.doc(db, "users", targetCode);
 
-         codePagePollingTimer = tools.onSnapshot(
+         codePagePollingTimer = listenFirestoreSnapshot(
+            "codePageCheckIn",
             userRef,
             function (snapshot) {
                if (!snapshot.exists()) {
@@ -6326,20 +6434,41 @@
       }
 
       function stopStaffDashboardRealtime() {
-         dashboardUnsubscribes.forEach(function (unsubscribe) {
-            if (typeof unsubscribe === "function") {
-               unsubscribe();
-            }
-         });
-
+         stopFirestoreListenersByPrefix("staffDashboard:");
          dashboardUnsubscribes = [];
       }
 
-      function startStaffDashboardRealtime() {
+      async function startStaffDashboardRealtime() {
          const db = window.firebaseDb;
          const tools = window.firebaseTools;
 
          if (!db || !tools) {
+            return;
+         }
+
+         const dashboardSources = [
+            { collectionName: "users", key: "users" },
+            { collectionName: "checkInLogs", key: "checkInLogs" },
+            { collectionName: "pointLogs", key: "pointLogs" },
+            { collectionName: "rewardClaims", key: "rewardClaims" },
+            { collectionName: "certificates", key: "certificates" }
+         ];
+
+         const now = Date.now();
+         const hasFreshDashboardCache =
+            dashboardDataLoadedAt &&
+            now - dashboardDataLoadedAt < DASHBOARD_CACHE_MS;
+
+         if (hasFreshDashboardCache) {
+            renderDashboardDateOptions();
+            renderStaffDashboard();
+            return;
+         }
+
+         if (dashboardLoadPromise) {
+            await dashboardLoadPromise;
+            renderDashboardDateOptions();
+            renderStaffDashboard();
             return;
          }
 
@@ -6353,16 +6482,14 @@
             certificates: []
          };
 
-         [
-            { collectionName: "users", key: "users" },
-            { collectionName: "checkInLogs", key: "checkInLogs" },
-            { collectionName: "pointLogs", key: "pointLogs" },
-            { collectionName: "rewardClaims", key: "rewardClaims" },
-            { collectionName: "certificates", key: "certificates" }
-         ].forEach(function (source) {
-            const unsubscribe = tools.onSnapshot(
-               tools.collection(db, source.collectionName),
-               function (snapshot) {
+         dashboardLoadPromise = Promise.all(
+               dashboardSources.map(async function (source) {
+                  const snapshot =
+                     await getFirestoreDocs(
+                        tools.collection(db, source.collectionName),
+                        "staffDashboard/" + source.collectionName
+                     );
+
                   const rows = [];
 
                   snapshot.forEach(function (docSnap) {
@@ -6377,16 +6504,20 @@
                   });
 
                   dashboardData[source.key] = rows;
-                  renderDashboardDateOptions();
-                  renderStaffDashboard();
-               },
-               function (error) {
-                  console.error("DASHBOARD LISTENER ERROR =", source.collectionName, error);
-               }
-            );
+               })
+         );
 
-            dashboardUnsubscribes.push(unsubscribe);
-         });
+         try {
+            await dashboardLoadPromise;
+
+            dashboardDataLoadedAt = Date.now();
+            renderDashboardDateOptions();
+            renderStaffDashboard();
+         } catch (error) {
+            console.error("DASHBOARD LOAD ERROR =", error);
+         } finally {
+            dashboardLoadPromise = null;
+         }
       }
 
       function getDashboardDateKey(value) {
@@ -7281,10 +7412,8 @@
       }
 
       function stopStaffSummaryRealtime() {
-         if (summaryUnsubscribe) {
-            summaryUnsubscribe();
-            summaryUnsubscribe = null;
-         }
+         stopFirestoreListener("staffSummary:pointScans");
+         summaryUnsubscribe = null;
       }
 
       function startStaffSummaryRealtime() {
@@ -7295,9 +7424,16 @@
             return;
          }
 
+         if (isFirestoreListenerActive("staffSummary:pointScans")) {
+            renderSummaryDateOptions();
+            renderStaffSummary();
+            return;
+         }
+
          stopStaffSummaryRealtime();
 
-         summaryUnsubscribe = tools.onSnapshot(
+         summaryUnsubscribe = listenFirestoreSnapshot(
+            "staffSummary:pointScans",
             tools.collection(db, "pointScans"),
             function (snapshot) {
                summaryScans = [];
@@ -7920,7 +8056,7 @@
          }
 
          const userRef = tools.doc(db, "users", targetCode);
-         const userSnap = await tools.getDoc(userRef);
+         const userSnap = await getFirestoreDoc(userRef, "getCertificateProfileFirebase/users/" + targetCode);
 
          if (!userSnap.exists()) {
             return {
