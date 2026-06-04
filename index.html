@@ -5885,21 +5885,17 @@
             return;
          }
 
-         try {
-            const img =
-               document.createElement("img");
+         const img =
+            document.createElement("img");
 
-            img.src =
-               makeQrSvgDataUrl(qrText);
+         img.src =
+            "https://api.qrserver.com/v1/create-qr-code/?size=230x230&data=" +
+            encodeURIComponent(qrText);
 
-            img.alt =
-               "QR Code";
+         img.alt =
+            "QR Code";
 
-            target.appendChild(img);
-         } catch (error) {
-            console.error("LOCAL QR GENERATION ERROR =", error);
-            target.innerHTML = escapeHtml(qrText);
-         }
+         target.appendChild(img);
       }
 
       function makeQrSvgDataUrl(text) {
