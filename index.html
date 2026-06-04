@@ -5795,6 +5795,10 @@
          lastQrUrl =
             qrUrl || fallbackQrUrl;
 
+         if (lastCode) {
+            localStorage.setItem(LOGIN_STORAGE_KEY, lastCode);
+         }
+
          const showCode =
             document.getElementById("showCode");
 
@@ -5948,6 +5952,24 @@
 
          updateStaffNavLabels();
 
+         const isStaffLogin =
+            result.isStaff === true ||
+            normalizeCode(result.code).startsWith("XX");
+
+         if (!isStaffLogin && result.checkedIn !== true) {
+            const stableQrUrl =
+               result.qrUrl ||
+               lastQrUrl ||
+               makeUserQrUrl(lastCode);
+
+            lastQrUrl = stableQrUrl;
+
+            forceHideLoading();
+            clearAllInputs();
+            showCodeAndQr(lastCode, stableQrUrl);
+            return;
+         }
+
          const memberName =
             document.getElementById("memberName");
 
@@ -5995,10 +6017,6 @@
          clearAllInputs();
 
          forceHideLoading();
-
-         const isStaffLogin =
-            result.isStaff === true ||
-            normalizeCode(result.code).startsWith("XX");
 
          showHome(isStaffLogin);
 
