@@ -4058,6 +4058,8 @@
       let html5QrCode = null;
       let scannerRunning = false;
       let currentPoint = 0;
+      let currentTotalEarnedPoint = 0;
+      let currentCertificateEligible = false;
       let currentRewardId = "";
       let currentRewardData = null;
       let currentRedeemToken = "";
@@ -4443,6 +4445,14 @@
             checkInTime: checkInText || "-",
             point: Number(user.point) || 0,
             limit: Number(user.pointLimit) || 12,
+            totalEarnedPoint:
+               Number(user.totalEarnedPoint) ||
+               Number(user.point) ||
+               0,
+            certificateEligible:
+               user.certificateEligible === true ||
+               Number(user.totalEarnedPoint) >= 5 ||
+               Number(user.point) >= 5,
             qrUrl: user.qrUrl || makeUserQrUrl(targetCode)
          };
       }
@@ -4526,6 +4536,14 @@
             checkInTime: user.checkInTime || "",
             point: Number(user.point) || 0,
             limit: Number(user.pointLimit) || 12,
+            totalEarnedPoint:
+               Number(user.totalEarnedPoint) ||
+               Number(user.point) ||
+               0,
+            certificateEligible:
+               user.certificateEligible === true ||
+               Number(user.totalEarnedPoint) >= 5 ||
+               Number(user.point) >= 5,
             qrUrl: user.qrUrl || makeUserQrUrl(targetCode)
          };
       }
@@ -4686,7 +4704,9 @@
             return {
                success: true,
                point: 0,
-               limit: 12
+               limit: 12,
+               totalEarnedPoint: 0,
+               certificateEligible: false
             };
          }
 
@@ -4701,11 +4721,56 @@
          }
 
          const user = userSnap.data();
+         let totalEarnedPoint =
+            Number(user.totalEarnedPoint) ||
+            Number(user.point) ||
+            0;
+
+         if (
+            user.certificateEligible !== true &&
+            totalEarnedPoint < 5 &&
+            targetCode &&
+            !targetCode.startsWith("XX")
+         ) {
+            try {
+               const pointLogsQuery =
+                  tools.query(
+                     tools.collection(db, "pointLogs"),
+                     tools.where("code", "==", targetCode)
+                  );
+
+               const pointLogsSnapshot =
+                  await getFirestoreDocs(
+                     pointLogsQuery,
+                     "getUserPointFirebase/pointLogs/" + targetCode
+                  );
+
+               let earnedFromLogs = 0;
+
+               pointLogsSnapshot.forEach(function (docSnap) {
+                  const log =
+                     docSnap.data() || {};
+
+                  earnedFromLogs +=
+                     Number(log.addedPoint) || 0;
+               });
+
+               totalEarnedPoint =
+                  Math.max(totalEarnedPoint, earnedFromLogs);
+            } catch (error) {
+               console.warn("CERTIFICATE ELIGIBILITY LOG CHECK ERROR =", error);
+            }
+         }
 
          return {
             success: true,
             point: Number(user.point) || 0,
-            limit: Number(user.pointLimit) || 12
+            limit: Number(user.pointLimit) || 12,
+            totalEarnedPoint: totalEarnedPoint,
+            certificateEligible:
+               user.certificateEligible === true ||
+               totalEarnedPoint >= 5 ||
+               Number(user.point) >= 5
          };
       }
 
@@ -4855,12 +4920,7 @@
                   getUserPointFirebase(lastCode)
                      .then(function (pointResult) {
                         if (pointResult && pointResult.success) {
-                           currentPoint = Number(pointResult.point) || 0;
-
-                           savePointToCache(
-                              pointResult.point,
-                              pointResult.limit
-                           );
+                           applyPointState(pointResult);
 
                            updatePointUI(
                               pointResult.point,
@@ -5477,10 +5537,16 @@
          stopAllFirestoreListeners();
 
          localStorage.removeItem(LOGIN_STORAGE_KEY);
+         localStorage.removeItem("kosen_point");
+         localStorage.removeItem("kosen_point_limit");
+         localStorage.removeItem("kosen_total_earned_point");
+         localStorage.removeItem("kosen_certificate_eligible");
 
          lastCode = "";
          lastQrUrl = "";
          currentPoint = 0;
+         currentTotalEarnedPoint = 0;
+         currentCertificateEligible = false;
          dashboardDataLoadedAt = 0;
          dashboardLoadPromise = null;
          dashboardSearchResults = [];
@@ -6528,10 +6594,18 @@
                      identity: data.identity || "-",
                      checkedIn: true,
                      checkInTime: checkInTimeText,
-                     point: Number(data.point) || 0,
-                     limit: Number(data.pointLimit) || 12,
-                     qrUrl: data.qrUrl || makeUserQrUrl(targetCode)
-                  };
+                      point: Number(data.point) || 0,
+                      limit: Number(data.pointLimit) || 12,
+                      totalEarnedPoint:
+                         Number(data.totalEarnedPoint) ||
+                         Number(data.point) ||
+                         0,
+                      certificateEligible:
+                         data.certificateEligible === true ||
+                         Number(data.totalEarnedPoint) >= 5 ||
+                         Number(data.point) >= 5,
+                      qrUrl: data.qrUrl || makeUserQrUrl(targetCode)
+                   };
 
                   showMember(result);
                }
@@ -6564,6 +6638,15 @@
 
          if (lastCode) {
             localStorage.setItem(LOGIN_STORAGE_KEY, lastCode);
+         }
+
+         if (!normalizeCode(lastCode).startsWith("XX")) {
+            applyPointState({
+               point: result.point,
+               limit: result.limit,
+               totalEarnedPoint: result.totalEarnedPoint,
+               certificateEligible: result.certificateEligible
+            });
          }
 
          updateStaffNavLabels();
@@ -7442,8 +7525,7 @@
             .then(function (result) {
 
                if (result && result.success) {
-                  currentPoint = Number(result.point) || 0;
-                  savePointToCache(result.point, result.limit);
+                  applyPointState(result);
                   updatePointUI(result.point, result.limit);
                   updateRewardPointFromCache();
                } else {
@@ -7464,6 +7546,22 @@
 
          const savedLimit =
             localStorage.getItem("kosen_point_limit");
+
+         const savedTotalEarned =
+            localStorage.getItem("kosen_total_earned_point");
+
+         const savedCertificateEligible =
+            localStorage.getItem("kosen_certificate_eligible");
+
+         if (savedTotalEarned !== null) {
+            currentTotalEarnedPoint =
+               Number(savedTotalEarned) || 0;
+         }
+
+         currentCertificateEligible =
+            savedCertificateEligible === "true" ||
+            currentTotalEarnedPoint >= 5 ||
+            Number(savedPoint) >= 5;
 
          if (savedPoint !== null) {
             updatePointUI(
@@ -7486,6 +7584,46 @@
             String(Number(limit) || 12)
          );
 
+      }
+
+      function applyPointState(result) {
+         currentPoint =
+            Number(result && result.point) || 0;
+
+         currentTotalEarnedPoint =
+            Number(result && result.totalEarnedPoint) ||
+            Math.max(currentTotalEarnedPoint, currentPoint);
+
+         currentCertificateEligible =
+            (result && result.certificateEligible === true) ||
+            currentTotalEarnedPoint >= 5 ||
+            currentPoint >= 5;
+
+         savePointToCache(
+            result && result.point,
+            result && result.limit
+         );
+
+         localStorage.setItem(
+            "kosen_total_earned_point",
+            String(currentTotalEarnedPoint)
+         );
+
+         localStorage.setItem(
+            "kosen_certificate_eligible",
+            currentCertificateEligible ? "true" : "false"
+         );
+      }
+
+      function canRedeemCertificate(item) {
+         const cost =
+            Number(item && item.cost) || 5;
+
+         return (
+            currentCertificateEligible === true ||
+            currentTotalEarnedPoint >= cost ||
+            currentPoint >= cost
+         );
       }
 
       function updateRewardPointFromCache() {
@@ -7653,13 +7791,7 @@
 
          if (result && typeof result.point !== "undefined") {
 
-            currentPoint =
-               Number(result.point) || 0;
-
-            savePointToCache(
-               result.point,
-               result.limit || 12
-            );
+            applyPointState(result);
 
             updatePointUI(
                result.point,
@@ -7994,8 +8126,7 @@
             .then(function (result) {
 
                if (result && result.success) {
-                  currentPoint = Number(result.point) || 0;
-                  savePointToCache(result.point, result.limit);
+                  applyPointState(result);
                   updateRewardPointLabels(currentPoint);
                   renderRewardList();
                } else {
@@ -8058,7 +8189,14 @@
             let className =
                "rewardItem";
 
-            if (item.disabled || (item.type !== "certificate" && currentPoint < item.cost)) {
+            if (
+               item.disabled ||
+               (
+                  item.type === "certificate"
+                     ? !canRedeemCertificate(item)
+                     : currentPoint < item.cost
+               )
+            ) {
                className += " disabledReward";
             }
 
@@ -8153,8 +8291,8 @@
 
          if (item.type === "certificate") {
 
-            if (currentPoint < item.cost) {
-               alert("ต้องมีคะแนนครบ " + item.cost + " คะแนน จึงจะรับ Certificate ได้");
+            if (!canRedeemCertificate(item)) {
+               alert("ต้องเคยสะสมคะแนนครบ " + item.cost + " คะแนน จึงจะรับ Certificate ได้");
                return;
             }
 
@@ -9457,13 +9595,7 @@
 
                if (pointResult && pointResult.success) {
 
-                  currentPoint =
-                     Number(pointResult.point) || 0;
-
-                  savePointToCache(
-                     pointResult.point,
-                     pointResult.limit
-                  );
+                  applyPointState(pointResult);
 
                   alert(
                      "ได้รับ +" +
@@ -9725,6 +9857,10 @@
                         showMember(result);
                      } else {
                         localStorage.removeItem(LOGIN_STORAGE_KEY);
+                        localStorage.removeItem("kosen_point");
+                        localStorage.removeItem("kosen_point_limit");
+                        localStorage.removeItem("kosen_total_earned_point");
+                        localStorage.removeItem("kosen_certificate_eligible");
                         showLogin();
                      }
 
