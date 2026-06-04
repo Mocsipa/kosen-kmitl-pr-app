@@ -6338,7 +6338,14 @@
                   const rows = [];
 
                   snapshot.forEach(function (docSnap) {
-                     rows.push(docSnap.data() || {});
+                     rows.push(
+                        Object.assign(
+                           {
+                              id: docSnap.id
+                           },
+                           docSnap.data() || {}
+                        )
+                     );
                   });
 
                   dashboardData[source.key] = rows;
@@ -6446,23 +6453,33 @@
          const rows = [];
 
          dashboardData.users.forEach(function (user) {
-            rows.push({ dateValue: user.createdAt || user.updatedAt });
+            if (isDashboardUser(user)) {
+               rows.push({ dateValue: user.createdAt || user.updatedAt });
+            }
          });
 
          dashboardData.checkInLogs.forEach(function (log) {
-            rows.push({ dateValue: log.createdAt });
+            if (isDashboardUserCode(log.targetCode || log.code || log.userCode)) {
+               rows.push({ dateValue: log.createdAt });
+            }
          });
 
          dashboardData.pointLogs.forEach(function (log) {
-            rows.push({ dateValue: log.createdAt });
+            if (isDashboardUserCode(log.code || log.userCode)) {
+               rows.push({ dateValue: log.createdAt });
+            }
          });
 
          dashboardData.rewardClaims.forEach(function (claim) {
-            rows.push({ dateValue: claim.usedAt || claim.createdAt });
+            if (isDashboardUserCode(claim.code || claim.userCode)) {
+               rows.push({ dateValue: claim.usedAt || claim.createdAt });
+            }
          });
 
          dashboardData.certificates.forEach(function (certificate) {
-            rows.push({ dateValue: certificate.updatedAt || certificate.createdAt });
+            if (isDashboardUserCode(certificate.code || certificate.userCode || certificate.id)) {
+               rows.push({ dateValue: certificate.updatedAt || certificate.createdAt });
+            }
          });
 
          return rows;
@@ -6483,9 +6500,40 @@
          return String(status || "").trim().toUpperCase() === "SENT";
       }
 
+      function isDashboardUserCode(code) {
+         const normalizedCode =
+            normalizeCode(code);
+
+         return (
+            normalizedCode.indexOf("KM") === 0 &&
+            normalizedCode.indexOf("XX") !== 0
+         );
+      }
+
+      function getDashboardUserCode(user) {
+         if (!user) {
+            return "";
+         }
+
+         return normalizeCode(user.code || user.userCode || user.id);
+      }
+
+      function isDashboardUser(user) {
+         return isDashboardUserCode(getDashboardUserCode(user));
+      }
+
+      function getDashboardMemberUsers() {
+         return dashboardData.users
+            .filter(function (user) {
+               return isDashboardUser(user);
+            });
+      }
+
       function renderStaffDashboard() {
          const renderToken = ++dashboardRenderToken;
          const selectedDate = dashboardSelectedDate || getTodayDashboardKey();
+         const memberUsers =
+            getDashboardMemberUsers();
 
          const counts = {
             totalUsers: 0,
@@ -6498,7 +6546,7 @@
             certificates: 0
          };
 
-         dashboardData.users.forEach(function (user) {
+         memberUsers.forEach(function (user) {
             counts.totalUsers++;
 
             const identity = String(user.identity || "").trim().toLowerCase();
@@ -6520,7 +6568,7 @@
 
             if (
                key === selectedDate &&
-               targetCode &&
+               isDashboardUserCode(targetCode) &&
                String(log.action || "").toUpperCase() === "CHECK_IN"
             ) {
                checkedInMap[targetCode] = true;
@@ -6530,7 +6578,10 @@
          counts.checkedIn = Object.keys(checkedInMap).length;
 
          dashboardData.pointLogs.forEach(function (log) {
-            if (getDashboardDateKey(log.createdAt) === selectedDate) {
+            if (
+               getDashboardDateKey(log.createdAt) === selectedDate &&
+               isDashboardUserCode(log.code || log.userCode)
+            ) {
                counts.pointScans++;
             }
          });
@@ -6540,7 +6591,8 @@
 
             if (
                key === selectedDate &&
-               isDashboardUsedRewardStatus(claim.status)
+               isDashboardUsedRewardStatus(claim.status) &&
+               isDashboardUserCode(claim.code || claim.userCode)
             ) {
                counts.rewards++;
             }
@@ -6551,7 +6603,8 @@
 
             if (
                key === selectedDate &&
-               isDashboardSentCertificateStatus(certificate.status)
+               isDashboardSentCertificateStatus(certificate.status) &&
+               isDashboardUserCode(certificate.code || certificate.userCode || certificate.id)
             ) {
                counts.certificates++;
             }
@@ -6624,7 +6677,7 @@
          const lowerSearch =
             searchText.toLowerCase();
 
-         dashboardSearchResults = dashboardData.users
+         dashboardSearchResults = getDashboardMemberUsers()
             .filter(function (user) {
                if (lowerSearch === "all") {
                   return true;
@@ -6735,7 +6788,7 @@
          const rows =
             dashboardSearchResults.length
                ? dashboardSearchResults
-               : dashboardData.users;
+               : getDashboardMemberUsers();
 
          if (!rows.length) {
             alert("ไม่มีข้อมูลสำหรับดาวน์โหลด");
