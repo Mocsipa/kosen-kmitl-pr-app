@@ -11,6 +11,10 @@
    <title>KOSEN NOW</title>
    <link rel="preload" as="image" href="https://mocsipa.github.io/kosen-now-images/16.png">
    <link rel="preload" as="image" href="https://mocsipa.github.io/kosen-now-images/Kosenlogo.png">
+   <link rel="preload" as="image" href="https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 13.21.35.png">
+   <link rel="preload" as="image" href="https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 09.59.30.png">
+   <link rel="preload" as="image" href="https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 09.59.47.png">
+   <link rel="preload" as="image" href="https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 10.00.05.png">
    <style>
       * {
          margin: 0;
@@ -4615,6 +4619,7 @@
       let scheduleAudioUnlocked = false;
       let lastScheduleNoticeKey = "";
       let dismissedScheduleNoticeKey = "";
+      const interestImageCache = {};
 
       function normalizeCode(value) {
          return String(value || "").trim().toUpperCase();
@@ -5971,6 +5976,7 @@
          }, 340);
 
          startSlideshow();
+         preloadInterestImages();
 
       }
 
@@ -6373,6 +6379,31 @@
 
       }
 
+      function preloadInterestImages() {
+         interestData.forEach(function (item) {
+            if (
+               !item ||
+               !item.image ||
+               interestImageCache[item.image]
+            ) {
+               return;
+            }
+
+            const img =
+               new Image();
+
+            img.decoding = "async";
+            img.loading = "eager";
+            img.src = item.image;
+
+            if (img.decode) {
+               img.decode().catch(function () { });
+            }
+
+            interestImageCache[item.image] = img;
+         });
+      }
+
       function changeInterest(index) {
 
          const data =
@@ -6395,7 +6426,13 @@
             document.getElementById("interestText");
 
          if (image) {
-            image.src = data.image;
+            const cachedImage =
+               interestImageCache[data.image];
+
+            image.src =
+               cachedImage && cachedImage.src
+                  ? cachedImage.src
+                  : data.image;
          }
 
          if (title) {
@@ -10641,6 +10678,7 @@
 
             installLoadingOverlayGuard();
             startScheduleTicker();
+            preloadInterestImages();
 
             if (AUTO_CODE) {
                autoLoginFromQr();
