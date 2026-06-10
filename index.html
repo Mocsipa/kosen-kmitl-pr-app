@@ -4566,6 +4566,8 @@
 
       let scheduleRefreshTimer = null;
       let scheduleNoticeTimer = null;
+      let scheduleNoticeDelayTimer = null;
+      let scheduleNoticeEnabled = false;
       let lastScheduleNoticeKey = "";
       let dismissedScheduleNoticeKey = "";
 
@@ -5836,6 +5838,14 @@
          dashboardSearchResults = [];
          summaryScans = [];
          profileDataCache = null;
+         scheduleNoticeEnabled = false;
+
+         if (scheduleNoticeDelayTimer) {
+            clearTimeout(scheduleNoticeDelayTimer);
+            scheduleNoticeDelayTimer = null;
+         }
+
+         closeScheduleNotice(true);
 
          updateStaffNavLabels();
 
@@ -5867,6 +5877,7 @@
 
          clearPageTransitionTimer();
          isPageAnimating = false;
+         closeScheduleNotice(true);
 
          const loadingPage = document.getElementById("loadingPage");
 
@@ -5907,6 +5918,7 @@
          }, 340);
 
          startSlideshow();
+         scheduleNoticeAfterHome();
 
       }
 
@@ -6001,6 +6013,17 @@
       }
 
       function showCurrentScheduleNotice() {
+         const activePage =
+            document.querySelector(".page.active");
+
+         if (
+            !activePage ||
+            !isAppPage(activePage.id) ||
+            activePage.id === "loadingPage"
+         ) {
+            return;
+         }
+
          const activeItem =
             getCurrentScheduleItem();
 
@@ -6081,11 +6104,14 @@
 
       function refreshScheduleUi() {
          renderScheduleTable();
-         showCurrentScheduleNotice();
+
+         if (scheduleNoticeEnabled) {
+            showCurrentScheduleNotice();
+         }
       }
 
       function startScheduleTicker() {
-         refreshScheduleUi();
+         renderScheduleTable();
 
          if (scheduleRefreshTimer) {
             return;
@@ -6093,6 +6119,36 @@
 
          scheduleRefreshTimer =
             setInterval(refreshScheduleUi, 30000);
+      }
+
+      function scheduleNoticeAfterHome() {
+         startScheduleTicker();
+
+         if (scheduleNoticeDelayTimer) {
+            clearTimeout(scheduleNoticeDelayTimer);
+         }
+
+         closeScheduleNotice(true);
+
+         scheduleNoticeEnabled = true;
+
+         const delay =
+            2000 + Math.floor(Math.random() * 3001);
+
+         scheduleNoticeDelayTimer =
+            setTimeout(function () {
+               scheduleNoticeDelayTimer = null;
+
+               const homePage =
+                  document.getElementById("homePage");
+
+               if (
+                  homePage &&
+                  homePage.classList.contains("active")
+               ) {
+                  showCurrentScheduleNotice();
+               }
+            }, delay);
       }
 
       function showEvent() {
