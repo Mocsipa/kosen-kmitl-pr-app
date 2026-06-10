@@ -1146,6 +1146,14 @@
          padding-top: 195px;
       }
 
+      body.capacityNoticeVisible .eventPage.active .scheduleContent {
+         padding-top: 195px;
+      }
+
+      body.scheduleNoticeVisible.capacityNoticeVisible .eventPage.active .scheduleContent {
+         padding-top: 290px;
+      }
+
       .scheduleTitle {
          font-size: 58px;
          line-height: 1;
@@ -1315,6 +1323,84 @@
       }
 
       .scheduleNoticeClose {
+         width: 58px;
+         min-width: 58px;
+         height: 58px;
+         border: none;
+         background: transparent;
+         color: white;
+         font-size: 60px;
+         line-height: 1;
+         font-weight: 300;
+         cursor: pointer;
+      }
+
+      .capacityNotice {
+         position: fixed;
+         top: calc(env(safe-area-inset-top) + 126px);
+         left: 50%;
+         z-index: 2700;
+         width: min(760px, calc(100vw - 44px));
+         min-height: 76px;
+         border-radius: 38px;
+         background: #ff5158;
+         display: none;
+         align-items: center;
+         gap: 16px;
+         padding: 10px 18px 10px 26px;
+         box-shadow: 0 14px 34px rgba(255, 81, 88, 0.22);
+         transform: translate(-50%, -12px) scale(0.82);
+         opacity: 0;
+         transform-origin: center;
+         transition: opacity 0.18s ease, transform 0.18s ease;
+      }
+
+      .capacityNotice.showCapacityNotice {
+         display: flex;
+         opacity: 1;
+         transform: translate(-50%, 0) scale(1);
+         animation: scheduleNoticePop 0.42s cubic-bezier(0.2, 0.9, 0.2, 1.15);
+      }
+
+      body.capacityNoticeVisible .scheduleNotice {
+         top: calc(env(safe-area-inset-top) + 220px);
+      }
+
+      .capacityNoticeBell {
+         width: 58px;
+         min-width: 58px;
+         height: 58px;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         color: white;
+         font-size: 34px;
+         font-weight: 900;
+      }
+
+      .capacityNoticeText {
+         flex: 1;
+         min-width: 0;
+         min-height: 56px;
+         border-radius: 28px;
+         background: rgba(255, 214, 216, 0.82);
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         padding: 10px 22px;
+         color: #111;
+         font-size: 21px;
+         font-weight: 900;
+         line-height: 1.25;
+         text-align: center;
+         overflow-wrap: anywhere;
+      }
+
+      .capacityNoticeText u {
+         text-underline-offset: 3px;
+      }
+
+      .capacityNoticeClose {
          width: 58px;
          min-width: 58px;
          height: 58px;
@@ -2525,6 +2611,14 @@
             padding-top: 160px;
          }
 
+         body.capacityNoticeVisible .eventPage.active .scheduleContent {
+            padding-top: 160px;
+         }
+
+         body.scheduleNoticeVisible.capacityNoticeVisible .eventPage.active .scheduleContent {
+            padding-top: 238px;
+         }
+
          .scheduleTitle {
             font-size: 48px;
             margin-bottom: 26px;
@@ -2584,6 +2678,38 @@
          }
 
          .scheduleNoticeClose {
+            width: 42px;
+            min-width: 42px;
+            height: 42px;
+            font-size: 48px;
+         }
+
+         .capacityNotice {
+            top: calc(env(safe-area-inset-top) + 92px);
+            width: calc(100vw - 44px);
+            min-height: 58px;
+            gap: 8px;
+            padding: 8px 12px 8px 16px;
+         }
+
+         body.capacityNoticeVisible .scheduleNotice {
+            top: calc(env(safe-area-inset-top) + 166px);
+         }
+
+         .capacityNoticeBell {
+            width: 42px;
+            min-width: 42px;
+            height: 42px;
+            font-size: 26px;
+         }
+
+         .capacityNoticeText {
+            min-height: 42px;
+            padding: 8px 14px;
+            font-size: 17px;
+         }
+
+         .capacityNoticeClose {
             width: 42px;
             min-width: 42px;
             height: 42px;
@@ -3369,6 +3495,12 @@
          <span id="scheduleNoticeActivity" class="scheduleNoticeActivity"></span>
       </div>
       <button class="scheduleNoticeClose" type="button" onclick="closeScheduleNotice()">×</button>
+   </div>
+
+   <div id="capacityNotice" class="capacityNotice">
+      <div class="capacityNoticeBell">🔔</div>
+      <div id="capacityNoticeText" class="capacityNoticeText"></div>
+      <button class="capacityNoticeClose" type="button" onclick="closeCapacityNotice()">×</button>
    </div>
    <!-- LOGIN -->
 
@@ -4333,6 +4465,15 @@
       const WORKER_API_BASE =
          "https://kosen-now-api.kosen-now-api.workers.dev";
 
+      const CAPACITY_SCAN_WINDOW_MS =
+         10 * 60 * 1000;
+
+      const CAPACITY_SCAN_THRESHOLD =
+         5;
+
+      const CAPACITY_NOTICE_DURATION_MS =
+         70000;
+
       const DEBUG_MODE =
          true;
 
@@ -4399,6 +4540,9 @@
       let summaryStatsDates = [];
       let summarySelectedDate = "";
       let firestoreUnsubscribers = {};
+      let capacityNoticeTimer = null;
+      let lastCapacityNoticeKey = "";
+      let dismissedCapacityNoticeKey = "";
 
       window.firestoreReadDebug = {
          getDoc: 0,
@@ -5897,6 +6041,8 @@
          summaryScans = [];
          profileDataCache = null;
          scheduleNoticeEnabled = false;
+         lastCapacityNoticeKey = "";
+         dismissedCapacityNoticeKey = "";
 
          if (scheduleNoticeDelayTimer) {
             clearTimeout(scheduleNoticeDelayTimer);
@@ -5904,6 +6050,7 @@
          }
 
          closeScheduleNotice(true);
+         closeCapacityNotice(true);
 
          updateStaffNavLabels();
 
@@ -5936,6 +6083,7 @@
          clearPageTransitionTimer();
          isPageAnimating = false;
          closeScheduleNotice(true);
+         closeCapacityNotice(true);
 
          const loadingPage = document.getElementById("loadingPage");
 
@@ -6258,6 +6406,218 @@
          }
       }
 
+      function startRoomCapacityMonitor() {
+         const db =
+            window.firebaseDb;
+
+         const tools =
+            window.firebaseTools;
+
+         if (
+            !db ||
+            !tools ||
+            !tools.collection ||
+            !tools.onSnapshot
+         ) {
+            return;
+         }
+
+         if (isFirestoreListenerActive("capacity:pointScans")) {
+            return;
+         }
+
+         const todayStart =
+            new Date();
+
+         todayStart.setHours(0, 0, 0, 0);
+
+         let ref =
+            tools.collection(db, "pointScans");
+
+         if (tools.query && tools.where) {
+            ref = tools.query(
+               ref,
+               tools.where("createdAt", ">=", todayStart.toISOString())
+            );
+         }
+
+         listenFirestoreSnapshot(
+            "capacity:pointScans",
+            ref,
+            function (snapshot) {
+               const scans =
+                  [];
+
+               snapshot.forEach(function (docSnap) {
+                  scans.push(docSnap.data() || {});
+               });
+
+               updateRoomCapacityNotice(scans);
+            },
+            function (error) {
+               console.error("CAPACITY MONITOR ERROR =", error);
+            }
+         );
+      }
+
+      function updateRoomCapacityNotice(scans) {
+         if (!Array.isArray(scans) || !scans.length) {
+            return;
+         }
+
+         const now =
+            Date.now();
+
+         const roomCounts =
+            {};
+
+         scans.forEach(function (scan) {
+            const roomId =
+               String(scan.roomId || "").trim();
+
+            if (!roomId) {
+               return;
+            }
+
+            const scanTime =
+               parseCapacityScanTime(scan.createdAt);
+
+            if (
+               !scanTime ||
+               now - scanTime.getTime() > CAPACITY_SCAN_WINDOW_MS
+            ) {
+               return;
+            }
+
+            roomCounts[roomId] =
+               (roomCounts[roomId] || 0) + 1;
+         });
+
+         let highRoomId =
+            "";
+
+         let highCount =
+            0;
+
+         Object.keys(roomCounts).forEach(function (roomId) {
+            if (roomCounts[roomId] > highCount) {
+               highRoomId = roomId;
+               highCount = roomCounts[roomId];
+            }
+         });
+
+         if (highCount < CAPACITY_SCAN_THRESHOLD) {
+            lastCapacityNoticeKey = "";
+            dismissedCapacityNoticeKey = "";
+            return;
+         }
+
+         showCapacityNotice(highRoomId, highCount);
+      }
+
+      function parseCapacityScanTime(value) {
+         if (!value) {
+            return null;
+         }
+
+         let dateValue =
+            value;
+
+         if (dateValue && typeof dateValue.toDate === "function") {
+            dateValue = dateValue.toDate();
+         } else {
+            dateValue = new Date(dateValue);
+         }
+
+         if (!dateValue || isNaN(dateValue.getTime())) {
+            return null;
+         }
+
+         return dateValue;
+      }
+
+      function getCapacityRoomNumber(roomId) {
+         const match =
+            String(roomId || "").match(/(\d+)/);
+
+         return match
+            ? String(Number(match[1]))
+            : String(roomId || "-");
+      }
+
+      function showCapacityNotice(roomId, count) {
+         const activePage =
+            document.querySelector(".page.active");
+
+         if (
+            !activePage ||
+            !isAppPage(activePage.id) ||
+            activePage.id === "loadingPage"
+         ) {
+            return;
+         }
+
+         if (
+            roomId === lastCapacityNoticeKey ||
+            roomId === dismissedCapacityNoticeKey
+         ) {
+            return;
+         }
+
+         lastCapacityNoticeKey =
+            roomId;
+
+         const notice =
+            document.getElementById("capacityNotice");
+
+         const noticeText =
+            document.getElementById("capacityNoticeText");
+
+         if (!notice || !noticeText) {
+            return;
+         }
+
+         const roomNumber =
+            getCapacityRoomNumber(roomId);
+
+         noticeText.innerHTML =
+            "<u>Room " + escapeHtml(roomNumber) + "</u> is currently at high capacity.";
+
+         notice.classList.add("showCapacityNotice");
+         document.body.classList.add("capacityNoticeVisible");
+         playScheduleNoticeSound();
+
+         if (capacityNoticeTimer) {
+            clearTimeout(capacityNoticeTimer);
+         }
+
+         capacityNoticeTimer =
+            setTimeout(function () {
+               closeCapacityNotice(true);
+            }, CAPACITY_NOTICE_DURATION_MS);
+      }
+
+      function closeCapacityNotice(skipDismiss) {
+         const notice =
+            document.getElementById("capacityNotice");
+
+         if (notice) {
+            notice.classList.remove("showCapacityNotice");
+         }
+
+         document.body.classList.remove("capacityNoticeVisible");
+
+         if (capacityNoticeTimer) {
+            clearTimeout(capacityNoticeTimer);
+            capacityNoticeTimer = null;
+         }
+
+         if (skipDismiss !== true) {
+            dismissedCapacityNoticeKey =
+               lastCapacityNoticeKey;
+         }
+      }
+
       function refreshScheduleUi() {
          renderScheduleTable();
 
@@ -6283,6 +6643,7 @@
          }
 
          startScheduleTicker();
+         startRoomCapacityMonitor();
 
          if (scheduleNoticeDelayTimer) {
             clearTimeout(scheduleNoticeDelayTimer);
