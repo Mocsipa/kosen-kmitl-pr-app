@@ -1123,14 +1123,14 @@
 
       .scheduleContent {
          min-height: calc(100vh - 110px);
-         padding: 150px 28px 150px;
+         padding: 110px 28px 150px;
          background: white;
          text-align: center;
          transition: padding-top 0.22s ease;
       }
 
       body.scheduleNoticeVisible .eventPage.active .scheduleContent {
-         padding-top: 235px;
+         padding-top: 195px;
       }
 
       .scheduleTitle {
@@ -2482,11 +2482,11 @@
 
          .scheduleContent {
             min-height: calc(100vh - 72px);
-            padding: 130px 20px 126px;
+            padding: 72px 20px 126px;
          }
 
          body.scheduleNoticeVisible .eventPage.active .scheduleContent {
-            padding-top: 218px;
+            padding-top: 160px;
          }
 
          .scheduleTitle {
@@ -3567,6 +3567,52 @@
       </div>
 
       <div class="eventContent scheduleContent">
+
+         <section class="eventPosterBox">
+            <img class="eventPosterImage" src="https://mocsipa.github.io/kosen-now-images/E1.png">
+         </section>
+
+         <section class="eventSection">
+
+            <div class="floorSliderWrap">
+
+               <div id="floorMapScroller" class="floorMapScroller" onscroll="handleFloorScroll()">
+
+                  <div class="floorSlide"><img src="https://mocsipa.github.io/kosen-now-images/E3.png"></div>
+                  <div class="floorSlide"><img src="https://mocsipa.github.io/kosen-now-images/E4.png"></div>
+                  <div class="floorSlide"><img src="https://mocsipa.github.io/kosen-now-images/E5.png"></div>
+                  <div class="floorSlide"><img src="https://mocsipa.github.io/kosen-now-images/E6.png"></div>
+
+               </div>
+
+               <div class="floorArrowRow">
+                  <button class="floorArrow" onclick="changeFloorSlide(-1)">‹</button>
+                  <div class="floorDots">
+                     <div id="floorDot0" class="floorDot activeFloorDot"></div>
+                     <div id="floorDot1" class="floorDot"></div>
+                     <div id="floorDot2" class="floorDot"></div>
+                     <div id="floorDot3" class="floorDot"></div>
+                  </div>
+                  <button class="floorArrow" onclick="changeFloorSlide(1)">›</button>
+               </div>
+
+               <div id="floorInfoBox" class="floorInfoBox">
+                  <div id="floorNumber" class="floorNumber">1<small>st</small><br>floor</div>
+                  <div id="floorInfoList" class="floorInfoList">
+                     • Registration Area<br>
+                     • Exhibition Zone<br>
+                     • Information Desk
+                  </div>
+               </div>
+
+               <div class="scrollHint">
+                  <div class="scrollHintIcon">⌄</div>
+                  SCROLL
+               </div>
+
+            </div>
+
+         </section>
 
          <h1 class="scheduleTitle">SCHEDULE</h1>
 
@@ -6056,6 +6102,23 @@
 
          showPage("eventPage");
          startScheduleTicker();
+
+         updateFloorInfo(0);
+
+         currentFloorSlide = 0;
+
+         setTimeout(function () {
+
+            const scroller =
+               document.getElementById("floorMapScroller");
+
+            if (scroller) {
+               scroller.scrollLeft = 0;
+            }
+
+            setupFloorTouchDirection();
+
+         }, 100);
 
       }
 
