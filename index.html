@@ -404,6 +404,15 @@
          color: #555;
       }
 
+      .studentRegisterFields {
+         display: none;
+         width: 100%;
+      }
+
+      .studentRegisterFields.showStudentRegisterFields {
+         display: block;
+      }
+
       .btnBlue,
       .btnOrange,
       .btnGray {
@@ -4173,12 +4182,18 @@
 
       <input id="email" class="input" placeholder="Email">
 
-      <select id="identity" class="input">
+      <select id="identity" class="input" onchange="toggleStudentRegisterFields()">
          <option value="">Student / Parent / Teacher</option>
          <option value="Student">Student</option>
          <option value="Parent">Parent</option>
          <option value="Teacher">Teacher</option>
       </select>
+
+      <div id="studentRegisterFields" class="studentRegisterFields">
+         <input id="school" class="input" placeholder="School">
+         <input id="educationLevel" class="input" placeholder="Education Level">
+         <input id="province" class="input" placeholder="Province">
+      </div>
 
       <div class="smallText">
          การสมัครนี้เป็นการเก็บข้อมูล เพื่อการจัดสถิติสำหรับการใช้งาน และปรับปรุงการจัดแสดงงานในอนาคต
@@ -4661,12 +4676,15 @@
          return code;
       }
 
-      async function registerUserFirebase(name, age, email, identity) {
+      async function registerUserFirebase(name, age, email, identity, studentInfo) {
          return await workerApi("/api/register", {
             name: name,
             age: age,
             email: email,
-            identity: identity
+            identity: identity,
+            school: studentInfo && studentInfo.school ? studentInfo.school : "",
+            educationLevel: studentInfo && studentInfo.educationLevel ? studentInfo.educationLevel : "",
+            province: studentInfo && studentInfo.province ? studentInfo.province : ""
          });
       }
 
@@ -7414,6 +7432,41 @@
 
       }
 
+      function toggleStudentRegisterFields() {
+         const identityInput =
+            document.getElementById("identity");
+
+         const studentFields =
+            document.getElementById("studentRegisterFields");
+
+         if (!identityInput || !studentFields) {
+            return;
+         }
+
+         const isStudent =
+            identityInput.value === "Student";
+
+         studentFields.classList.toggle(
+            "showStudentRegisterFields",
+            isStudent
+         );
+
+         if (!isStudent) {
+            [
+               "school",
+               "educationLevel",
+               "province"
+            ].forEach(function (id) {
+               const input =
+                  document.getElementById(id);
+
+               if (input) {
+                  input.value = "";
+               }
+            });
+         }
+      }
+
       async function registerUserUI() {
          const name =
             document.getElementById("name").value.trim();
@@ -7432,6 +7485,26 @@
             return;
          }
 
+         const isStudent =
+            identity === "Student";
+
+         const school =
+            document.getElementById("school").value.trim();
+
+         const educationLevel =
+            document.getElementById("educationLevel").value.trim();
+
+         const province =
+            document.getElementById("province").value.trim();
+
+         if (
+            isStudent &&
+            (!school || !educationLevel || !province)
+         ) {
+            alert("กรุณากรอกข้อมูลนักเรียนให้ครบ");
+            return;
+         }
+
          showLoading();
 
          try {
@@ -7440,7 +7513,12 @@
                   name,
                   age,
                   email,
-                  identity
+                  identity,
+                  {
+                     school: school,
+                     educationLevel: educationLevel,
+                     province: province
+                  }
                );
 
             if (result && result.success) {
@@ -7586,6 +7664,9 @@
             "age",
             "email",
             "identity",
+            "school",
+            "educationLevel",
+            "province",
             "forgotEmail"
          ].forEach(function (id) {
 
@@ -7597,6 +7678,8 @@
             }
 
          });
+
+         toggleStudentRegisterFields();
 
       }
 
