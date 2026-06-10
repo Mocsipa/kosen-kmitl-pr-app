@@ -1226,7 +1226,7 @@
          z-index: 2600;
          width: min(760px, calc(100vw - 44px));
          min-height: 76px;
-         border-radius: 999px;
+         border-radius: 38px;
          background: #58d5d8;
          display: none;
          align-items: center;
@@ -1279,7 +1279,7 @@
          flex: 1;
          min-width: 0;
          min-height: 56px;
-         border-radius: 999px;
+         border-radius: 28px;
          background: rgba(214, 247, 247, 0.8);
          display: flex;
          align-items: center;
@@ -1289,12 +1289,16 @@
          color: #111;
          font-size: 21px;
          font-weight: 900;
-         white-space: nowrap;
+         flex-wrap: wrap;
+         white-space: normal;
+         overflow-wrap: anywhere;
+         text-align: center;
       }
 
       .scheduleNoticeActivity {
-         overflow: hidden;
-         text-overflow: ellipsis;
+         min-width: 0;
+         overflow: visible;
+         text-overflow: clip;
       }
 
       .scheduleNoticeClose {
@@ -2562,6 +2566,8 @@
             gap: 14px;
             padding: 8px 14px;
             font-size: 17px;
+            flex-direction: column;
+            align-items: center;
          }
 
          .scheduleNoticeClose {
@@ -3079,7 +3085,7 @@
 
       .eventPage.active .eventContent {
          padding-top: 0 !important;
-         padding-bottom: 560px !important;
+         padding-bottom: 260px !important;
       }
 
       .pointPage.active .pointContent,
@@ -3170,7 +3176,7 @@
          }
 
          .eventPage.active .eventContent {
-            padding-bottom: 620px !important;
+            padding-bottom: 270px !important;
          }
 
       }
@@ -4590,6 +4596,8 @@
       let scheduleNoticeTimer = null;
       let scheduleNoticeDelayTimer = null;
       let scheduleNoticeEnabled = false;
+      let scheduleAudioContext = null;
+      let scheduleAudioUnlocked = false;
       let lastScheduleNoticeKey = "";
       let dismissedScheduleNoticeKey = "";
 
@@ -6038,6 +6046,87 @@
             }).join("");
       }
 
+      function getScheduleAudioContext() {
+         const AudioContextClass =
+            window.AudioContext || window.webkitAudioContext;
+
+         if (!AudioContextClass) {
+            return null;
+         }
+
+         if (!scheduleAudioContext) {
+            scheduleAudioContext =
+               new AudioContextClass();
+         }
+
+         return scheduleAudioContext;
+      }
+
+      function unlockScheduleNoticeSound() {
+         const audioContext =
+            getScheduleAudioContext();
+
+         if (!audioContext) {
+            return;
+         }
+
+         if (audioContext.state === "suspended") {
+            audioContext.resume().catch(function () { });
+         }
+
+         scheduleAudioUnlocked = true;
+      }
+
+      function playScheduleNoticeSound() {
+         try {
+            const audioContext =
+               getScheduleAudioContext();
+
+            if (
+               !audioContext ||
+               !scheduleAudioUnlocked ||
+               audioContext.state === "suspended"
+            ) {
+               return;
+            }
+
+            const now =
+               audioContext.currentTime;
+
+            const gain =
+               audioContext.createGain();
+
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(0.18, now + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.42);
+            gain.connect(audioContext.destination);
+
+            const firstTone =
+               audioContext.createOscillator();
+
+            firstTone.type = "sine";
+            firstTone.frequency.setValueAtTime(880, now);
+            firstTone.connect(gain);
+            firstTone.start(now);
+            firstTone.stop(now + 0.18);
+
+            const secondTone =
+               audioContext.createOscillator();
+
+            secondTone.type = "sine";
+            secondTone.frequency.setValueAtTime(1175, now + 0.16);
+            secondTone.connect(gain);
+            secondTone.start(now + 0.16);
+            secondTone.stop(now + 0.42);
+         } catch (error) {
+            console.warn("Schedule sound blocked =", error);
+         }
+      }
+
+      document.addEventListener("pointerdown", unlockScheduleNoticeSound, { passive: true });
+      document.addEventListener("touchstart", unlockScheduleNoticeSound, { passive: true });
+      document.addEventListener("click", unlockScheduleNoticeSound, { passive: true });
+
       function showCurrentScheduleNotice() {
          const activePage =
             document.querySelector(".page.active");
@@ -6093,6 +6182,7 @@
 
          notice.classList.add("showScheduleNotice");
          document.body.classList.add("scheduleNoticeVisible");
+         playScheduleNoticeSound();
 
          if (scheduleNoticeTimer) {
             clearTimeout(scheduleNoticeTimer);
