@@ -3648,7 +3648,7 @@
 
             <input id="cerName" class="cerInput" placeholder="Name">
 
-            <input id="cerEmail" class="cerInput" placeholder="Email">
+            <input id="cerEmail" class="cerInput" type="email" inputmode="email" autocapitalize="off" spellcheck="false" placeholder="Email">
 
             <div class="cerWarning">
                *ผู้ใช้สามารถแก้ไขได้ภายในวันงาน<br>
@@ -8599,7 +8599,7 @@
             success: true,
             code: targetCode,
             name: user.certificateName || user.name || "",
-            email: user.certificateEmail || user.email || "",
+            email: normalizeCertificateEmail(user.certificateEmail || user.email || ""),
             identity: user.identity || "-",
             point: Number(user.point) || 0,
             limit: Number(user.pointLimit) || 12
@@ -8607,8 +8607,21 @@
       }
 
       function isValidEmailSimple(email) {
-         const text = String(email || "").trim();
-         return text.indexOf("@") > 0 && text.indexOf(".") > text.indexOf("@") + 1;
+         const text = normalizeCertificateEmail(email);
+
+         return /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/.test(text);
+      }
+
+      function normalizeCertificateEmail(email) {
+         return String(email || "")
+            .trim()
+            .replace(/[\u200B-\u200D\uFEFF]/g, "")
+            .replace(/\s+/g, "")
+            .replace(/[＠]/g, "@")
+            .replace(/[．｡]/g, ".")
+            .replace(/[‐‑‒–—−]/g, "-")
+            .replace(/[＿]/g, "_")
+            .toLowerCase();
       }
 
       async function saveCertificateDraftFirebase(code, name, email) {
@@ -8631,7 +8644,7 @@
             tools.doc(db, "users", targetCode),
             {
                certificateName: name,
-               certificateEmail: email,
+               certificateEmail: normalizeCertificateEmail(email),
                certificateUpdatedAt: tools.serverTimestamp(),
                updatedAt: tools.serverTimestamp()
             }
@@ -8763,6 +8776,20 @@
          updateRewardPointLabels(currentPoint);
 
          try {
+            const profileResult =
+               await getCertificateProfileFirebase(lastCode);
+
+            if (profileResult && profileResult.success) {
+               profileDataCache =
+                  Object.assign({}, profileDataCache || {}, profileResult);
+
+               certificateName =
+                  certificateName || profileResult.name || "";
+
+               certificateEmail =
+                  profileResult.email || certificateEmail || "";
+            }
+
             await prepareCertificateDefaultData();
          } catch (error) {
             alert(
@@ -8785,7 +8812,7 @@
          }
 
          if (emailInput) {
-            emailInput.value = certificateEmail || "";
+            emailInput.value = normalizeCertificateEmail(certificateEmail || "");
          }
 
       }
@@ -8799,10 +8826,11 @@
                .trim();
 
          const email =
-            document
-               .getElementById("cerEmail")
-               .value
-               .trim();
+            normalizeCertificateEmail(
+               document
+                  .getElementById("cerEmail")
+                  .value
+            );
 
          if (!name || !email) {
             alert("กรุณากรอก Name และ Email");
@@ -9120,13 +9148,13 @@
 
          const sendEmail =
             emailInput && emailInput.value.trim()
-               ? emailInput.value.trim()
+               ? normalizeCertificateEmail(emailInput.value)
                : certificateEmail
-                  ? certificateEmail.trim()
+                  ? normalizeCertificateEmail(certificateEmail)
                   : profileDataCache && profileDataCache.email
-                     ? profileDataCache.email
+                     ? normalizeCertificateEmail(profileDataCache.email)
                      : firestoreProfile && firestoreProfile.email
-                        ? firestoreProfile.email
+                        ? normalizeCertificateEmail(firestoreProfile.email)
                         : "";
 
          if (!sendName || !sendEmail) {
