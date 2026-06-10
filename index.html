@@ -1121,6 +1121,176 @@
          margin: 0 auto;
       }
 
+      .scheduleContent {
+         min-height: calc(100vh - 110px);
+         padding: 150px 28px 150px;
+         background: white;
+         text-align: center;
+         transition: padding-top 0.22s ease;
+      }
+
+      body.scheduleNoticeVisible .eventPage.active .scheduleContent {
+         padding-top: 235px;
+      }
+
+      .scheduleTitle {
+         font-size: 58px;
+         line-height: 1;
+         font-weight: 900;
+         letter-spacing: 0;
+         margin: 0 0 30px;
+      }
+
+      .scheduleTable {
+         width: 100%;
+         max-width: 760px;
+         margin: 0 auto;
+      }
+
+      .scheduleHeaderRow,
+      .scheduleRow {
+         display: grid;
+         grid-template-columns: 36% 64%;
+         align-items: center;
+      }
+
+      .scheduleHeaderRow {
+         min-height: 38px;
+         border-radius: 20px;
+         background: #168df2;
+         color: white;
+         font-size: 16px;
+         font-weight: 900;
+      }
+
+      .scheduleRows {
+         position: relative;
+         padding: 4px 0 0;
+      }
+
+      .scheduleRows::before {
+         content: "";
+         position: absolute;
+         top: -18px;
+         bottom: 0;
+         left: 36%;
+         width: 2px;
+         background: #111;
+         transform: translateX(-1px);
+      }
+
+      .scheduleRow {
+         position: relative;
+         z-index: 1;
+         min-height: 43px;
+         border-radius: 20px;
+         color: #111;
+         font-size: 18px;
+      }
+
+      .scheduleRow.activeScheduleRow {
+         background: #58d5d8;
+      }
+
+      .scheduleTimeCell,
+      .scheduleActivityCell {
+         padding: 8px 14px;
+         line-height: 1.25;
+      }
+
+      .scheduleActivityCell {
+         font-weight: 400;
+      }
+
+      .scheduleActivityCell.scheduleStrong {
+         font-weight: 900;
+      }
+
+      .scheduleNote {
+         margin: 42px auto 0;
+         font-size: 13px;
+         line-height: 1.35;
+         letter-spacing: .02em;
+         color: #111;
+      }
+
+      .scheduleNote span {
+         font-style: italic;
+         text-decoration: underline;
+      }
+
+      .scheduleNotice {
+         position: fixed;
+         top: calc(env(safe-area-inset-top) + 126px);
+         left: 50%;
+         z-index: 2600;
+         width: min(760px, calc(100vw - 44px));
+         min-height: 76px;
+         border-radius: 999px;
+         background: #58d5d8;
+         display: none;
+         align-items: center;
+         gap: 16px;
+         padding: 10px 18px 10px 26px;
+         box-shadow: 0 14px 34px rgba(0, 0, 0, 0.12);
+         transform: translate(-50%, -12px);
+         opacity: 0;
+         transition: opacity 0.22s ease, transform 0.22s ease;
+      }
+
+      .scheduleNotice.showScheduleNotice {
+         display: flex;
+         opacity: 1;
+         transform: translate(-50%, 0);
+      }
+
+      .scheduleNoticeBell {
+         width: 58px;
+         min-width: 58px;
+         height: 58px;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         color: white;
+         font-size: 34px;
+         font-weight: 900;
+      }
+
+      .scheduleNoticeText {
+         flex: 1;
+         min-width: 0;
+         min-height: 56px;
+         border-radius: 999px;
+         background: rgba(214, 247, 247, 0.8);
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         gap: 28px;
+         padding: 10px 22px;
+         color: #111;
+         font-size: 21px;
+         font-weight: 900;
+         white-space: nowrap;
+      }
+
+      .scheduleNoticeActivity {
+         overflow: hidden;
+         text-overflow: ellipsis;
+      }
+
+      .scheduleNoticeClose {
+         width: 58px;
+         min-width: 58px;
+         height: 58px;
+         border: none;
+         background: transparent;
+         color: white;
+         font-size: 60px;
+         line-height: 1;
+         font-weight: 300;
+         cursor: pointer;
+      }
+
       /* ========================
    POINT
 ======================== */
@@ -2310,6 +2480,78 @@
             max-width: 100%;
          }
 
+         .scheduleContent {
+            min-height: calc(100vh - 72px);
+            padding: 130px 20px 126px;
+         }
+
+         body.scheduleNoticeVisible .eventPage.active .scheduleContent {
+            padding-top: 218px;
+         }
+
+         .scheduleTitle {
+            font-size: 48px;
+            margin-bottom: 26px;
+         }
+
+         .scheduleTable {
+            max-width: 100%;
+         }
+
+         .scheduleHeaderRow {
+            min-height: 34px;
+            font-size: 14px;
+         }
+
+         .scheduleRows::before {
+            top: -14px;
+            width: 2px;
+         }
+
+         .scheduleRow {
+            min-height: 42px;
+            font-size: 16px;
+         }
+
+         .scheduleTimeCell,
+         .scheduleActivityCell {
+            padding: 8px 8px;
+         }
+
+         .scheduleNote {
+            margin-top: 34px;
+            font-size: 11px;
+         }
+
+         .scheduleNotice {
+            top: calc(env(safe-area-inset-top) + 92px);
+            width: calc(100vw - 44px);
+            min-height: 58px;
+            gap: 8px;
+            padding: 8px 12px 8px 16px;
+         }
+
+         .scheduleNoticeBell {
+            width: 42px;
+            min-width: 42px;
+            height: 42px;
+            font-size: 26px;
+         }
+
+         .scheduleNoticeText {
+            min-height: 42px;
+            gap: 14px;
+            padding: 8px 14px;
+            font-size: 17px;
+         }
+
+         .scheduleNoticeClose {
+            width: 42px;
+            min-width: 42px;
+            height: 42px;
+            font-size: 48px;
+         }
+
          .pointContent {
             padding: 125px 18px 100px;
          }
@@ -3073,6 +3315,15 @@
       </div>
 
    </div>
+
+   <div id="scheduleNotice" class="scheduleNotice">
+      <div class="scheduleNoticeBell">🔔</div>
+      <div class="scheduleNoticeText">
+         <span id="scheduleNoticeTime"></span>
+         <span id="scheduleNoticeActivity" class="scheduleNoticeActivity"></span>
+      </div>
+      <button class="scheduleNoticeClose" type="button" onclick="closeScheduleNotice()">×</button>
+   </div>
    <!-- LOGIN -->
 
    <div id="loginPage" class="page active">
@@ -3315,57 +3566,22 @@
          <div class="menuIcon" onclick="openMenuOverlay()"><span></span><span></span><span></span></div>
       </div>
 
-      <div class="eventContent">
+      <div class="eventContent scheduleContent">
 
-         <section class="eventPosterBox">
-            <img class="eventPosterImage" src="https://mocsipa.github.io/kosen-now-images/E1.png">
-         </section>
+         <h1 class="scheduleTitle">SCHEDULE</h1>
 
-         <section class="eventSection">
-
-            <div class="floorSliderWrap">
-
-               <div id="floorMapScroller" class="floorMapScroller" onscroll="handleFloorScroll()">
-
-                  <div class="floorSlide"><img src="https://mocsipa.github.io/kosen-now-images/E3.png"></div>
-                  <div class="floorSlide"><img src="https://mocsipa.github.io/kosen-now-images/E4.png"></div>
-                  <div class="floorSlide"><img src="https://mocsipa.github.io/kosen-now-images/E5.png"></div>
-                  <div class="floorSlide"><img src="https://mocsipa.github.io/kosen-now-images/E6.png"></div>
-
-               </div>
-
-               <div class="floorArrowRow">
-                  <button class="floorArrow" onclick="changeFloorSlide(-1)">‹</button>
-                  <div class="floorDots">
-                     <div id="floorDot0" class="floorDot activeFloorDot"></div>
-                     <div id="floorDot1" class="floorDot"></div>
-                     <div id="floorDot2" class="floorDot"></div>
-                     <div id="floorDot3" class="floorDot"></div>
-                  </div>
-                  <button class="floorArrow" onclick="changeFloorSlide(1)">›</button>
-               </div>
-
-               <div id="floorInfoBox" class="floorInfoBox">
-                  <div id="floorNumber" class="floorNumber">1<small>st</small><br>floor</div>
-                  <div id="floorInfoList" class="floorInfoList">
-                     • Registration Area<br>
-                     • Exhibition Zone<br>
-                     • Information Desk
-                  </div>
-               </div>
-
-               <div class="scrollHint">
-                  <div class="scrollHintIcon">⌄</div>
-                  SCROLL
-               </div>
-
+         <section class="scheduleTable">
+            <div class="scheduleHeaderRow">
+               <div>TIME</div>
+               <div>ACTIVITES</div>
             </div>
-
+            <div id="scheduleRows" class="scheduleRows"></div>
          </section>
 
-         <section class="scheduleSection">
-            <img class="scheduleImage" src="https://mocsipa.github.io/kosen-now-images/E7.png">
-         </section>
+         <div class="scheduleNote">
+            THIS SCHEDULE IS INTENDED FOR USE IN<br>
+            <span>THE MULTI-PURPOSE HALL ONLY.</span>
+         </div>
 
       </div>
 
@@ -4284,6 +4500,28 @@
             info: "• Advanced Innovation Engineering<br>• Seminar Room<br>• Staff Support Area"
          }
       ];
+
+      const scheduleItems = [
+         { start: "08:00", end: "09:00", title: "Registration" },
+         { start: "09:00", end: "09:15", title: "Opening Messages" },
+         { start: "09:15", end: "09:30", title: "What is KOSEN - KMITL", strong: true },
+         { start: "09:30", end: "10:00", title: "Departments of KOSEN - KMITL" },
+         { start: "10:00", end: "10:20", title: "General Subjects" },
+         { start: "10:20", end: "10:40", title: "Language is Important" },
+         { start: "11:00", end: "11:30", title: "Industrial Linkage" },
+         { start: "11:30", end: "12:30", title: "Lunch" },
+         { start: "12:30", end: "13:00", title: "Graduated Students Experience", strong: true },
+         { start: "13:00", end: "13:30", title: "Departments of KOSEN - KMITL" },
+         { start: "13:30", end: "13:50", title: "General Subjects" },
+         { start: "13:50", end: "14:10", title: "Language is Important" },
+         { start: "14:30", end: "15:00", title: "Industrial Linkage" },
+         { start: "15:30", end: "16:00", title: "Closing Ceremony" }
+      ];
+
+      let scheduleRefreshTimer = null;
+      let scheduleNoticeTimer = null;
+      let lastScheduleNoticeKey = "";
+      let dismissedScheduleNoticeKey = "";
 
       function normalizeCode(value) {
          return String(value || "").trim().toUpperCase();
@@ -5626,29 +5864,198 @@
 
       }
 
+      function scheduleTimeToMinutes(value) {
+         const parts =
+            String(value || "").split(":");
+
+         const hours =
+            Number(parts[0] || 0);
+
+         const minutes =
+            Number(parts[1] || 0);
+
+         return (hours * 60) + minutes;
+      }
+
+      function getCurrentScheduleMinutes() {
+         const now =
+            new Date();
+
+         return (now.getHours() * 60) + now.getMinutes();
+      }
+
+      function getCurrentScheduleItem() {
+         const currentMinutes =
+            getCurrentScheduleMinutes();
+
+         for (let i = 0; i < scheduleItems.length; i++) {
+            const item =
+               scheduleItems[i];
+
+            const startMinutes =
+               scheduleTimeToMinutes(item.start);
+
+            const endMinutes =
+               scheduleTimeToMinutes(item.end);
+
+            if (
+               currentMinutes >= startMinutes &&
+               currentMinutes < endMinutes
+            ) {
+               return item;
+            }
+         }
+
+         return null;
+      }
+
+      function getScheduleItemKey(item) {
+         if (!item) {
+            return "";
+         }
+
+         return item.start + "-" + item.end + "-" + item.title;
+      }
+
+      function renderScheduleTable() {
+         const scheduleRows =
+            document.getElementById("scheduleRows");
+
+         if (!scheduleRows) {
+            return;
+         }
+
+         const activeItem =
+            getCurrentScheduleItem();
+
+         const activeKey =
+            getScheduleItemKey(activeItem);
+
+         scheduleRows.innerHTML =
+            scheduleItems.map(function (item) {
+               const itemKey =
+                  getScheduleItemKey(item);
+
+               const activeClass =
+                  itemKey === activeKey ? " activeScheduleRow" : "";
+
+               const strongClass =
+                  item.strong ? " scheduleStrong" : "";
+
+               return "" +
+                  "<div class=\"scheduleRow" + activeClass + "\">" +
+                  "<div class=\"scheduleTimeCell\">" +
+                  item.start + " - " + item.end +
+                  "</div>" +
+                  "<div class=\"scheduleActivityCell" + strongClass + "\">" +
+                  item.title +
+                  "</div>" +
+                  "</div>";
+            }).join("");
+      }
+
+      function showCurrentScheduleNotice() {
+         const activeItem =
+            getCurrentScheduleItem();
+
+         if (!activeItem) {
+            closeScheduleNotice(true);
+            lastScheduleNoticeKey = "";
+            return;
+         }
+
+         const activeKey =
+            getScheduleItemKey(activeItem);
+
+         if (
+            activeKey === lastScheduleNoticeKey ||
+            activeKey === dismissedScheduleNoticeKey
+         ) {
+            return;
+         }
+
+         lastScheduleNoticeKey =
+            activeKey;
+
+         const notice =
+            document.getElementById("scheduleNotice");
+
+         const noticeTime =
+            document.getElementById("scheduleNoticeTime");
+
+         const noticeActivity =
+            document.getElementById("scheduleNoticeActivity");
+
+         if (!notice || !noticeTime || !noticeActivity) {
+            return;
+         }
+
+         noticeTime.innerHTML =
+            activeItem.start + " - " + activeItem.end;
+
+         noticeActivity.innerHTML =
+            activeItem.title;
+
+         notice.classList.add("showScheduleNotice");
+         document.body.classList.add("scheduleNoticeVisible");
+
+         if (scheduleNoticeTimer) {
+            clearTimeout(scheduleNoticeTimer);
+         }
+
+         scheduleNoticeTimer =
+            setTimeout(function () {
+               closeScheduleNotice(true);
+            }, 20000);
+      }
+
+      function closeScheduleNotice(skipDismiss) {
+         const notice =
+            document.getElementById("scheduleNotice");
+
+         if (notice) {
+            notice.classList.remove("showScheduleNotice");
+         }
+
+         document.body.classList.remove("scheduleNoticeVisible");
+
+         if (scheduleNoticeTimer) {
+            clearTimeout(scheduleNoticeTimer);
+            scheduleNoticeTimer = null;
+         }
+
+         if (skipDismiss !== true) {
+            const activeItem =
+               getCurrentScheduleItem();
+
+            dismissedScheduleNoticeKey =
+               getScheduleItemKey(activeItem);
+         }
+      }
+
+      function refreshScheduleUi() {
+         renderScheduleTable();
+         showCurrentScheduleNotice();
+      }
+
+      function startScheduleTicker() {
+         refreshScheduleUi();
+
+         if (scheduleRefreshTimer) {
+            return;
+         }
+
+         scheduleRefreshTimer =
+            setInterval(refreshScheduleUi, 30000);
+      }
+
       function showEvent() {
 
          stopRewardPolling();
          stopScannerSilent();
 
          showPage("eventPage");
-
-         updateFloorInfo(0);
-
-         currentFloorSlide = 0;
-
-         setTimeout(function () {
-
-            const scroller =
-               document.getElementById("floorMapScroller");
-
-            if (scroller) {
-               scroller.scrollLeft = 0;
-            }
-
-            setupFloorTouchDirection();
-
-         }, 100);
+         startScheduleTicker();
 
       }
 
@@ -9859,6 +10266,7 @@
          function () {
 
             installLoadingOverlayGuard();
+            startScheduleTicker();
 
             if (AUTO_CODE) {
                autoLoginFromQr();
