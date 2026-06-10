@@ -6191,7 +6191,7 @@
          scheduleNoticeTimer =
             setTimeout(function () {
                closeScheduleNotice(true);
-            }, 20000);
+            }, 70000);
       }
 
       function closeScheduleNotice(skipDismiss) {
@@ -6248,9 +6248,22 @@
             clearTimeout(scheduleNoticeDelayTimer);
          }
 
-         closeScheduleNotice(true);
+         const notice =
+            document.getElementById("scheduleNotice");
+
+         const isNoticeVisible =
+            notice &&
+            notice.classList.contains("showScheduleNotice");
+
+         if (!isNoticeVisible) {
+            closeScheduleNotice(true);
+         }
 
          scheduleNoticeEnabled = true;
+
+         if (isNoticeVisible) {
+            return;
+         }
 
          const delay =
             2000 + Math.floor(Math.random() * 3001);
