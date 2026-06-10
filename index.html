@@ -3072,10 +3072,14 @@
          -webkit-transform: translateZ(0) !important;
       }
 
-      .homePage.active .homeContent,
-      .eventPage.active .eventContent {
+      .homePage.active .homeContent {
          padding-top: 0 !important;
          padding-bottom: 40px !important;
+      }
+
+      .eventPage.active .eventContent {
+         padding-top: 0 !important;
+         padding-bottom: 560px !important;
       }
 
       .pointPage.active .pointContent,
@@ -3163,6 +3167,10 @@
 
          .pointPage.active .dashboardContent {
             padding-bottom: 340px !important;
+         }
+
+         .eventPage.active .eventContent {
+            padding-bottom: 620px !important;
          }
 
       }
@@ -5714,6 +5722,7 @@
          nextPage.classList.add("active");
          window.scrollTo(0, 0);
          resetActiveContentScroll(id);
+         scheduleNoticeAfterAppPage(id);
       }
 
       function showPage(id) {
@@ -5744,6 +5753,7 @@
             nextPage.classList.add("active", "fadeInPage");
             window.scrollTo(0, 0);
             resetActiveContentScroll(id);
+            scheduleNoticeAfterAppPage(id);
             return;
          }
 
@@ -5752,6 +5762,7 @@
             nextPage.classList.add("active");
             window.scrollTo(0, 0);
             resetActiveContentScroll(id);
+            scheduleNoticeAfterAppPage(id);
             isPageAnimating = false;
             return;
          }
@@ -5762,6 +5773,7 @@
             cleanupTransitionPages(id);
             window.scrollTo(0, 0);
             resetActiveContentScroll(id);
+            scheduleNoticeAfterAppPage(id);
             isPageAnimating = false;
             return;
          }
@@ -5811,6 +5823,7 @@
 
             nextPage.classList.add("active");
             resetActiveContentScroll(id);
+            scheduleNoticeAfterAppPage(id);
 
             isPageAnimating = false;
             pageTransitionTimer = null;
@@ -5932,7 +5945,6 @@
          }, 340);
 
          startSlideshow();
-         scheduleNoticeAfterHome();
 
       }
 
@@ -6135,7 +6147,11 @@
             setInterval(refreshScheduleUi, 30000);
       }
 
-      function scheduleNoticeAfterHome() {
+      function scheduleNoticeAfterAppPage(pageId) {
+         if (!isAppPage(pageId)) {
+            return;
+         }
+
          startScheduleTicker();
 
          if (scheduleNoticeDelayTimer) {
@@ -6153,12 +6169,12 @@
             setTimeout(function () {
                scheduleNoticeDelayTimer = null;
 
-               const homePage =
-                  document.getElementById("homePage");
+               const activePage =
+                  document.querySelector(".page.active");
 
                if (
-                  homePage &&
-                  homePage.classList.contains("active")
+                  activePage &&
+                  isAppPage(activePage.id)
                ) {
                   showCurrentScheduleNotice();
                }
