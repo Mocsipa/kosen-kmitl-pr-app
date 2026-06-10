@@ -8101,12 +8101,16 @@
                const dateTime =
                   getDashboardUserDateTime(user);
 
+               const studentDetails =
+                  getDashboardStudentDetailsHtml(user);
+
                return (
                   "<div class=\"dashboardUserCard\">" +
                      "name: " + escapeHtml(user.name || "-") + "<br>" +
                      "Email: " + escapeHtml(user.email || "-") + "<br>" +
                      "age: " + escapeHtml(user.age || "-") + "<br>" +
                      "Identity: " + escapeHtml(user.identity || "-") + "<br>" +
+                     studentDetails +
                      "Code: " + escapeHtml(user.code || "-") + "<br>" +
                      "date: " + escapeHtml(dateTime.date) + "<br>" +
                      "time: " + escapeHtml(dateTime.time) +
@@ -8114,6 +8118,35 @@
                );
             })
             .join("");
+      }
+
+      function getDashboardStudentDetailsHtml(user) {
+         const isStudent =
+            String(user.identity || "").trim().toLowerCase() === "student";
+
+         const school =
+            user.school || "";
+
+         const educationLevel =
+            user.educationLevel || "";
+
+         const province =
+            user.province || "";
+
+         if (
+            !isStudent &&
+            !school &&
+            !educationLevel &&
+            !province
+         ) {
+            return "";
+         }
+
+         return (
+            "School: " + escapeHtml(school || "-") + "<br>" +
+            "Education Level: " + escapeHtml(educationLevel || "-") + "<br>" +
+            "Province: " + escapeHtml(province || "-") + "<br>"
+         );
       }
 
       function getDashboardUserDateTime(user) {
@@ -8200,6 +8233,9 @@
             "Email",
             "Age",
             "Identity",
+            "School",
+            "Education Level",
+            "Province",
             "Code",
             "Date",
             "Time"
@@ -8217,6 +8253,9 @@
                   user.email || "",
                   user.age || "",
                   user.identity || "",
+                  user.school || "",
+                  user.educationLevel || "",
+                  user.province || "",
                   user.code || "",
                   dateTime.date,
                   dateTime.time
