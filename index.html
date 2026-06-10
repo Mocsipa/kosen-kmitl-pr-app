@@ -6004,6 +6004,9 @@
          const currentMinutes =
             getCurrentScheduleMinutes();
 
+         let nextItem =
+            null;
+
          for (let i = 0; i < scheduleItems.length; i++) {
             const item =
                scheduleItems[i];
@@ -6020,9 +6023,22 @@
             ) {
                return item;
             }
+
+            if (
+               !nextItem &&
+               currentMinutes < startMinutes
+            ) {
+               nextItem = item;
+            }
          }
 
-         return null;
+         if (nextItem) {
+            return nextItem;
+         }
+
+         return scheduleItems.length
+            ? scheduleItems[scheduleItems.length - 1]
+            : null;
       }
 
       function getScheduleItemKey(item) {
