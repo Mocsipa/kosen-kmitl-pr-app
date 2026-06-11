@@ -4491,6 +4491,9 @@
       const CAPACITY_NOTICE_DURATION_MS =
          70000;
 
+      const POINT_CACHE_TTL_MS =
+         60000;
+
       const DEBUG_MODE =
          true;
 
@@ -4525,6 +4528,8 @@
       let html5QrCode = null;
       let scannerRunning = false;
       let currentPoint = 0;
+      let currentPointLimit = 12;
+      let lastPointFetchAt = 0;
       let currentTotalEarnedPoint = 0;
       let currentCertificateEligible = false;
       let currentRewardId = "";
@@ -5226,42 +5231,6 @@
             Number(user.point) ||
             0;
 
-         if (
-            user.certificateEligible !== true &&
-            totalEarnedPoint < 5 &&
-            targetCode &&
-            !targetCode.startsWith("XX")
-         ) {
-            try {
-               const pointLogsQuery =
-                  tools.query(
-                     tools.collection(db, "pointLogs"),
-                     tools.where("code", "==", targetCode)
-                  );
-
-               const pointLogsSnapshot =
-                  await getFirestoreDocs(
-                     pointLogsQuery,
-                     "getUserPointFirebase/pointLogs/" + targetCode
-                  );
-
-               let earnedFromLogs = 0;
-
-               pointLogsSnapshot.forEach(function (docSnap) {
-                  const log =
-                     docSnap.data() || {};
-
-                  earnedFromLogs +=
-                     Number(log.addedPoint) || 0;
-               });
-
-               totalEarnedPoint =
-                  Math.max(totalEarnedPoint, earnedFromLogs);
-            } catch (error) {
-               console.warn("CERTIFICATE ELIGIBILITY LOG CHECK ERROR =", error);
-            }
-         }
-
          return {
             success: true,
             point: Number(user.point) || 0,
@@ -5417,6 +5386,22 @@
                ) {
                   stopRewardPolling();
 
+                  if (typeof data.pointAfterConfirm !== "undefined") {
+                     const pointResult = {
+                        success: true,
+                        point: Number(data.pointAfterConfirm) || 0,
+                        limit: currentPointLimit || 12,
+                        totalEarnedPoint: currentTotalEarnedPoint,
+                        certificateEligible: currentCertificateEligible
+                     };
+
+                     applyPointState(pointResult);
+                     updatePointUI(pointResult.point, pointResult.limit);
+                     updateRewardPointFromCache();
+                     showRewardSuccessView(pointResult);
+                     return;
+                  }
+
                   getUserPointFirebase(lastCode)
                      .then(function (pointResult) {
                         if (pointResult && pointResult.success) {
@@ -5434,7 +5419,7 @@
                            pointResult || {
                               success: true,
                               point: currentPoint,
-                              limit: 12
+                              limit: currentPointLimit || 12
                            }
                         );
                      })
@@ -5442,7 +5427,7 @@
                         showRewardSuccessView({
                            success: true,
                            point: currentPoint,
-                           limit: 12
+                           limit: currentPointLimit || 12
                         });
                      });
                }
@@ -6044,12 +6029,15 @@
          localStorage.removeItem(LOGIN_STORAGE_KEY);
          localStorage.removeItem("kosen_point");
          localStorage.removeItem("kosen_point_limit");
+         localStorage.removeItem("kosen_point_fetch_at");
          localStorage.removeItem("kosen_total_earned_point");
          localStorage.removeItem("kosen_certificate_eligible");
 
          lastCode = "";
          lastQrUrl = "";
          currentPoint = 0;
+         currentPointLimit = 12;
+         lastPointFetchAt = 0;
          currentTotalEarnedPoint = 0;
          currentCertificateEligible = false;
          dashboardDataLoadedAt = 0;
@@ -8166,9 +8154,11 @@
 
          loadPointFromCache();
 
-         setTimeout(function () {
-            loadPoint();
-         }, 80);
+         if (shouldLoadPointFromServer()) {
+            setTimeout(function () {
+               loadPoint();
+            }, 80);
+         }
 
       }
 
@@ -8759,9 +8749,15 @@
          URL.revokeObjectURL(url);
       }
 
-      function loadPoint() {
+      function loadPoint(forceRefresh) {
 
          if (!lastCode) {
+            return;
+         }
+
+         if (!shouldLoadPointFromServer(forceRefresh)) {
+            updatePointUI(currentPoint, currentPointLimit);
+            updateRewardPointFromCache();
             return;
          }
 
@@ -8797,6 +8793,24 @@
          const savedCertificateEligible =
             localStorage.getItem("kosen_certificate_eligible");
 
+         const savedFetchAt =
+            localStorage.getItem("kosen_point_fetch_at");
+
+         if (savedPoint !== null) {
+            currentPoint =
+               Number(savedPoint) || 0;
+         }
+
+         if (savedLimit !== null) {
+            currentPointLimit =
+               Number(savedLimit) || 12;
+         }
+
+         if (savedFetchAt !== null) {
+            lastPointFetchAt =
+               Number(savedFetchAt) || 0;
+         }
+
          if (savedTotalEarned !== null) {
             currentTotalEarnedPoint =
                Number(savedTotalEarned) || 0;
@@ -8809,11 +8823,33 @@
 
          if (savedPoint !== null) {
             updatePointUI(
-               Number(savedPoint),
-               Number(savedLimit) || 12
+               currentPoint,
+               currentPointLimit
             );
          }
 
+      }
+
+      function hasPointCache() {
+         return localStorage.getItem("kosen_point") !== null;
+      }
+
+      function isPointCacheFresh() {
+         return (
+            hasPointCache() &&
+            lastPointFetchAt &&
+            Date.now() - lastPointFetchAt < POINT_CACHE_TTL_MS
+         );
+      }
+
+      function shouldLoadPointFromServer(forceRefresh) {
+         if (forceRefresh === true) {
+            return true;
+         }
+
+         loadPointFromCache();
+
+         return !isPointCacheFresh();
       }
 
       function savePointToCache(point, limit) {
@@ -8828,11 +8864,22 @@
             String(Number(limit) || 12)
          );
 
+         lastPointFetchAt =
+            Date.now();
+
+         localStorage.setItem(
+            "kosen_point_fetch_at",
+            String(lastPointFetchAt)
+         );
+
       }
 
       function applyPointState(result) {
          currentPoint =
             Number(result && result.point) || 0;
+
+         currentPointLimit =
+            Number(result && result.limit) || currentPointLimit || 12;
 
          currentTotalEarnedPoint =
             Number(result && result.totalEarnedPoint) ||
@@ -8845,7 +8892,7 @@
 
          savePointToCache(
             result && result.point,
-            result && result.limit
+            currentPointLimit
          );
 
          localStorage.setItem(
@@ -8875,12 +8922,19 @@
          const savedPoint =
             localStorage.getItem("kosen_point");
 
-         if (savedPoint === null) {
+         if (
+            savedPoint === null &&
+            typeof currentPoint === "undefined"
+         ) {
             return;
          }
 
          const pointText =
-            "x " + String(Number(savedPoint) || 0);
+            "x " + String(
+               savedPoint !== null
+                  ? Number(savedPoint) || 0
+                  : Number(currentPoint) || 0
+            );
 
          const rewardPointIds = [
             "rewardPointTop",
@@ -8996,7 +9050,10 @@
 
          updateRewardPointFromCache();
 
-         if (typeof loadRewardPoint === "function") {
+         if (
+            typeof loadRewardPoint === "function" &&
+            shouldLoadPointFromServer()
+         ) {
             setTimeout(function () {
                loadRewardPoint();
             }, 80);
@@ -9146,7 +9203,10 @@
 
          window.scrollTo(0, 0);
 
-         if (typeof loadRewardPoint === "function") {
+         if (
+            typeof loadRewardPoint === "function" &&
+            shouldLoadPointFromServer()
+         ) {
             setTimeout(function () {
                loadRewardPoint();
             }, 80);
@@ -9191,9 +9251,11 @@
          updateRewardPointFromCache();
          renderRewardList();
 
-         setTimeout(function () {
-            loadRewardPoint();
-         }, 80);
+         if (shouldLoadPointFromServer()) {
+            setTimeout(function () {
+               loadRewardPoint();
+            }, 80);
+         }
 
       }
 
@@ -9364,7 +9426,13 @@
 
       }
 
-      function loadRewardPoint() {
+      function loadRewardPoint(forceRefresh) {
+
+         if (!shouldLoadPointFromServer(forceRefresh)) {
+            updateRewardPointLabels(currentPoint);
+            renderRewardList();
+            return;
+         }
 
          getUserPointFirebase(lastCode)
             .then(function (result) {
