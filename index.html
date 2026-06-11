@@ -408,12 +408,22 @@
          color: #555;
       }
 
+      .extraRegisterFields,
       .studentRegisterFields {
          display: none;
          width: 100%;
       }
 
+      .extraRegisterFields.showExtraRegisterFields,
       .studentRegisterFields.showStudentRegisterFields {
+         display: block;
+      }
+
+      .studentOnlyRegisterField {
+         display: none;
+      }
+
+      .studentOnlyRegisterField.showStudentOnlyRegisterField {
          display: block;
       }
 
@@ -4327,7 +4337,7 @@
 
       <div id="studentRegisterFields" class="studentRegisterFields">
          <input id="school" class="input" placeholder="โรงเรียน">
-         <select id="educationLevel" class="input">
+         <select id="educationLevel" class="input studentOnlyRegisterField">
             <option value="">ระดับชั้นการศึกษา</option>
             <option value="ระดับชั้นต่ำกว่าประถม">ระดับชั้นต่ำกว่าประถม</option>
             <option value="ระดับชั้นประถม">ระดับชั้นประถม</option>
@@ -4335,7 +4345,7 @@
             <option value="ระดับชั้นมัธยมปลาย">ระดับชั้นมัธยมปลาย</option>
             <option value="อื่นๆ">อื่นๆ</option>
          </select>
-         <input id="province" class="input" placeholder="จังหวัด">
+         <input id="province" class="input studentOnlyRegisterField" placeholder="จังหวัด">
       </div>
 
       <div class="smallText">
@@ -7867,14 +7877,38 @@
          const isStudent =
             identityInput.value === "Student";
 
+         const isTeacher =
+            identityInput.value === "Teacher";
+
          studentFields.classList.toggle(
             "showStudentRegisterFields",
-            isStudent
+            isStudent || isTeacher
          );
 
-         if (!isStudent) {
+         document
+            .querySelectorAll(".studentOnlyRegisterField")
+            .forEach(function (field) {
+               field.classList.toggle(
+                  "showStudentOnlyRegisterField",
+                  isStudent
+               );
+            });
+
+         if (!isStudent && !isTeacher) {
             [
                "school",
+               "educationLevel",
+               "province"
+            ].forEach(function (id) {
+               const input =
+                  document.getElementById(id);
+
+               if (input) {
+                  input.value = "";
+               }
+            });
+         } else if (!isStudent) {
+            [
                "educationLevel",
                "province"
             ].forEach(function (id) {
@@ -7909,6 +7943,9 @@
          const isStudent =
             identity === "Student";
 
+         const isTeacher =
+            identity === "Teacher";
+
          const school =
             document.getElementById("school").value.trim();
 
@@ -7923,6 +7960,11 @@
             (!school || !educationLevel || !province)
          ) {
             alert("กรุณากรอกข้อมูลนักเรียนให้ครบ");
+            return;
+         }
+
+         if (isTeacher && !school) {
+            alert("กรุณากรอกชื่อโรงเรียน");
             return;
          }
 
