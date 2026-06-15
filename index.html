@@ -10352,18 +10352,22 @@
          }
 
          ctx.textAlign =
-            "center";
+            "left";
 
          ctx.textBaseline =
-            "middle";
+            "alphabetic";
 
          ctx.fillStyle =
             "#111111";
 
+         const certificateNameFont =
+            'Arial, "Noto Sans Thai", Tahoma, sans-serif';
+
          ctx.font =
             "bold " +
             fontSize +
-            "px Arial";
+            "px " +
+            certificateNameFont;
 
          while (
             ctx.measureText(nameText).width >
@@ -10376,14 +10380,46 @@
             ctx.font =
                "bold " +
                fontSize +
-               "px Arial";
+               "px " +
+               certificateNameFont;
 
          }
 
+         const metrics =
+            ctx.measureText(nameText);
+
+         const actualLeft =
+            typeof metrics.actualBoundingBoxLeft === "number"
+               ? metrics.actualBoundingBoxLeft
+               : 0;
+
+         const actualRight =
+            typeof metrics.actualBoundingBoxRight === "number"
+               ? metrics.actualBoundingBoxRight
+               : metrics.width;
+
+         const actualAscent =
+            typeof metrics.actualBoundingBoxAscent === "number"
+               ? metrics.actualBoundingBoxAscent
+               : fontSize * 0.8;
+
+         const actualDescent =
+            typeof metrics.actualBoundingBoxDescent === "number"
+               ? metrics.actualBoundingBoxDescent
+               : fontSize * 0.2;
+
+         const drawX =
+            centerX -
+            ((actualRight - actualLeft) / 2);
+
+         const drawY =
+            nameY +
+            ((actualAscent - actualDescent) / 2);
+
          ctx.fillText(
             nameText,
-            centerX,
-            nameY
+            drawX,
+            drawY
          );
 
       }
