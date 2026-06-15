@@ -1980,6 +1980,15 @@
          object-fit: contain;
       }
 
+      .certificateConfirmText {
+         width: 82%;
+         margin: 12px auto 34px;
+         font-size: 34px;
+         font-weight: 700;
+         line-height: 1.35;
+         color: #000;
+      }
+
       .rewardQrBox {
          width: 78%;
          max-width: 420px;
@@ -4191,6 +4200,29 @@
          <button class="btnBlue" onclick="confirmRedeemReward()">Confirm</button>
 
          <button class="btnGray" onclick="closeRewardModal()">Back</button>
+
+      </div>
+
+   </div>
+
+   <div id="certificateConfirmModal" class="rewardModalOverlay">
+
+      <div class="rewardModal">
+
+         <div class="rewardModalTitle">ยืนยันแลกรับ</div>
+
+         <img class="rewardModalImage"
+            src="https://mocsipa.github.io/kosen-now-images/29.png">
+
+         <div class="certificateConfirmText">
+            ใบCertificate ของคุณ<br>
+            สามารถแลกรับได้ 1 ครั้ง<br>
+            เท่านั้น
+         </div>
+
+         <button class="btnBlue" onclick="confirmCertificateRedeem()">Confirm</button>
+
+         <button class="btnGray" onclick="closeCertificateConfirmModal()">Back</button>
 
       </div>
 
@@ -9650,7 +9682,7 @@
                return;
             }
 
-            showCertificatePreview();
+            openCertificateConfirmModal();
             return;
 
          }
@@ -9704,6 +9736,60 @@
          if (modal) {
             modal.classList.remove("activeModal");
          }
+
+      }
+
+      function openCertificateConfirmModal() {
+
+         const modal =
+            document.getElementById("certificateConfirmModal");
+
+         if (modal) {
+            modal.classList.add("activeModal");
+         }
+
+      }
+
+      function closeCertificateConfirmModal() {
+
+         const modal =
+            document.getElementById("certificateConfirmModal");
+
+         if (modal) {
+            modal.classList.remove("activeModal");
+         }
+
+      }
+
+      function confirmCertificateRedeem() {
+
+         if (currentCertificateSent === true) {
+            closeCertificateConfirmModal();
+            alert("คุณแลกรับ Certificate ไปแล้ว");
+            renderRewardList();
+            return;
+         }
+
+         const certificateItem =
+            findRewardById("CERTIFICATE");
+
+         if (!canRedeemCertificate(certificateItem)) {
+            closeCertificateConfirmModal();
+            alert(
+               "ต้องเคยสะสมคะแนนครบ " +
+               (
+                  certificateItem
+                     ? certificateItem.cost
+                     : CERTIFICATE_REDEEM_POINT
+               ) +
+               " คะแนน จึงจะรับ Certificate ได้"
+            );
+            renderRewardList();
+            return;
+         }
+
+         closeCertificateConfirmModal();
+         showCertificatePreview();
 
       }
 
