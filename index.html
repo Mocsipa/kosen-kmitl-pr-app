@@ -4532,6 +4532,8 @@
       let lastPointFetchAt = 0;
       let currentTotalEarnedPoint = 0;
       let currentCertificateEligible = false;
+      let currentCertificateSent = false;
+      let lastCertificateStatusFetchAt = 0;
       let currentRewardId = "";
       let currentRewardData = null;
       let currentRedeemToken = "";
@@ -6043,6 +6045,7 @@
          localStorage.removeItem("kosen_point_fetch_at");
          localStorage.removeItem("kosen_total_earned_point");
          localStorage.removeItem("kosen_certificate_eligible");
+         localStorage.removeItem("kosen_certificate_sent");
 
          lastCode = "";
          lastQrUrl = "";
@@ -6051,6 +6054,8 @@
          lastPointFetchAt = 0;
          currentTotalEarnedPoint = 0;
          currentCertificateEligible = false;
+         currentCertificateSent = false;
+         lastCertificateStatusFetchAt = 0;
          dashboardDataLoadedAt = 0;
          dashboardLoadPromise = null;
          dashboardSearchResults = [];
@@ -8804,6 +8809,9 @@
          const savedCertificateEligible =
             localStorage.getItem("kosen_certificate_eligible");
 
+         const savedCertificateSent =
+            localStorage.getItem("kosen_certificate_sent");
+
          const savedFetchAt =
             localStorage.getItem("kosen_point_fetch_at");
 
@@ -8831,6 +8839,9 @@
             savedCertificateEligible === "true" ||
             currentTotalEarnedPoint >= CERTIFICATE_REDEEM_POINT ||
             Number(savedPoint) >= CERTIFICATE_REDEEM_POINT;
+
+         currentCertificateSent =
+            savedCertificateSent === "true";
 
          if (savedPoint !== null) {
             updatePointUI(
@@ -8915,11 +8926,25 @@
             "kosen_certificate_eligible",
             currentCertificateEligible ? "true" : "false"
          );
+
+         if (result && result.certificateSent === true) {
+            currentCertificateSent =
+               true;
+
+            localStorage.setItem(
+               "kosen_certificate_sent",
+               "true"
+            );
+         }
       }
 
       function canRedeemCertificate(item) {
          const cost =
             Number(item && item.cost) || 5;
+
+         if (currentCertificateSent === true) {
+            return false;
+         }
 
          return (
             currentCertificateEligible === true ||
@@ -9261,6 +9286,7 @@
 
          updateRewardPointFromCache();
          renderRewardList();
+         loadCertificateSentStatus(false);
 
          if (shouldLoadPointFromServer()) {
             setTimeout(function () {
@@ -9614,6 +9640,11 @@
 
          if (item.type === "certificate") {
 
+            if (currentCertificateSent === true) {
+               alert("คุณแลกรับ Certificate ไปแล้ว");
+               return;
+            }
+
             if (!canRedeemCertificate(item)) {
                alert("ต้องเคยสะสมคะแนนครบ " + item.cost + " คะแนน จึงจะรับ Certificate ได้");
                return;
@@ -9918,6 +9949,32 @@
 
          const user = userSnap.data();
 
+         let certificateSent =
+            false;
+
+         try {
+            const certificateRef =
+               tools.doc(db, "certificates", targetCode);
+
+            const certificateSnap =
+               await getFirestoreDoc(
+                  certificateRef,
+                  "getCertificateProfileFirebase/certificates/" + targetCode
+               );
+
+            if (certificateSnap.exists()) {
+               const certificateData =
+                  certificateSnap.data();
+
+               certificateSent =
+                  String(certificateData.status || "")
+                     .trim()
+                     .toUpperCase() === "SENT";
+            }
+         } catch (error) {
+            console.warn("CERTIFICATE STATUS LOAD ERROR =", error);
+         }
+
          return {
             success: true,
             code: targetCode,
@@ -9925,8 +9982,25 @@
             email: normalizeCertificateEmail(user.certificateEmail || user.email || ""),
             identity: user.identity || "-",
             point: Number(user.point) || 0,
-            limit: Number(user.pointLimit) || 12
+            limit: Number(user.pointLimit) || 12,
+            certificateSent: certificateSent
          };
+      }
+
+      function applyCertificateProfileState(result) {
+         if (!result || result.success !== true) {
+            return;
+         }
+
+         if (result.certificateSent === true) {
+            currentCertificateSent =
+               true;
+
+            localStorage.setItem(
+               "kosen_certificate_sent",
+               "true"
+            );
+         }
       }
 
       function isValidEmailSimple(email) {
@@ -10006,7 +10080,92 @@
          };
       }
 
+      async function getCertificateSentFirebase(code) {
+         const db = window.firebaseDb;
+         const tools = window.firebaseTools;
+         const targetCode = normalizeCode(code);
+
+         if (!db || !tools || !targetCode || targetCode.startsWith("XX")) {
+            return {
+               success: false,
+               certificateSent: false
+            };
+         }
+
+         const certificateRef =
+            tools.doc(db, "certificates", targetCode);
+
+         const certificateSnap =
+            await getFirestoreDoc(
+               certificateRef,
+               "getCertificateSentFirebase/certificates/" + targetCode
+            );
+
+         if (!certificateSnap.exists()) {
+            return {
+               success: true,
+               certificateSent: false
+            };
+         }
+
+         const certificateData =
+            certificateSnap.data();
+
+         return {
+            success: true,
+            certificateSent:
+               String(certificateData.status || "")
+                  .trim()
+                  .toUpperCase() === "SENT"
+         };
+      }
+
+      function loadCertificateSentStatus(forceRefresh) {
+         if (
+            !lastCode ||
+            isStaffCode(lastCode) ||
+            currentCertificateSent === true
+         ) {
+            return;
+         }
+
+         if (
+            forceRefresh !== true &&
+            lastCertificateStatusFetchAt &&
+            Date.now() - lastCertificateStatusFetchAt < POINT_CACHE_TTL_MS
+         ) {
+            return;
+         }
+
+         lastCertificateStatusFetchAt =
+            Date.now();
+
+         getCertificateSentFirebase(lastCode)
+            .then(function (result) {
+               if (result && result.certificateSent === true) {
+                  currentCertificateSent =
+                     true;
+
+                  localStorage.setItem(
+                     "kosen_certificate_sent",
+                     "true"
+                  );
+
+                  renderRewardList();
+               }
+            })
+            .catch(function (error) {
+               console.warn("CERTIFICATE SENT STATUS ERROR =", error);
+            });
+      }
+
       async function showCertificatePreview() {
+
+         if (currentCertificateSent === true) {
+            alert("คุณแลกรับ Certificate ไปแล้ว");
+            showReward();
+            return;
+         }
 
          showPage("rewardPage");
 
@@ -10015,6 +10174,28 @@
          updateRewardPointLabels(currentPoint);
 
          try {
+            const profileResult =
+               await getCertificateProfileFirebase(lastCode);
+
+            if (profileResult && profileResult.success) {
+               applyCertificateProfileState(profileResult);
+
+               profileDataCache =
+                  Object.assign({}, profileDataCache || {}, profileResult);
+
+               certificateName =
+                  certificateName || profileResult.name || "";
+
+               certificateEmail =
+                  profileResult.email || certificateEmail || "";
+            }
+
+            if (currentCertificateSent === true) {
+               alert("คุณแลกรับ Certificate ไปแล้ว");
+               showReward();
+               return;
+            }
+
             await prepareCertificateDefaultData();
          } catch (error) {
             alert(
@@ -10041,6 +10222,8 @@
                   await getCertificateProfileFirebase(lastCode);
 
                if (result && result.success) {
+                  applyCertificateProfileState(result);
+
                   profileDataCache =
                      Object.assign({}, profileDataCache || {}, result);
 
@@ -10069,6 +10252,8 @@
                   await getCertificateProfileFirebase(lastCode);
 
                if (result && result.success) {
+                  applyCertificateProfileState(result);
+
                   profileDataCache =
                      Object.assign({}, profileDataCache || {}, result);
 
@@ -10103,6 +10288,14 @@
                await getCertificateProfileFirebase(lastCode);
 
             if (profileResult && profileResult.success) {
+               applyCertificateProfileState(profileResult);
+
+               if (currentCertificateSent === true) {
+                  alert("คุณแลกรับ Certificate ไปแล้ว");
+                  showReward();
+                  return;
+               }
+
                profileDataCache =
                   Object.assign({}, profileDataCache || {}, profileResult);
 
@@ -10452,6 +10645,12 @@
             return;
          }
 
+         if (currentCertificateSent === true) {
+            alert("คุณแลกรับ Certificate ไปแล้ว");
+            showReward();
+            return;
+         }
+
          const nameInput =
             document.getElementById("cerName");
 
@@ -10461,12 +10660,52 @@
          let firestoreProfile =
             null;
 
+         try {
+            const sentCheckResult =
+               await getCertificateProfileFirebase(targetCode);
+
+            if (sentCheckResult && sentCheckResult.success) {
+               applyCertificateProfileState(sentCheckResult);
+
+               firestoreProfile =
+                  sentCheckResult;
+
+               profileDataCache =
+                  Object.assign({}, profileDataCache || {}, sentCheckResult);
+            }
+
+            if (currentCertificateSent === true) {
+               alert("คุณแลกรับ Certificate ไปแล้ว");
+               showReward();
+               return;
+            }
+         } catch (error) {
+            alert(
+               "เกิดข้อผิดพลาด: " +
+               (
+                  error && error.message
+                     ? error.message
+                     : error
+               )
+            );
+            showCertificatePreview();
+            return;
+         }
+
          if (!certificateName || !certificateEmail) {
             try {
                const profileResult =
                   await getCertificateProfileFirebase(targetCode);
 
                if (profileResult && profileResult.success) {
+                  applyCertificateProfileState(profileResult);
+
+                  if (currentCertificateSent === true) {
+                     alert("คุณแลกรับ Certificate ไปแล้ว");
+                     showReward();
+                     return;
+                  }
+
                   firestoreProfile = profileResult;
 
                   profileDataCache =
@@ -10579,6 +10818,14 @@
                      sentAt: window.firebaseTools.serverTimestamp(),
                      message: result.message || ""
                   }
+               );
+
+               currentCertificateSent =
+                  true;
+
+               localStorage.setItem(
+                  "kosen_certificate_sent",
+                  "true"
                );
 
                try {
@@ -11250,6 +11497,7 @@
                         localStorage.removeItem("kosen_point_limit");
                         localStorage.removeItem("kosen_total_earned_point");
                         localStorage.removeItem("kosen_certificate_eligible");
+                        localStorage.removeItem("kosen_certificate_sent");
                         showLogin();
                      }
 
