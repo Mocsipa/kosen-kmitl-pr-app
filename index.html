@@ -4675,35 +4675,46 @@
 
       }
 
+      const CERTIFICATE_REDEEM_POINT =
+         3;
+
       const rewardItems = [
          {
-            id: "reward1",
-            name: "สมุด + ปากกา",
-            cost: 2,
-            image: "https://mocsipa.github.io/kosen-now-images/26.png",
+            id: "RW01",
+            name: "ปากกา",
+            cost: 3,
+            image: "https://mocsipa.github.io/kosen-now-images/RW01.png",
             disabled: false,
             type: "reward"
          },
          {
-            id: "reward2",
-            name: "เมาส์ Bluetooth",
-            cost: 4,
-            image: "https://mocsipa.github.io/kosen-now-images/27.png",
+            id: "RW02",
+            name: "รางวัลพิเศษ<br>และ Sticker<br>เกียร์กี้เกียร์",
+            cost: 6,
+            image: "https://mocsipa.github.io/kosen-now-images/RW02.png",
             disabled: false,
             type: "reward"
          },
          {
-            id: "reward3",
-            name: "Ipad Air 7",
+            id: "RW03",
+            name: "สมุด<br>สถาบันโคเซ็น<br>แห่ง สจล.",
+            cost: 9,
+            image: "https://mocsipa.github.io/kosen-now-images/RW03.png",
+            disabled: false,
+            type: "reward"
+         },
+         {
+            id: "RW04",
+            name: "Ipad<br>Air 7",
             cost: 12,
-            image: "https://mocsipa.github.io/kosen-now-images/28.png",
-            disabled: false,
+            image: "https://mocsipa.github.io/kosen-now-images/RW04.png",
+            disabled: true,
             type: "reward"
          },
          {
             id: "CERTIFICATE",
             name: "ใบ certificate",
-            cost: 5,
+            cost: CERTIFICATE_REDEEM_POINT,
             image: "https://mocsipa.github.io/kosen-now-images/29.png",
             disabled: false,
             type: "certificate"
@@ -4956,8 +4967,8 @@
                0,
             certificateEligible:
                user.certificateEligible === true ||
-               Number(user.totalEarnedPoint) >= 5 ||
-               Number(user.point) >= 5,
+               Number(user.totalEarnedPoint) >= CERTIFICATE_REDEEM_POINT ||
+               Number(user.point) >= CERTIFICATE_REDEEM_POINT,
             qrUrl: user.qrUrl || makeUserQrUrl(targetCode)
          };
       }
@@ -5047,8 +5058,8 @@
                0,
             certificateEligible:
                user.certificateEligible === true ||
-               Number(user.totalEarnedPoint) >= 5 ||
-               Number(user.point) >= 5,
+               Number(user.totalEarnedPoint) >= CERTIFICATE_REDEEM_POINT ||
+               Number(user.point) >= CERTIFICATE_REDEEM_POINT,
             qrUrl: user.qrUrl || makeUserQrUrl(targetCode)
          };
       }
@@ -5238,8 +5249,8 @@
             totalEarnedPoint: totalEarnedPoint,
             certificateEligible:
                user.certificateEligible === true ||
-               totalEarnedPoint >= 5 ||
-               Number(user.point) >= 5
+               totalEarnedPoint >= CERTIFICATE_REDEEM_POINT ||
+               Number(user.point) >= CERTIFICATE_REDEEM_POINT
          };
       }
 
@@ -7698,8 +7709,8 @@
                          0,
                       certificateEligible:
                          data.certificateEligible === true ||
-                         Number(data.totalEarnedPoint) >= 5 ||
-                         Number(data.point) >= 5,
+                         Number(data.totalEarnedPoint) >= CERTIFICATE_REDEEM_POINT ||
+                         Number(data.point) >= CERTIFICATE_REDEEM_POINT,
                       qrUrl: data.qrUrl || makeUserQrUrl(targetCode)
                    };
 
@@ -8818,8 +8829,8 @@
 
          currentCertificateEligible =
             savedCertificateEligible === "true" ||
-            currentTotalEarnedPoint >= 5 ||
-            Number(savedPoint) >= 5;
+            currentTotalEarnedPoint >= CERTIFICATE_REDEEM_POINT ||
+            Number(savedPoint) >= CERTIFICATE_REDEEM_POINT;
 
          if (savedPoint !== null) {
             updatePointUI(
@@ -8887,8 +8898,8 @@
 
          currentCertificateEligible =
             (result && result.certificateEligible === true) ||
-            currentTotalEarnedPoint >= 5 ||
-            currentPoint >= 5;
+            currentTotalEarnedPoint >= CERTIFICATE_REDEEM_POINT ||
+            currentPoint >= CERTIFICATE_REDEEM_POINT;
 
          savePointToCache(
             result && result.point,
