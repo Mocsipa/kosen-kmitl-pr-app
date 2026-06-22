@@ -1611,6 +1611,7 @@
          font-weight: 900;
          cursor: pointer;
          position: relative;
+         touch-action: manipulation;
       }
 
       .dashboardCalendarDay.hasRegistration::after {
@@ -1645,6 +1646,25 @@
          font-size: 13px;
          font-weight: 900;
          color: #253553;
+      }
+
+      .dashboardCalendarActions {
+         display: grid;
+         grid-template-columns: 1fr 1fr;
+         gap: 7px;
+         margin-top: 9px;
+      }
+
+      .dashboardCalendarAction {
+         min-height: 34px;
+         border: 0;
+         border-radius: 18px;
+         background: white;
+         color: #253553;
+         font-size: 13px;
+         font-weight: 900;
+         cursor: pointer;
+         touch-action: manipulation;
       }
 
       .dashboardRegistrationDateApply {
@@ -2856,64 +2876,81 @@
          }
 
          .dashboardTotalUsersCard {
-            min-height: 318px;
+            grid-column: span 6;
+            min-height: 460px;
+         }
+
+         .dashboardCheckedInCard {
+            grid-column: span 6;
+            min-height: 170px;
          }
 
          .dashboardRegistrationCalendar {
-            width: 98%;
+            width: 96%;
             margin-top: 12px;
             border-width: 2px;
-            border-radius: 10px;
-            padding: 7px;
+            border-radius: 14px;
+            padding: 12px;
          }
 
          .dashboardCalendarHeader {
-            gap: 5px;
-            margin-bottom: 5px;
+            gap: 8px;
+            margin-bottom: 8px;
          }
 
          .dashboardCalendarSelect {
-            height: 32px;
-            border-radius: 6px;
-            font-size: 13px;
-            padding: 0 2px;
+            height: 42px;
+            border-radius: 8px;
+            font-size: 16px;
+            padding: 0 6px;
          }
 
          .dashboardCalendarWeekdays,
          .dashboardCalendarDays {
-            gap: 2px;
+            gap: 4px;
          }
 
          .dashboardCalendarWeekday {
-            padding: 3px 0;
-            font-size: 8px;
-         }
-
-         .dashboardCalendarDays {
-            margin-top: 2px;
-         }
-
-         .dashboardCalendarDay {
-            border-radius: 3px;
+            padding: 5px 0;
             font-size: 11px;
          }
 
+         .dashboardCalendarDays {
+            margin-top: 4px;
+         }
+
+         .dashboardCalendarDay {
+            min-height: 34px;
+            border-radius: 6px;
+            font-size: 15px;
+         }
+
          .dashboardCalendarDay.hasRegistration::after {
-            bottom: 2px;
-            width: 3px;
-            height: 3px;
+            bottom: 3px;
+            width: 4px;
+            height: 4px;
          }
 
          .dashboardCalendarSelectedText {
-            margin-top: 6px;
-            font-size: 10px;
+            margin-top: 9px;
+            font-size: 13px;
+         }
+
+         .dashboardCalendarActions {
+            gap: 7px;
+            margin-top: 9px;
+         }
+
+         .dashboardCalendarAction {
+            min-height: 36px;
+            font-size: 13px;
          }
 
          .dashboardRegistrationDateApply {
-            min-height: 30px;
-            margin-top: 5px;
-            border-radius: 15px;
-            font-size: 12px;
+            min-height: 42px;
+            margin-top: 8px;
+            border-radius: 21px;
+            font-size: 15px;
          }
 
          .dashboardCardFull .dashboardCardNumber {
@@ -4016,12 +4053,18 @@
                   <div id="dashboardCalendarSelectedText" class="dashboardCalendarSelectedText">
                      เลือกวันสมัคร
                   </div>
+                  <div class="dashboardCalendarActions">
+                     <button type="button" class="dashboardCalendarAction"
+                        onclick="selectDashboardCalendarMonth()">เลือกทั้งเดือน</button>
+                     <button type="button" class="dashboardCalendarAction"
+                        onclick="clearDashboardCalendarDates()">ล้าง</button>
+                  </div>
                   <button type="button" class="dashboardRegistrationDateApply"
                      onclick="applyDashboardRegistrationDates()">Apply</button>
                </div>
             </div>
 
-            <div class="dashboardCard dashboardCardWide">
+            <div class="dashboardCard dashboardCardWide dashboardCheckedInCard">
                <div class="dashboardCardLabel">Checked-in Users</div>
                <div id="dashboardCheckedInText" class="dashboardCardNumber dashboardNumberBlue">0</div>
             </div>
@@ -4644,6 +4687,9 @@
 
       const LOGIN_STORAGE_KEY =
          "KOSEN_NOW_LOGIN_CODE";
+
+      const DASHBOARD_REGISTRATION_DATE_STORAGE_KEY =
+         "KOSEN_NOW_DASHBOARD_REGISTRATION_DATES";
 
       const WORKER_API_BASE =
          "https://kosen-now-api.kosen-now-api.workers.dev";
@@ -8155,6 +8201,89 @@
          startStaffDashboardRealtime();
       }
 
+      function loadDashboardRegistrationPreferences() {
+         if (!lastCode || !isStaffCode(lastCode)) {
+            return;
+         }
+
+         try {
+            const allPreferences =
+               JSON.parse(
+                  localStorage.getItem(
+                     DASHBOARD_REGISTRATION_DATE_STORAGE_KEY
+                  ) || "{}"
+               );
+
+            const saved =
+               allPreferences[normalizeCode(lastCode)];
+
+            if (!saved || typeof saved !== "object") {
+               return;
+            }
+
+            const savedDates =
+               Array.isArray(saved.dates)
+                  ? saved.dates.filter(function (key) {
+                     return /^\d{4}-\d{2}-\d{2}$/.test(String(key || ""));
+                  })
+                  : [];
+
+            if (savedDates.length) {
+               dashboardSelectedRegistrationDates =
+                  savedDates.slice().sort();
+
+               dashboardPendingRegistrationDates =
+                  savedDates.slice().sort();
+            }
+
+            if (Number(saved.year) >= 2000) {
+               dashboardCalendarYear =
+                  Number(saved.year);
+            }
+
+            if (Number(saved.month) >= 1 && Number(saved.month) <= 12) {
+               dashboardCalendarMonth =
+                  Number(saved.month);
+            }
+
+            if (/^\d{4}-\d{2}-\d{2}$/.test(String(saved.eventDate || ""))) {
+               dashboardSelectedDate =
+                  String(saved.eventDate);
+            }
+         } catch (error) {
+            console.warn("DASHBOARD DATE PREFERENCE LOAD ERROR =", error);
+         }
+      }
+
+      function saveDashboardRegistrationPreferences() {
+         if (!lastCode || !isStaffCode(lastCode)) {
+            return;
+         }
+
+         try {
+            const allPreferences =
+               JSON.parse(
+                  localStorage.getItem(
+                     DASHBOARD_REGISTRATION_DATE_STORAGE_KEY
+                  ) || "{}"
+               );
+
+            allPreferences[normalizeCode(lastCode)] = {
+               dates: dashboardSelectedRegistrationDates.slice(),
+               year: dashboardCalendarYear,
+               month: dashboardCalendarMonth,
+               eventDate: dashboardSelectedDate
+            };
+
+            localStorage.setItem(
+               DASHBOARD_REGISTRATION_DATE_STORAGE_KEY,
+               JSON.stringify(allPreferences)
+            );
+         } catch (error) {
+            console.warn("DASHBOARD DATE PREFERENCE SAVE ERROR =", error);
+         }
+      }
+
       function stopStaffDashboardRealtime() {
          stopFirestoreListenersByPrefix("staffDashboard:");
          dashboardUnsubscribes = [];
@@ -8163,6 +8292,10 @@
       async function startStaffDashboardRealtime() {
          if (!lastCode || !isStaffCode(lastCode)) {
             return;
+         }
+
+         if (!dashboardSelectedRegistrationDates.length) {
+            loadDashboardRegistrationPreferences();
          }
 
          const now = Date.now();
@@ -8534,6 +8667,40 @@
          renderDashboardCalendarDays();
       }
 
+      function selectDashboardCalendarMonth() {
+         const year =
+            dashboardCalendarYear;
+
+         const month =
+            dashboardCalendarMonth;
+
+         const daysInMonth =
+            new Date(Date.UTC(year, month, 0)).getUTCDate();
+
+         for (let day = 1; day <= daysInMonth; day++) {
+            const key =
+               year +
+               "-" +
+               String(month).padStart(2, "0") +
+               "-" +
+               String(day).padStart(2, "0");
+
+            if (dashboardPendingRegistrationDates.indexOf(key) === -1) {
+               dashboardPendingRegistrationDates.push(key);
+            }
+         }
+
+         dashboardPendingRegistrationDates.sort();
+         renderDashboardCalendarDays();
+      }
+
+      function clearDashboardCalendarDates() {
+         dashboardPendingRegistrationDates =
+            [];
+
+         renderDashboardCalendarDays();
+      }
+
       function applyDashboardRegistrationDates() {
          const selectedDates =
             dashboardPendingRegistrationDates
@@ -8550,12 +8717,15 @@
          dashboardSelectedRegistrationDates =
             selectedDates.sort();
 
+         saveDashboardRegistrationPreferences();
+
          dashboardDataLoadedAt = 0;
          startStaffDashboardRealtime();
       }
 
       function changeDashboardDate(value) {
          dashboardSelectedDate = value || getTodayDashboardKey();
+         saveDashboardRegistrationPreferences();
          dashboardDataLoadedAt = 0;
          startStaffDashboardRealtime();
       }
