@@ -1548,75 +1548,103 @@
          color: #238bff;
       }
 
-      .dashboardRegistrationDates {
-         width: 92%;
+      .dashboardRegistrationCalendar {
+         width: 94%;
          margin-top: 18px;
-         position: relative;
-         z-index: 8;
+         border: 3px solid #303b52;
+         border-radius: 16px;
+         background: #b9d9ff;
+         padding: 12px;
+         color: #17233a;
       }
 
-      .dashboardRegistrationDates summary {
-         min-height: 52px;
-         border-radius: 28px;
-         background: #d9d9d9;
-         display: flex;
-         align-items: center;
-         justify-content: center;
-         padding: 8px 32px 8px 20px;
-         color: #000;
-         font-size: 20px;
+      .dashboardCalendarHeader {
+         display: grid;
+         grid-template-columns: 1fr 1.35fr;
+         gap: 8px;
+         margin-bottom: 8px;
+      }
+
+      .dashboardCalendarSelect {
+         width: 100%;
+         min-width: 0;
+         height: 42px;
+         border: 0;
+         border-radius: 9px;
+         background: #62dce3;
+         color: #17233a;
+         text-align: center;
+         text-align-last: center;
+         font-size: 17px;
          font-weight: 900;
-         line-height: 1.15;
+         padding: 0 6px;
+      }
+
+      .dashboardCalendarWeekdays,
+      .dashboardCalendarDays {
+         display: grid;
+         grid-template-columns: repeat(7, minmax(0, 1fr));
+         gap: 4px;
+      }
+
+      .dashboardCalendarWeekday {
+         min-width: 0;
+         padding: 4px 0;
+         background: #62dce3;
+         font-size: 11px;
+         font-weight: 900;
+         line-height: 1;
+      }
+
+      .dashboardCalendarDays {
+         margin-top: 4px;
+      }
+
+      .dashboardCalendarDay {
+         aspect-ratio: 1;
+         min-width: 0;
+         border: 0;
+         border-radius: 5px;
+         background: white;
+         color: #253553;
+         font-size: 15px;
+         font-weight: 900;
          cursor: pointer;
-         list-style: none;
          position: relative;
       }
 
-      .dashboardRegistrationDates summary::-webkit-details-marker {
-         display: none;
-      }
-
-      .dashboardRegistrationDates summary::after {
-         content: "▼";
+      .dashboardCalendarDay.hasRegistration::after {
+         content: "";
          position: absolute;
-         right: 14px;
-         font-size: 18px;
+         left: 50%;
+         bottom: 3px;
+         width: 4px;
+         height: 4px;
+         border-radius: 50%;
+         background: #238bff;
+         transform: translateX(-50%);
       }
 
-      .dashboardRegistrationDates[open] summary::after {
-         content: "▲";
+      .dashboardCalendarDay.selected {
+         background: #ffb29a;
+         color: #7c3d2f;
+         box-shadow: inset 0 0 0 2px #ff5c1a;
       }
 
-      .dashboardRegistrationDateOptions {
-         position: absolute;
-         top: calc(100% + 8px);
-         left: 0;
-         right: 0;
-         max-height: 230px;
-         overflow-y: auto;
-         border-radius: 24px;
-         background: #d9d9d9;
-         padding: 12px 14px;
-         box-shadow: 0 10px 24px rgba(0, 0, 0, .18);
+      .dashboardCalendarDay.selected::after {
+         background: #7c3d2f;
       }
 
-      .dashboardRegistrationDateOption {
-         display: flex;
-         align-items: center;
-         gap: 10px;
-         min-height: 38px;
-         font-size: 19px;
+      .dashboardCalendarDay.empty {
+         visibility: hidden;
+         pointer-events: none;
+      }
+
+      .dashboardCalendarSelectedText {
+         margin-top: 9px;
+         font-size: 13px;
          font-weight: 900;
-         color: #000;
-         text-align: left;
-         cursor: pointer;
-      }
-
-      .dashboardRegistrationDateOption input {
-         width: 20px;
-         height: 20px;
-         accent-color: #ff5c1a;
-         flex: 0 0 auto;
+         color: #253553;
       }
 
       .dashboardRegistrationDateApply {
@@ -2828,46 +2856,64 @@
          }
 
          .dashboardTotalUsersCard {
-            min-height: 166px;
+            min-height: 318px;
          }
 
-         .dashboardRegistrationDates {
+         .dashboardRegistrationCalendar {
+            width: 98%;
             margin-top: 12px;
-            width: 96%;
+            border-width: 2px;
+            border-radius: 10px;
+            padding: 7px;
          }
 
-         .dashboardRegistrationDates summary {
-            min-height: 40px;
-            border-radius: 22px;
-            padding: 6px 24px 6px 10px;
-            font-size: 14px;
+         .dashboardCalendarHeader {
+            gap: 5px;
+            margin-bottom: 5px;
          }
 
-         .dashboardRegistrationDates summary::after {
-            right: 9px;
-            font-size: 12px;
+         .dashboardCalendarSelect {
+            height: 32px;
+            border-radius: 6px;
+            font-size: 13px;
+            padding: 0 2px;
          }
 
-         .dashboardRegistrationDateOptions {
-            max-height: 190px;
-            border-radius: 20px;
-            padding: 9px 10px;
+         .dashboardCalendarWeekdays,
+         .dashboardCalendarDays {
+            gap: 2px;
          }
 
-         .dashboardRegistrationDateOption {
-            min-height: 32px;
-            gap: 7px;
-            font-size: 14px;
+         .dashboardCalendarWeekday {
+            padding: 3px 0;
+            font-size: 8px;
          }
 
-         .dashboardRegistrationDateOption input {
-            width: 17px;
-            height: 17px;
+         .dashboardCalendarDays {
+            margin-top: 2px;
+         }
+
+         .dashboardCalendarDay {
+            border-radius: 3px;
+            font-size: 11px;
+         }
+
+         .dashboardCalendarDay.hasRegistration::after {
+            bottom: 2px;
+            width: 3px;
+            height: 3px;
+         }
+
+         .dashboardCalendarSelectedText {
+            margin-top: 6px;
+            font-size: 10px;
          }
 
          .dashboardRegistrationDateApply {
-            min-height: 34px;
-            font-size: 14px;
+            min-height: 30px;
+            margin-top: 5px;
+            border-radius: 15px;
+            font-size: 12px;
          }
 
          .dashboardCardFull .dashboardCardNumber {
@@ -3950,10 +3996,29 @@
             <div class="dashboardCard dashboardCardWide dashboardTotalUsersCard">
                <div class="dashboardCardLabel">Total Users</div>
                <div id="dashboardTotalUsersText" class="dashboardCardNumber dashboardNumberOrange">0</div>
-               <details id="dashboardRegistrationDates" class="dashboardRegistrationDates">
-                  <summary id="dashboardRegistrationDatesSummary">เลือกวันสมัคร</summary>
-                  <div id="dashboardRegistrationDateOptions" class="dashboardRegistrationDateOptions"></div>
-               </details>
+               <div class="dashboardRegistrationCalendar">
+                  <div class="dashboardCalendarHeader">
+                     <select id="dashboardCalendarYear" class="dashboardCalendarSelect"
+                        onchange="changeDashboardCalendarView()"></select>
+                     <select id="dashboardCalendarMonth" class="dashboardCalendarSelect"
+                        onchange="changeDashboardCalendarView()"></select>
+                  </div>
+                  <div class="dashboardCalendarWeekdays">
+                     <div class="dashboardCalendarWeekday">SUN</div>
+                     <div class="dashboardCalendarWeekday">MON</div>
+                     <div class="dashboardCalendarWeekday">TUE</div>
+                     <div class="dashboardCalendarWeekday">WED</div>
+                     <div class="dashboardCalendarWeekday">THU</div>
+                     <div class="dashboardCalendarWeekday">FRI</div>
+                     <div class="dashboardCalendarWeekday">SAT</div>
+                  </div>
+                  <div id="dashboardCalendarDays" class="dashboardCalendarDays"></div>
+                  <div id="dashboardCalendarSelectedText" class="dashboardCalendarSelectedText">
+                     เลือกวันสมัคร
+                  </div>
+                  <button type="button" class="dashboardRegistrationDateApply"
+                     onclick="applyDashboardRegistrationDates()">Apply</button>
+               </div>
             </div>
 
             <div class="dashboardCard dashboardCardWide">
@@ -4644,6 +4709,9 @@
       let dashboardSelectedDate = "";
       let dashboardSelectedRegistrationDates = [];
       let dashboardRegistrationDates = [];
+      let dashboardPendingRegistrationDates = [];
+      let dashboardCalendarYear = 0;
+      let dashboardCalendarMonth = 0;
       let dashboardRenderToken = 0;
       let dashboardSearchResults = [];
       let dashboardDataLoadedAt = 0;
@@ -6152,6 +6220,9 @@
          dashboardSelectedDate = "";
          dashboardSelectedRegistrationDates = [];
          dashboardRegistrationDates = [];
+         dashboardPendingRegistrationDates = [];
+         dashboardCalendarYear = 0;
+         dashboardCalendarMonth = 0;
          dashboardSearchResults = [];
          summaryScans = [];
          profileDataCache = null;
@@ -8236,75 +8307,237 @@
       }
 
       function renderDashboardRegistrationDateOptions() {
-         const optionsBox =
-            document.getElementById("dashboardRegistrationDateOptions");
+         const yearSelect =
+            document.getElementById("dashboardCalendarYear");
 
-         const summary =
-            document.getElementById("dashboardRegistrationDatesSummary");
+         const monthSelect =
+            document.getElementById("dashboardCalendarMonth");
 
-         if (!optionsBox || !summary) {
+         if (!yearSelect || !monthSelect) {
             return;
          }
-
-         const dates =
-            dashboardRegistrationDates
-               .slice()
-               .sort();
 
          if (
             !dashboardSelectedRegistrationDates.length &&
-            dates.length
+            dashboardRegistrationDates.length
          ) {
             dashboardSelectedRegistrationDates =
-               dates.slice();
+               dashboardRegistrationDates.slice();
          }
 
-         summary.innerHTML =
-            dashboardSelectedRegistrationDates.length
-               ? "เลือกแล้ว " + dashboardSelectedRegistrationDates.length + " วัน"
-               : "เลือกวันสมัคร";
+         if (!dashboardPendingRegistrationDates.length) {
+            dashboardPendingRegistrationDates =
+               dashboardSelectedRegistrationDates.slice();
+         }
 
-         optionsBox.innerHTML =
-            dates
+         const initialDateKey =
+            dashboardPendingRegistrationDates[
+               dashboardPendingRegistrationDates.length - 1
+            ] ||
+            dashboardRegistrationDates[
+               dashboardRegistrationDates.length - 1
+            ] ||
+            getTodayDashboardKey();
+
+         const initialParts =
+            initialDateKey.split("-");
+
+         if (!dashboardCalendarYear) {
+            dashboardCalendarYear =
+               Number(initialParts[0]) || new Date().getFullYear();
+         }
+
+         if (!dashboardCalendarMonth) {
+            dashboardCalendarMonth =
+               Number(initialParts[1]) || new Date().getMonth() + 1;
+         }
+
+         const years =
+            dashboardRegistrationDates
                .map(function (key) {
-                  const checked =
-                     dashboardSelectedRegistrationDates.indexOf(key) !== -1
-                        ? " checked"
-                        : "";
+                  return Number(key.split("-")[0]);
+               })
+               .filter(function (year) {
+                  return Number.isFinite(year);
+               });
+
+         years.push(new Date().getFullYear());
+         years.push(dashboardCalendarYear);
+
+         const minYear =
+            Math.min(
+               Math.min.apply(null, years),
+               new Date().getFullYear() - 5
+            );
+
+         const maxYear =
+            Math.max(
+               Math.max.apply(null, years),
+               new Date().getFullYear() + 5
+            );
+
+         let yearOptions =
+            "";
+
+         for (let year = minYear; year <= maxYear; year++) {
+            yearOptions +=
+               "<option value=\"" +
+               year +
+               "\">" +
+               year +
+               "</option>";
+         }
+
+         yearSelect.innerHTML =
+            yearOptions;
+
+         yearSelect.value =
+            String(dashboardCalendarYear);
+
+         const monthNames = [
+            "JANUARY",
+            "FEBRUARY",
+            "MARCH",
+            "APRIL",
+            "MAY",
+            "JUNE",
+            "JULY",
+            "AUGUST",
+            "SEPTEMBER",
+            "OCTOBER",
+            "NOVEMBER",
+            "DECEMBER"
+         ];
+
+         monthSelect.innerHTML =
+            monthNames
+               .map(function (name, index) {
+                  const value =
+                     index + 1;
 
                   return (
-                     "<label class=\"dashboardRegistrationDateOption\">" +
-                        "<input type=\"checkbox\" value=\"" +
-                        key +
-                        "\"" +
-                        checked +
-                        ">" +
-                        "<span>" +
-                        formatDashboardDate(key) +
-                        "</span>" +
-                     "</label>"
+                     "<option value=\"" +
+                     value +
+                     "\">" +
+                     name +
+                     "</option>"
                   );
                })
-               .join("") +
-            "<button type=\"button\" class=\"dashboardRegistrationDateApply\" " +
-            "onclick=\"applyDashboardRegistrationDates()\">Apply</button>";
+               .join("");
+
+         monthSelect.value =
+            String(dashboardCalendarMonth);
+
+         renderDashboardCalendarDays();
       }
 
-      function applyDashboardRegistrationDates() {
-         const optionsBox =
-            document.getElementById("dashboardRegistrationDateOptions");
+      function changeDashboardCalendarView() {
+         const yearSelect =
+            document.getElementById("dashboardCalendarYear");
 
-         if (!optionsBox) {
+         const monthSelect =
+            document.getElementById("dashboardCalendarMonth");
+
+         dashboardCalendarYear =
+            Number(yearSelect && yearSelect.value) ||
+            dashboardCalendarYear;
+
+         dashboardCalendarMonth =
+            Number(monthSelect && monthSelect.value) ||
+            dashboardCalendarMonth;
+
+         renderDashboardCalendarDays();
+      }
+
+      function renderDashboardCalendarDays() {
+         const daysBox =
+            document.getElementById("dashboardCalendarDays");
+
+         const selectedText =
+            document.getElementById("dashboardCalendarSelectedText");
+
+         if (!daysBox || !selectedText) {
             return;
          }
 
+         const year =
+            dashboardCalendarYear;
+
+         const month =
+            dashboardCalendarMonth;
+
+         const firstWeekday =
+            new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
+
+         const daysInMonth =
+            new Date(Date.UTC(year, month, 0)).getUTCDate();
+
+         let html =
+            "";
+
+         for (let emptyIndex = 0; emptyIndex < firstWeekday; emptyIndex++) {
+            html +=
+               "<button type=\"button\" class=\"dashboardCalendarDay empty\" tabindex=\"-1\"></button>";
+         }
+
+         for (let day = 1; day <= daysInMonth; day++) {
+            const key =
+               year +
+               "-" +
+               String(month).padStart(2, "0") +
+               "-" +
+               String(day).padStart(2, "0");
+
+            let className =
+               "dashboardCalendarDay";
+
+            if (dashboardRegistrationDates.indexOf(key) !== -1) {
+               className += " hasRegistration";
+            }
+
+            if (dashboardPendingRegistrationDates.indexOf(key) !== -1) {
+               className += " selected";
+            }
+
+            html +=
+               "<button type=\"button\" class=\"" +
+               className +
+               "\" onclick=\"toggleDashboardRegistrationDate('" +
+               key +
+               "')\">" +
+               day +
+               "</button>";
+         }
+
+         daysBox.innerHTML =
+            html;
+
+         selectedText.innerHTML =
+            dashboardPendingRegistrationDates.length
+               ? "เลือกแล้ว " +
+                  dashboardPendingRegistrationDates.length +
+                  " วัน"
+               : "เลือกวันสมัคร";
+      }
+
+      function toggleDashboardRegistrationDate(key) {
+         const index =
+            dashboardPendingRegistrationDates.indexOf(key);
+
+         if (index === -1) {
+            dashboardPendingRegistrationDates.push(key);
+         } else {
+            dashboardPendingRegistrationDates.splice(index, 1);
+         }
+
+         dashboardPendingRegistrationDates.sort();
+         renderDashboardCalendarDays();
+      }
+
+      function applyDashboardRegistrationDates() {
          const selectedDates =
-            Array.from(
-               optionsBox.querySelectorAll("input[type=\"checkbox\"]:checked")
-            )
-               .map(function (input) {
-                  return String(input.value || "");
-               })
+            dashboardPendingRegistrationDates
+               .slice()
                .filter(function (key) {
                   return /^\d{4}-\d{2}-\d{2}$/.test(key);
                });
@@ -8315,14 +8548,7 @@
          }
 
          dashboardSelectedRegistrationDates =
-            selectedDates;
-
-         const details =
-            document.getElementById("dashboardRegistrationDates");
-
-         if (details) {
-            details.open = false;
-         }
+            selectedDates.sort();
 
          dashboardDataLoadedAt = 0;
          startStaffDashboardRealtime();
