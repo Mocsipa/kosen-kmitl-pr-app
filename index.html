@@ -815,6 +815,27 @@
          text-align: center;
       }
 
+      .interestReadMore {
+         min-width: 230px;
+         min-height: 58px;
+         padding: 12px 34px;
+         border: none;
+         border-radius: 32px;
+         background: #acd2ff;
+         color: #111;
+         font-size: 22px;
+         font-weight: 900;
+         cursor: pointer;
+         margin: 0 auto 30px;
+         display: inline-flex;
+         align-items: center;
+         justify-content: center;
+      }
+
+      .interestReadMore:active {
+         transform: scale(0.97);
+      }
+
       .interestButtons {
          display: flex;
          justify-content: center;
@@ -879,6 +900,7 @@
          padding: 60px 55px 40px;
          background: white;
          overflow-x: hidden;
+         text-align: center;
       }
 
       .noticeTitle {
@@ -888,39 +910,31 @@
          margin-bottom: 35px;
       }
 
-      .noticeItem {
-         margin-bottom: 35px;
-      }
-
-      .noticeMeta {
+      .moreInfoButtons {
          display: flex;
+         flex-direction: column;
          align-items: center;
-         gap: 30px;
-         margin-bottom: 15px;
-         flex-wrap: wrap;
+         gap: 18px;
+         width: 100%;
+         max-width: 720px;
+         margin: 0 auto;
       }
 
-      .noticeTag {
-         background: #b9d9ff;
+      .moreInfoButton {
+         width: 100%;
+         min-height: 74px;
+         border: none;
+         border-radius: 40px;
+         background: #acd2ff;
          color: #666;
-         font-size: 22px;
-         padding: 12px 60px;
-         border-radius: 30px;
-      }
-
-      .noticeDate {
          font-size: 28px;
-         color: #777;
+         font-weight: 900;
+         cursor: pointer;
+         padding: 14px 28px;
       }
 
-      .noticeLink {
-         font-size: 27px;
-         line-height: 1.45;
-         color: #666;
-         text-decoration: underline;
-         font-weight: bold;
-         cursor: pointer;
-         word-break: break-word;
+      .moreInfoButton:active {
+         transform: scale(0.98);
       }
 
       .followSection {
@@ -2515,7 +2529,15 @@
             width: 94%;
             font-size: 15px;
             line-height: 1.55;
-            margin: 0 auto 24px;
+            margin: 0 auto 20px;
+         }
+
+         .interestReadMore {
+            min-width: 150px;
+            min-height: 44px;
+            padding: 9px 24px;
+            font-size: 15px;
+            margin-bottom: 25px;
          }
 
          .interestButtons {
@@ -2543,27 +2565,15 @@
             margin-bottom: 24px;
          }
 
-         .noticeItem {
-            margin-bottom: 26px;
-         }
-
-         .noticeMeta {
+         .moreInfoButtons {
             gap: 12px;
-            margin-bottom: 10px;
          }
 
-         .noticeTag {
-            font-size: 15px;
-            padding: 8px 24px;
-         }
-
-         .noticeDate {
+         .moreInfoButton {
+            min-height: 54px;
+            border-radius: 28px;
             font-size: 18px;
-         }
-
-         .noticeLink {
-            font-size: 17px;
-            line-height: 1.45;
+            padding: 10px 18px;
          }
 
          .followSection {
@@ -3813,6 +3823,9 @@
                applications.
             </div>
 
+            <button id="interestReadMore" class="interestReadMore" type="button"
+               onclick="openCurrentInterestLink()">READ MORE</button>
+
             <div class="interestButtons">
                <button id="interestBtn0" class="interestBtn activeInterest mechaColor"
                   onclick="changeInterest(0)">🤖</button>
@@ -3827,26 +3840,21 @@
 
          <section class="noticeSection">
 
-            <div class="noticeTitle">NOTICE</div>
+            <div class="noticeTitle">MORE INFORMATION</div>
 
-            <div class="noticeItem">
-               <div class="noticeMeta">
-                  <div class="noticeTag">ประกาศ</div>
-                  <div class="noticeDate">01/08/2026</div>
-               </div>
-               <div class="noticeLink" onclick="openLink('https://www.kosen.kmitl.ac.th')">
-                  ประกาศรับสมัครเข้าศึกษา สถาบันโคเซ็นแห่ง สจล. ปีการศึกษา 2070 [แผนทุนการศึกษา]
-               </div>
-            </div>
-
-            <div class="noticeItem">
-               <div class="noticeMeta">
-                  <div class="noticeTag">ประกาศ</div>
-                  <div class="noticeDate">01/08/2026</div>
-               </div>
-               <div class="noticeLink" onclick="openLink('https://www.kosen.kmitl.ac.th')">
-                  ประกาศรับสมัครเข้าศึกษา สถาบันโคเซ็นแห่ง สจล. ปีการศึกษา 2070 [แผนปกติ]
-               </div>
+            <div class="moreInfoButtons">
+               <button class="moreInfoButton" type="button"
+                  onclick="openLink('http://www.kosen.kmitl.ac.th/en/about/industrial-Linkage')">
+                  Industrial Linkage
+               </button>
+               <button class="moreInfoButton" type="button"
+                  onclick="openLink('http://www.kosen.kmitl.ac.th/en/students/gathering')">
+                  Club Activity
+               </button>
+               <button class="moreInfoButton" type="button"
+                  onclick="openLink('http://www.kosen.kmitl.ac.th/en/students/council')">
+                  Student Council
+               </button>
             </div>
 
          </section>
@@ -4959,30 +4967,36 @@
             subtitle: "Engineering",
             theme: "themeMecha",
             image: "https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 13.21.35.png",
-            text: "The Mechatronics Engineering program integrates knowledge from mechanics, electronics, and computer science, with a focus on robotics. It aims to produce and develop smart technologies for industrial applications."
+            text: "The Mechatronics Engineering program integrates knowledge from mechanics, electronics, and computer science, with a focus on robotics. It aims to produce and develop smart technologies for industrial applications.",
+            url: "https://www.kosen.kmitl.ac.th/?s=Mechatronics+Engineering"
          },
          {
             title: "Computer",
             subtitle: "Engineering",
             theme: "themeCom",
             image: "https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 09.59.30.png",
-            text: "The Computer Engineering program focuses on the design, development, application, and problem-solving of computer systems and operations in all aspects. It also aligns with global trends in areas such as AI, IoT, and Network & Cyber Security."
+            text: "The Computer Engineering program focuses on the design, development, application, and problem-solving of computer systems and operations in all aspects. It also aligns with global trends in areas such as AI, IoT, and Network & Cyber Security.",
+            url: "https://www.kosen.kmitl.ac.th/?s=Computer+Engineering"
          },
          {
             title: "Electrical and Electronics",
             subtitle: "Engineering",
             theme: "themeElec",
             image: "https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 09.59.47.png",
-            text: "The Electrical and Electronics Engineering program combines electrical and electronic disciplines, applying and developing expertise in these two fundamental areas of engineering. It also includes learning about the use of renewable and clean energy for advancing global technology."
+            text: "The Electrical and Electronics Engineering program combines electrical and electronic disciplines, applying and developing expertise in these two fundamental areas of engineering. It also includes learning about the use of renewable and clean energy for advancing global technology.",
+            url: "https://www.kosen.kmitl.ac.th/?s=Electrical+and+Electronics+Engineering"
          },
          {
             title: "Advanced Innovation",
             subtitle: "Engineering",
             theme: "themeAdvanced",
             image: "https://mocsipa.github.io/kosen-now-images/Screenshot 2569-05-12 at 10.00.05.png",
-            text: "The Bachelor of Engineering program at KOSEN - KMITL, offers an advanced innovation engineering track with a duration of 2 years. This program builds upon content from the associate degree level and provides two learning formats: Format 1 includes scholarship opportunities, and Format 2 allows students to study while working"
+            text: "The Bachelor of Engineering program at KOSEN - KMITL, offers an advanced innovation engineering track with a duration of 2 years. This program builds upon content from the associate degree level and provides two learning formats: Format 1 includes scholarship opportunities, and Format 2 allows students to study while working",
+            url: "https://www.kosen.kmitl.ac.th/?s=Advanced+Innovation+Engineering"
          }
       ];
+
+      let currentInterestIndex = 0;
 
       const floorData = [
          {
@@ -6831,6 +6845,8 @@
             return;
          }
 
+         currentInterestIndex = index;
+
          const image =
             document.getElementById("interestImage");
 
@@ -6884,6 +6900,15 @@
             activeBtn.classList.add("activeInterest");
          }
 
+      }
+
+      function openCurrentInterestLink() {
+         const data =
+            interestData[currentInterestIndex] || interestData[0];
+
+         if (data && data.url) {
+            openLink(data.url);
+         }
       }
 
       function openLink(url) {
