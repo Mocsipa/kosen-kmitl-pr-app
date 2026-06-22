@@ -1737,6 +1737,19 @@
          font-weight: 900;
       }
 
+      .dashboardSearchBtn {
+         width: 260px;
+         max-width: 70%;
+         height: 58px;
+         border: 0;
+         border-radius: 34px;
+         background: #ff5c1a;
+         color: white;
+         font-size: 22px;
+         font-weight: 900;
+         margin: 0 auto 18px;
+      }
+
       .dashboardDownloadBtn {
          display: none;
          width: 320px;
@@ -2985,6 +2998,12 @@
             margin-bottom: 18px;
          }
 
+         .dashboardSearchBtn {
+            width: 210px;
+            height: 52px;
+            font-size: 20px;
+         }
+
          .dashboardDownloadBtn {
             width: 240px;
             height: 48px;
@@ -4111,7 +4130,12 @@
             id="dashboardSearchInput"
             class="dashboardSearchBox"
             placeholder="Search"
-            oninput="handleDashboardSearchInput()">
+            oninput="handleDashboardSearchInput()"
+            onkeydown="handleDashboardSearchKeydown(event)">
+
+         <button class="dashboardSearchBtn" onclick="submitDashboardSearch()">
+            Search
+         </button>
 
          <button id="dashboardDownloadBtn" class="dashboardDownloadBtn" onclick="downloadDashboardSearchExcel()">
             Download Excel
@@ -4765,6 +4789,7 @@
       let dashboardStatsData = null;
       let dashboardStatsDates = [];
       let dashboardSearchTimer = null;
+      let dashboardSearchCache = {};
       const DASHBOARD_CACHE_MS = 60000;
       let summaryUnsubscribe = null;
       let summaryScans = [];
@@ -6270,6 +6295,7 @@
          dashboardCalendarYear = 0;
          dashboardCalendarMonth = 0;
          dashboardSearchResults = [];
+         dashboardSearchCache = {};
          summaryScans = [];
          profileDataCache = null;
          scheduleNoticeEnabled = false;
@@ -8831,7 +8857,6 @@
          }
 
          updateDashboardCards(counts);
-         renderDashboardSearchResults();
       }
 
       function updateDashboardCards(counts) {
@@ -8857,12 +8882,37 @@
       function handleDashboardSearchInput() {
          if (dashboardSearchTimer) {
             clearTimeout(dashboardSearchTimer);
+            dashboardSearchTimer = null;
          }
 
-         dashboardSearchTimer =
-            setTimeout(function () {
-               renderDashboardSearchResults();
-            }, 500);
+         if (!getDashboardSearchText()) {
+            dashboardSearchResults = [];
+
+            const resultsBox =
+               document.getElementById("dashboardSearchResults");
+
+            const downloadBtn =
+               document.getElementById("dashboardDownloadBtn");
+
+            if (resultsBox) {
+               resultsBox.innerHTML = "";
+            }
+
+            if (downloadBtn) {
+               downloadBtn.style.display = "none";
+            }
+         }
+      }
+
+      function handleDashboardSearchKeydown(event) {
+         if (event && event.key === "Enter") {
+            event.preventDefault();
+            submitDashboardSearch();
+         }
+      }
+
+      function submitDashboardSearch() {
+         renderDashboardSearchResults();
       }
 
       function getDashboardSearchText() {
@@ -8897,6 +8947,20 @@
             return;
          }
 
+         const cacheKey =
+            searchText.toLowerCase();
+
+         if (Array.isArray(dashboardSearchCache[cacheKey])) {
+            dashboardSearchResults =
+               dashboardSearchCache[cacheKey].slice();
+
+            renderDashboardSearchResultCards(
+               resultsBox,
+               downloadBtn
+            );
+            return;
+         }
+
          resultsBox.innerHTML =
             "<div class=\"dashboardUserCard\">กำลังค้นหา...</div>";
 
@@ -8919,6 +8983,9 @@
             dashboardSearchResults = Array.isArray(result.users)
                ? result.users
                : [];
+
+            dashboardSearchCache[cacheKey] =
+               dashboardSearchResults.slice();
          } catch (error) {
             dashboardSearchResults = [];
             resultsBox.innerHTML =
@@ -8929,6 +8996,17 @@
             }
 
             console.error("DASHBOARD SEARCH ERROR =", error);
+            return;
+         }
+
+         renderDashboardSearchResultCards(
+            resultsBox,
+            downloadBtn
+         );
+      }
+
+      function renderDashboardSearchResultCards(resultsBox, downloadBtn) {
+         if (!resultsBox) {
             return;
          }
 
@@ -9058,16 +9136,26 @@
                : [];
 
          if (!rows.length) {
-            const result =
-               await workerApi("/api/search-users", {
-                  staffCode: lastCode,
-                  search: "All",
-                  date: dashboardSelectedDate || getTodayDashboardKey()
-               });
+            if (Array.isArray(dashboardSearchCache.all)) {
+               rows =
+                  dashboardSearchCache.all.slice();
+            } else {
+               const result =
+                  await workerApi("/api/search-users", {
+                     staffCode: lastCode,
+                     search: "All",
+                     date: dashboardSelectedDate || getTodayDashboardKey()
+                  });
 
-            rows = result && result.success && Array.isArray(result.users)
-               ? result.users
-               : [];
+               rows = result && result.success && Array.isArray(result.users)
+                  ? result.users
+                  : [];
+
+               if (rows.length) {
+                  dashboardSearchCache.all =
+                     rows.slice();
+               }
+            }
          }
 
          if (!rows.length) {
